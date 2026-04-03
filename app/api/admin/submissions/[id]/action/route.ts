@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdminApi } from "@/lib/admin/route-auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const finalSchema = z.object({
   shoe_name: z.string().min(1),
@@ -42,44 +43,78 @@ function badRequest(message: string) {
   return NextResponse.json({ ok: false, message }, { status: 400 });
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const auth = await requireAdminApi();
   if ("error" in auth) return auth.error;
-  const { supabase, user } = auth;
+  const { user } = auth;
+
+  const supabase = createAdminClient();
+  if (!supabase) {
+    return NextResponse.json(
+      { ok: false, message: "Supabase admin client is not configured." },
+      { status: 500 }
+    );
+  }
 
   const { id } = await params;
   const payload = bodySchema.safeParse(await request.json());
-  if (!payload.success) return badRequest(payload.error.issues[0]?.message ?? "Invalid payload.");
+  if (!payload.success) {
+    return badRequest(payload.error.issues[0]?.message ?? "Invalid payload.");
+  }
 
-  const { data: currentSubmission, error: submissionError } = await supabase.from("user_submissions").select("*").eq("id", id).maybeSingle();
-  if (submissionError || !currentSubmission) return NextResponse.json({ ok: false, message: "Submission not found." }, { status: 404 });
+  const { data: currentSubmission, error: submissionError } = await supabase
+    .from("user_submissions")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
 
-  const { error: draftVersionError } = await supabase.from("submission_admin_versions").upsert(
-    {
-      submission_id: id,
-      final_payload: payload.data.finalPayload,
-      last_edited_by: user.id,
-      updated_at: new Date().toISOString()
-    },
-    { onConflict: "submission_id" }
-  );
+  if (submissionError || !currentSubmission) {
+    return NextResponse.json(
+      { ok: false, message: "Submission not found." },
+      { status: 404 }
+    );
+  }
+
+  const { error: draftVersionError } = await supabase
+    .from("submission_admin_versions")
+    .upsert(
+      {
+        submission_id: id,
+        final_payload: payload.data.finalPayload,
+        last_edited_by: user.id,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: "submission_id" }
+    );
+
   if (draftVersionError) return badRequest(draftVersionError.message);
 
   if (payload.data.action === "save_draft") {
     const { error: draftUpdateError } = await supabase
       .from("user_submissions")
-      .update({ status: "draft", reviewed_by: user.id, reviewer_notes: payload.data.note ?? null })
+      .update({
+        status: "draft",
+        reviewed_by: user.id,
+        reviewer_notes: payload.data.note ?? null
+      })
       .eq("id", id);
+
     if (draftUpdateError) return badRequest(draftUpdateError.message);
 
-    const { error: draftLogError } = await supabase.from("admin_audit_logs").insert({
-      actor_admin_id: user.id,
-      target_type: "submission",
-      target_submission_id: id,
-      action: "draft_saved",
-      note: payload.data.note ?? "Draft saved",
-      after_payload: payload.data.finalPayload
-    });
+    const { error: draftLogError } = await supabase
+      .from("admin_audit_logs")
+      .insert({
+        actor_admin_id: user.id,
+        target_type: "submission",
+        target_submission_id: id,
+        action: "draft_saved",
+        note: payload.data.note ?? "Draft saved",
+        after_payload: payload.data.finalPayload
+      });
+
     if (draftLogError) return badRequest(draftLogError.message);
 
     return NextResponse.json({ ok: true, message: "Draft saved." });
@@ -88,18 +123,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (payload.data.action === "reject") {
     const { error: rejectUpdateError } = await supabase
       .from("user_submissions")
-      .update({ status: "rejected", reviewed_by: user.id, reviewer_notes: payload.data.note ?? null })
+      .update({
+        status: "rejected",
+        reviewed_by: user.id,
+        reviewer_notes: payload.data.note ?? null
+      })
       .eq("id", id);
+
     if (rejectUpdateError) return badRequest(rejectUpdateError.message);
 
-    const { error: rejectLogError } = await supabase.from("admin_audit_logs").insert({
-      actor_admin_id: user.id,
-      target_type: "submission",
-      target_submission_id: id,
-      action: "rejected",
-      note: payload.data.note ?? "Submission rejected",
-      after_payload: payload.data.finalPayload
-    });
+    const { error: rejectLogError } = await supabase
+      .from("admin_audit_logs")
+      .insert({
+        actor_admin_id: user.id,
+        target_type: "submission",
+        target_submission_id: id,
+        action: "rejected",
+        note: payload.data.note ?? "Submission rejected",
+        after_payload: payload.data.finalPayload
+      });
+
     if (rejectLogError) return badRequest(rejectLogError.message);
 
     return NextResponse.json({ ok: true, message: "Submission rejected." });
@@ -107,7 +150,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const final = payload.data.finalPayload;
   const nowIso = new Date().toISOString();
-  const storyContent = final.story_summary ?? final.playstyle_summary ?? `${final.brand} ${final.shoe_name}`;
+  const storyContent =
+    final.story_summary ??
+    final.playstyle_summary ??
+    `${final.brand} ${final.shoe_name}`;
 
   let shoeId = currentSubmission.published_shoe_id as string | null;
   let beforeShoePayload: unknown = null;
@@ -133,11 +179,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .select("id")
       .single();
 
-    if (insertError || !insertedShoe) return badRequest(insertError?.message ?? "Could not publish shoe.");
+    if (insertError || !insertedShoe) {
+      return badRequest(insertError?.message ?? "Could not publish shoe.");
+    }
+
     shoeId = insertedShoe.id;
   } else {
-    const { data: currentShoe, error: loadShoeError } = await supabase.from("shoes").select("*").eq("id", shoeId).maybeSingle();
-    if (loadShoeError || !currentShoe) return badRequest(loadShoeError?.message ?? "Published shoe record is missing.");
+    const { data: currentShoe, error: loadShoeError } = await supabase
+      .from("shoes")
+      .select("*")
+      .eq("id", shoeId)
+      .maybeSingle();
+
+    if (loadShoeError || !currentShoe) {
+      return badRequest(
+        loadShoeError?.message ?? "Published shoe record is missing."
+      );
+    }
 
     beforeShoePayload = currentShoe;
 
@@ -159,7 +217,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .eq("id", shoeId)
       .select("id");
 
-    if (shoeUpdateError || !updatedRows || updatedRows.length === 0) return badRequest(shoeUpdateError?.message ?? "Could not update published shoe.");
+    if (shoeUpdateError || !updatedRows || updatedRows.length === 0) {
+      return badRequest(
+        shoeUpdateError?.message ?? "Could not update published shoe."
+      );
+    }
   }
 
   const specPayload = {
@@ -179,14 +241,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     updated_at: nowIso
   };
 
-  const { data: updatedSpecs, error: specUpdateError } = await supabase.from("shoe_specs").update(specPayload).eq("shoe_id", shoeId).select("id");
+  const { data: updatedSpecs, error: specUpdateError } = await supabase
+    .from("shoe_specs")
+    .update(specPayload)
+    .eq("shoe_id", shoeId)
+    .select("id");
+
   if (specUpdateError) return badRequest(specUpdateError.message);
+
   if (!updatedSpecs || updatedSpecs.length === 0) {
-    const { error: specInsertError } = await supabase.from("shoe_specs").insert({ shoe_id: shoeId, ...specPayload });
+    const { error: specInsertError } = await supabase
+      .from("shoe_specs")
+      .insert({ shoe_id: shoeId, ...specPayload });
+
     if (specInsertError) return badRequest(specInsertError.message);
   }
 
   const storyTitle = `${final.brand} ${final.shoe_name}`;
+
   const { data: updatedStories, error: storyUpdateError } = await supabase
     .from("shoe_stories")
     .update({
@@ -197,68 +269,106 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     })
     .eq("shoe_id", shoeId)
     .select("id");
+
   if (storyUpdateError) return badRequest(storyUpdateError.message);
+
   if (!updatedStories || updatedStories.length === 0) {
-    const { error: storyInsertError } = await supabase.from("shoe_stories").insert({
-      shoe_id: shoeId,
-      title: storyTitle,
-      content: storyContent,
-      source_label: "Admin approved submission",
-      source_url: final.source_links?.[0] ?? null
-    });
+    const { error: storyInsertError } = await supabase
+      .from("shoe_stories")
+      .insert({
+        shoe_id: shoeId,
+        title: storyTitle,
+        content: storyContent,
+        source_label: "Admin approved submission",
+        source_url: final.source_links?.[0] ?? null
+      });
+
     if (storyInsertError) return badRequest(storyInsertError.message);
   }
 
   if (final.source_links && final.source_links.length > 0) {
-    const { error: sourceInsertError } = await supabase.from("sources").insert(
-      final.source_links.map((url) => ({
-        shoe_id: shoeId,
-        source_type: "submission",
-        source_label: "Admin approved submission source",
-        source_url: url
-      }))
-    );
+    const { error: sourceInsertError } = await supabase
+      .from("sources")
+      .insert(
+        final.source_links.map((url) => ({
+          shoe_id: shoeId,
+          source_type: "submission",
+          source_label: "Admin approved submission source",
+          source_url: url
+        }))
+      );
+
     if (sourceInsertError) return badRequest(sourceInsertError.message);
   }
 
-  const { data: updatedSubmission, error: submissionUpdateError } = await supabase
+  const { data: updatedRows, error: submissionUpdateError } = await supabase
     .from("user_submissions")
     .update({
-      status: "published",
+      status: "approved",
       reviewed_by: user.id,
       reviewer_notes: payload.data.note ?? null,
       published_shoe_id: shoeId,
       published_at: nowIso
     })
     .eq("id", id)
-    .select("id, status, published_at, published_shoe_id, reviewed_by")
-    .maybeSingle();
-  if (submissionUpdateError) return badRequest(submissionUpdateError.message);
+    .select("id, status, published_at, published_shoe_id, reviewed_by");
+
+  console.log("[publish] submission metadata update result", {
+    submissionId: id,
+    shoeId,
+    reviewerId: user.id,
+    nowIso,
+    submissionUpdateError,
+    updatedRows,
+    updatedRowCount: updatedRows?.length ?? 0
+  });
+
+  if (submissionUpdateError) {
+    return badRequest(
+      `submission update failed: ${submissionUpdateError.message}`
+    );
+  }
+
+  const updatedSubmission = updatedRows?.[0] ?? null;
+
   if (
     !updatedSubmission ||
-    updatedSubmission.status !== "published" ||
+    updatedSubmission.status !== "approved" ||
     !updatedSubmission.published_at ||
     updatedSubmission.published_shoe_id !== shoeId ||
     updatedSubmission.reviewed_by !== user.id
   ) {
-    return badRequest("Failed to persist submission publish metadata after production writes.");
+    return badRequest(
+      "Failed to persist submission publish metadata after production writes."
+    );
   }
 
-  const { error: publishLogError } = await supabase.from("admin_audit_logs").insert({
-    actor_admin_id: user.id,
-    target_type: currentSubmission.published_shoe_id ? "shoe" : "submission",
-    target_submission_id: id,
-    target_shoe_id: shoeId,
-    action: currentSubmission.published_shoe_id ? "updated" : "approved_published",
-    note: payload.data.note ?? (currentSubmission.published_shoe_id ? "Published record updated" : "Submission approved and published"),
-    before_payload: beforeShoePayload ?? currentSubmission.raw_payload,
-    after_payload: final
-  });
+  const { error: publishLogError } = await supabase
+    .from("admin_audit_logs")
+    .insert({
+      actor_admin_id: user.id,
+      target_type: currentSubmission.published_shoe_id ? "shoe" : "submission",
+      target_submission_id: id,
+      target_shoe_id: shoeId,
+      action: currentSubmission.published_shoe_id
+        ? "updated"
+        : "approved_published",
+      note:
+        payload.data.note ??
+        (currentSubmission.published_shoe_id
+          ? "Published record updated"
+          : "Submission approved and published"),
+      before_payload: beforeShoePayload ?? currentSubmission.raw_payload,
+      after_payload: final
+    });
+
   if (publishLogError) return badRequest(publishLogError.message);
 
   return NextResponse.json({
     ok: true,
-    message: currentSubmission.published_shoe_id ? "Published record updated." : "Published to official shoes table.",
+    message: currentSubmission.published_shoe_id
+      ? "Published record updated."
+      : "Published to official shoes table.",
     shoeId
   });
 }
