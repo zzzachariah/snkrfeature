@@ -54,12 +54,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { data: currentSubmission, error: submissionError } = await supabase.from("user_submissions").select("*").eq("id", id).maybeSingle();
   if (submissionError || !currentSubmission) return NextResponse.json({ ok: false, message: "Submission not found." }, { status: 404 });
 
-  const { error: draftVersionError } = await supabase.from("submission_admin_versions").upsert({
-    submission_id: id,
-    final_payload: payload.data.finalPayload,
-    last_edited_by: user.id,
-    updated_at: new Date().toISOString()
-  });
+  const { error: draftVersionError } = await supabase.from("submission_admin_versions").upsert(
+    {
+      submission_id: id,
+      final_payload: payload.data.finalPayload,
+      last_edited_by: user.id,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "submission_id" }
+  );
   if (draftVersionError) return badRequest(draftVersionError.message);
 
   if (payload.data.action === "save_draft") {
