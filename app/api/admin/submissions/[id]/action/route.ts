@@ -38,6 +38,10 @@ function slugify(input: string) {
   return input.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+function badRequest(message: string) {
+  return NextResponse.json({ ok: false, message }, { status: 400 });
+}
+
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdminApi();
   if ("error" in auth) return auth.error;
@@ -45,21 +49,27 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { id } = await params;
   const payload = bodySchema.safeParse(await request.json());
-  if (!payload.success) return NextResponse.json({ ok: false, message: payload.error.issues[0]?.message }, { status: 400 });
+  if (!payload.success) return badRequest(payload.error.issues[0]?.message ?? "Invalid payload.");
 
   const { data: currentSubmission, error: submissionError } = await supabase.from("user_submissions").select("*").eq("id", id).maybeSingle();
   if (submissionError || !currentSubmission) return NextResponse.json({ ok: false, message: "Submission not found." }, { status: 404 });
 
-  await supabase.from("submission_admin_versions").upsert({
+  const { error: draftVersionError } = await supabase.from("submission_admin_versions").upsert({
     submission_id: id,
     final_payload: payload.data.finalPayload,
     last_edited_by: user.id,
     updated_at: new Date().toISOString()
   });
+  if (draftVersionError) return badRequest(draftVersionError.message);
 
   if (payload.data.action === "save_draft") {
-    await supabase.from("user_submissions").update({ status: "draft", reviewed_by: user.id, reviewer_notes: payload.data.note ?? null }).eq("id", id);
-    await supabase.from("admin_audit_logs").insert({
+    const { error: draftUpdateError } = await supabase
+      .from("user_submissions")
+      .update({ status: "draft", reviewed_by: user.id, reviewer_notes: payload.data.note ?? null })
+      .eq("id", id);
+    if (draftUpdateError) return badRequest(draftUpdateError.message);
+
+    const { error: draftLogError } = await supabase.from("admin_audit_logs").insert({
       actor_admin_id: user.id,
       target_type: "submission",
       target_submission_id: id,
@@ -67,12 +77,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       note: payload.data.note ?? "Draft saved",
       after_payload: payload.data.finalPayload
     });
+    if (draftLogError) return badRequest(draftLogError.message);
+
     return NextResponse.json({ ok: true, message: "Draft saved." });
   }
 
   if (payload.data.action === "reject") {
-    await supabase.from("user_submissions").update({ status: "rejected", reviewed_by: user.id, reviewer_notes: payload.data.note ?? null }).eq("id", id);
-    await supabase.from("admin_audit_logs").insert({
+    const { error: rejectUpdateError } = await supabase
+      .from("user_submissions")
+      .update({ status: "rejected", reviewed_by: user.id, reviewer_notes: payload.data.note ?? null })
+      .eq("id", id);
+    if (rejectUpdateError) return badRequest(rejectUpdateError.message);
+
+    const { error: rejectLogError } = await supabase.from("admin_audit_logs").insert({
       actor_admin_id: user.id,
       target_type: "submission",
       target_submission_id: id,
@@ -80,16 +97,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       note: payload.data.note ?? "Submission rejected",
       after_payload: payload.data.finalPayload
     });
+    if (rejectLogError) return badRequest(rejectLogError.message);
+
     return NextResponse.json({ ok: true, message: "Submission rejected." });
   }
 
   const final = payload.data.finalPayload;
-  const baseSlug = slugify(`${final.brand}-${final.shoe_name}`);
-  const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
+  const nowIso = new Date().toISOString();
+  const storyContent = final.story_summary ?? final.playstyle_summary ?? `${final.brand} ${final.shoe_name}`;
 
-  const publishedShoeId = currentSubmission.published_shoe_id as string | null;
+  let shoeId = currentSubmission.published_shoe_id as string | null;
+  let beforeShoePayload: unknown = null;
 
-  if (!publishedShoeId) {
+  if (!shoeId) {
+    const baseSlug = slugify(`${final.brand}-${final.shoe_name}`);
+    const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
+
     const { data: insertedShoe, error: insertError } = await supabase
       .from("shoes")
       .insert({
@@ -107,120 +130,121 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .select("id")
       .single();
 
-    if (insertError || !insertedShoe) return NextResponse.json({ ok: false, message: insertError?.message ?? "Could not publish shoe." }, { status: 400 });
+    if (insertError || !insertedShoe) return badRequest(insertError?.message ?? "Could not publish shoe.");
+    shoeId = insertedShoe.id;
+  } else {
+    const { data: currentShoe, error: loadShoeError } = await supabase.from("shoes").select("*").eq("id", shoeId).maybeSingle();
+    if (loadShoeError || !currentShoe) return badRequest(loadShoeError?.message ?? "Published shoe record is missing.");
 
-    await supabase.from("shoe_specs").insert({
-      shoe_id: insertedShoe.id,
-      forefoot_midsole_tech: final.forefoot_midsole_tech ?? null,
-      heel_midsole_tech: final.heel_midsole_tech ?? null,
-      outsole_tech: final.outsole_tech ?? null,
-      upper_tech: final.upper_tech ?? null,
-      cushioning_feel: final.cushioning_feel ?? null,
-      court_feel: final.court_feel ?? null,
-      bounce: final.bounce ?? null,
-      stability: final.stability ?? null,
-      traction: final.traction ?? null,
-      fit: final.fit ?? null,
-      playstyle_summary: final.playstyle_summary ?? null,
-      story_summary: final.story_summary ?? null,
-      tags: final.tags ?? []
-    });
+    beforeShoePayload = currentShoe;
 
-    if (final.source_links && final.source_links.length > 0) {
-      await supabase.from("sources").insert(
-        final.source_links.map((url) => ({
-          shoe_id: insertedShoe.id,
-          source_type: "submission",
-          source_label: "Admin approved submission source",
-          source_url: url
-        }))
-      );
-    }
-
-    await supabase
-      .from("user_submissions")
+    const { data: updatedRows, error: shoeUpdateError } = await supabase
+      .from("shoes")
       .update({
-        status: "published",
-        reviewed_by: user.id,
-        reviewer_notes: payload.data.note ?? null,
-        published_shoe_id: insertedShoe.id,
-        published_at: new Date().toISOString()
+        brand: final.brand,
+        shoe_name: final.shoe_name,
+        model_line: final.model_line ?? null,
+        version_name: final.version_name ?? null,
+        release_year: final.release_year ?? null,
+        category: final.category ?? null,
+        player: final.player ?? null,
+        is_published: true,
+        unpublished_at: null,
+        unpublished_by: null,
+        updated_at: nowIso
       })
-      .eq("id", id);
+      .eq("id", shoeId)
+      .select("id");
 
-    await supabase.from("admin_audit_logs").insert({
-      actor_admin_id: user.id,
-      target_type: "submission",
-      target_submission_id: id,
-      target_shoe_id: insertedShoe.id,
-      action: "approved_published",
-      note: payload.data.note ?? "Submission approved and published",
-      before_payload: currentSubmission.raw_payload,
-      after_payload: final
-    });
-
-    return NextResponse.json({ ok: true, message: "Published to official shoes table.", shoeId: insertedShoe.id });
+    if (shoeUpdateError || !updatedRows || updatedRows.length === 0) return badRequest(shoeUpdateError?.message ?? "Could not update published shoe.");
   }
 
-  const { data: currentShoe } = await supabase.from("shoes").select("*").eq("id", publishedShoeId).maybeSingle();
+  const specPayload = {
+    forefoot_midsole_tech: final.forefoot_midsole_tech ?? null,
+    heel_midsole_tech: final.heel_midsole_tech ?? null,
+    outsole_tech: final.outsole_tech ?? null,
+    upper_tech: final.upper_tech ?? null,
+    cushioning_feel: final.cushioning_feel ?? null,
+    court_feel: final.court_feel ?? null,
+    bounce: final.bounce ?? null,
+    stability: final.stability ?? null,
+    traction: final.traction ?? null,
+    fit: final.fit ?? null,
+    playstyle_summary: final.playstyle_summary ?? null,
+    story_summary: final.story_summary ?? null,
+    tags: final.tags ?? [],
+    updated_at: nowIso
+  };
 
-  await supabase
-    .from("shoes")
+  const { data: updatedSpecs, error: specUpdateError } = await supabase.from("shoe_specs").update(specPayload).eq("shoe_id", shoeId).select("id");
+  if (specUpdateError) return badRequest(specUpdateError.message);
+  if (!updatedSpecs || updatedSpecs.length === 0) {
+    const { error: specInsertError } = await supabase.from("shoe_specs").insert({ shoe_id: shoeId, ...specPayload });
+    if (specInsertError) return badRequest(specInsertError.message);
+  }
+
+  const storyTitle = `${final.brand} ${final.shoe_name}`;
+  const { data: updatedStories, error: storyUpdateError } = await supabase
+    .from("shoe_stories")
     .update({
-      brand: final.brand,
-      shoe_name: final.shoe_name,
-      model_line: final.model_line ?? null,
-      version_name: final.version_name ?? null,
-      release_year: final.release_year ?? null,
-      category: final.category ?? null,
-      player: final.player ?? null,
-      is_published: true,
-      unpublished_at: null,
-      unpublished_by: null,
-      updated_at: new Date().toISOString()
+      title: storyTitle,
+      content: storyContent,
+      source_label: "Admin approved submission",
+      source_url: final.source_links?.[0] ?? null
     })
-    .eq("id", publishedShoeId);
+    .eq("shoe_id", shoeId)
+    .select("id");
+  if (storyUpdateError) return badRequest(storyUpdateError.message);
+  if (!updatedStories || updatedStories.length === 0) {
+    const { error: storyInsertError } = await supabase.from("shoe_stories").insert({
+      shoe_id: shoeId,
+      title: storyTitle,
+      content: storyContent,
+      source_label: "Admin approved submission",
+      source_url: final.source_links?.[0] ?? null
+    });
+    if (storyInsertError) return badRequest(storyInsertError.message);
+  }
 
-  await supabase
-    .from("shoe_specs")
-    .update({
-      forefoot_midsole_tech: final.forefoot_midsole_tech ?? null,
-      heel_midsole_tech: final.heel_midsole_tech ?? null,
-      outsole_tech: final.outsole_tech ?? null,
-      upper_tech: final.upper_tech ?? null,
-      cushioning_feel: final.cushioning_feel ?? null,
-      court_feel: final.court_feel ?? null,
-      bounce: final.bounce ?? null,
-      stability: final.stability ?? null,
-      traction: final.traction ?? null,
-      fit: final.fit ?? null,
-      playstyle_summary: final.playstyle_summary ?? null,
-      story_summary: final.story_summary ?? null,
-      tags: final.tags ?? [],
-      updated_at: new Date().toISOString()
-    })
-    .eq("shoe_id", publishedShoeId);
+  if (final.source_links && final.source_links.length > 0) {
+    const { error: sourceInsertError } = await supabase.from("sources").insert(
+      final.source_links.map((url) => ({
+        shoe_id: shoeId,
+        source_type: "submission",
+        source_label: "Admin approved submission source",
+        source_url: url
+      }))
+    );
+    if (sourceInsertError) return badRequest(sourceInsertError.message);
+  }
 
-  await supabase
+  const { error: submissionUpdateError } = await supabase
     .from("user_submissions")
     .update({
       status: "published",
       reviewed_by: user.id,
       reviewer_notes: payload.data.note ?? null,
-      published_at: new Date().toISOString()
+      published_shoe_id: shoeId,
+      published_at: nowIso
     })
     .eq("id", id);
+  if (submissionUpdateError) return badRequest(submissionUpdateError.message);
 
-  await supabase.from("admin_audit_logs").insert({
+  const { error: publishLogError } = await supabase.from("admin_audit_logs").insert({
     actor_admin_id: user.id,
-    target_type: "shoe",
+    target_type: currentSubmission.published_shoe_id ? "shoe" : "submission",
     target_submission_id: id,
-    target_shoe_id: publishedShoeId,
-    action: "updated",
-    note: payload.data.note ?? "Published record updated",
-    before_payload: currentShoe,
+    target_shoe_id: shoeId,
+    action: currentSubmission.published_shoe_id ? "updated" : "approved_published",
+    note: payload.data.note ?? (currentSubmission.published_shoe_id ? "Published record updated" : "Submission approved and published"),
+    before_payload: beforeShoePayload ?? currentSubmission.raw_payload,
     after_payload: final
   });
+  if (publishLogError) return badRequest(publishLogError.message);
 
-  return NextResponse.json({ ok: true, message: "Published record updated.", shoeId: publishedShoeId });
+  return NextResponse.json({
+    ok: true,
+    message: currentSubmission.published_shoe_id ? "Published record updated." : "Published to official shoes table.",
+    shoeId
+  });
 }
