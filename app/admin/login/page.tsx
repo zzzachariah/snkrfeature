@@ -1,0 +1,89 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ShieldCheck } from "lucide-react";
+import { TurnstileWidget } from "@/components/ui/turnstile";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+export default function AdminLoginPage() {
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(false);
+    setMessage("");
+    setLoading(true);
+
+    try {
+      if (!turnstileToken) {
+        setError(true);
+        setMessage("Please complete human verification.");
+        return;
+      }
+
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, password, turnstileToken })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        setError(true);
+        setMessage(data.message ?? "Admin login failed.");
+        return;
+      }
+
+      setError(false);
+      setMessage("Admin access granted. Redirecting...");
+      router.push("/admin");
+      router.refresh();
+    } catch {
+      setError(true);
+      setMessage("Admin login request failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="container-shell py-10">
+      <form onSubmit={onSubmit} className="surface-card premium-border mx-auto max-w-md space-y-4 rounded-2xl p-6">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-[rgb(var(--accent))]" />
+          <h1 className="text-2xl font-semibold">Admin login</h1>
+        </div>
+        <p className="text-sm soft-text">Use admin credentials only. Non-admin users cannot enter the admin workspace.</p>
+
+        <div>
+          <label className="mb-1 block text-xs soft-text">Email or username</label>
+          <Input value={identifier} onChange={(e) => setIdentifier(e.target.value)} required />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs soft-text">Password</label>
+          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        </div>
+        <TurnstileWidget onToken={setTurnstileToken} />
+
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Authorizing..." : "Enter admin workspace"}
+        </Button>
+
+        {message && <p className={`text-sm ${error ? "text-red-500" : "text-emerald-500"}`}>{message}</p>}
+
+        <p className="text-xs soft-text">
+          Need normal access? <Link href="/login" className="text-[rgb(var(--accent))]">Use user login</Link>.
+        </p>
+      </form>
+    </main>
+  );
+}

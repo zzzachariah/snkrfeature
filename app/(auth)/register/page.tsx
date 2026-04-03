@@ -1,0 +1,60 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { BrandLoader } from "@/components/ui/brand-loader";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { TurnstileWidget } from "@/components/ui/turnstile";
+
+export default function RegisterPage() {
+  const [form, setForm] = useState({ username: "", email: "", password: "" });
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(false);
+    setSubmitting(true);
+    if (form.password.length < 8) {
+      setSubmitting(false);
+      setError(true);
+      return setMessage("Password must be at least 8 characters.");
+    }
+    if (!turnstileToken) {
+      setSubmitting(false);
+      setError(true);
+      return setMessage("Please complete human verification.");
+    }
+
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...form, turnstileToken })
+    });
+    const data = await res.json();
+    setSubmitting(false);
+    setError(!res.ok || !data.ok);
+    setMessage(data.message ?? (data.ok ? "Account created." : "Registration failed."));
+  }
+
+  return (
+    <main className="container-shell py-10">
+      <form onSubmit={onSubmit} className="surface-card premium-border mx-auto max-w-md space-y-4 rounded-3xl p-7">
+        <h1 className="text-2xl font-semibold tracking-[0.02em]">Register</h1>
+        <p className="text-sm soft-text">Create your snkrfeature account. Public identity is username-based.</p>
+        <div><label className="mb-1 block text-xs soft-text">Username</label><Input value={form.username} onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))} placeholder="snkrfan23" required /></div>
+        <div><label className="mb-1 block text-xs soft-text">Email</label><Input value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} placeholder="you@domain.com" type="email" required /></div>
+        <div><label className="mb-1 block text-xs soft-text">Password</label><Input value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} placeholder="At least 8 characters" type="password" required /></div>
+        <TurnstileWidget onToken={setTurnstileToken} />
+        <Button type="submit" className="w-full" disabled={submitting}>{submitting ? "Creating account..." : "Create account"}</Button>
+        {submitting && <BrandLoader compact label="Setting up your profile" />}
+        {message && <FeedbackMessage message={message} isError={error} />}
+        <p className="text-xs soft-text">Already have an account? <Link href="/login" className="text-[rgb(var(--accent))] hover:underline">Log in</Link></p>
+      </form>
+    </main>
+  );
+}

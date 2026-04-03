@@ -1,0 +1,37 @@
+import { z } from "zod";
+
+export const authSchema = z.object({
+  identifier: z.string().min(3, "Use at least 3 characters for username/email."),
+  username: z.string().min(3).max(20).optional(),
+  email: z.string().email().optional(),
+  password: z.string().min(8, "Password must be at least 8 characters."),
+  turnstileToken: z.string().min(1, "Please complete Turnstile verification.")
+});
+
+export const commentSchema = z.object({
+  shoeId: z.string().uuid("Invalid shoe identifier."),
+  content: z.string().min(3).max(1000),
+  turnstileToken: z.string().min(1)
+});
+
+export const submissionSchema = z.object({
+  shoe_name: z.string().min(2),
+  brand: z.string().min(2),
+  model: z.string().optional(),
+  release_year: z.coerce.number().min(1980).max(new Date().getFullYear() + 2).optional(),
+  forefoot_midsole_tech: z.string().optional(),
+  heel_midsole_tech: z.string().optional(),
+  outsole_tech: z.string().optional(),
+  upper_tech: z.string().optional(),
+  cushioning_feel: z.string().optional(),
+  court_feel: z.string().optional(),
+  bounce: z.string().optional(),
+  stability: z.string().optional(),
+  traction: z.string().optional(),
+  fit: z.string().optional(),
+  tags: z.string().optional(),
+  story_notes: z.string().optional(),
+  raw_text: z.string().min(20, "Please add detailed notes so normalization is reliable."),
+  source_links: z.string().optional(),
+  turnstileToken: z.string().min(1)
+});

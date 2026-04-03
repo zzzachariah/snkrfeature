@@ -1,0 +1,148 @@
+import { NextResponse } from "next/server";
+import { normalizeSubmission } from "@/lib/openai-normalize";
+import { submissionSchema } from "@/lib/validation/schemas";
+import { verifyTurnstileToken } from "@/lib/turnstile";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+
+function jsonResponse(payload: unknown, init?: ResponseInit) {
+  console.log("[submissions] final returned response", {
+    status: init?.status ?? 200,
+    payload
+  });
+  return NextResponse.json(payload, init);
+}
+
+export async function POST(request: Request) {
+  console.log("[submissions] submit request start");
+  const normalizationEnabled = process.env.ENABLE_OPENAI_NORMALIZATION === "true";
+  console.log("[submissions] normalization enabled", { normalizationEnabled });
+
+  try {
+    let body: unknown;
+    try {
+      body = await request.json();
+      console.log("[submissions] request body parsed", {
+        bodyKeys: body && typeof body === "object" ? Object.keys(body) : []
+      });
+    } catch (error) {
+      console.error("[submissions] request body parse failed", error);
+      return jsonResponse({ ok: false, message: "Invalid JSON request body." }, { status: 400 });
+    }
+
+    const parsed = submissionSchema.safeParse(body);
+    if (!parsed.success) {
+      return jsonResponse({ ok: false, message: parsed.error.issues[0]?.message ?? "Invalid submission payload." }, { status: 400 });
+    }
+
+    const verified = await verifyTurnstileToken(parsed.data.turnstileToken);
+    console.log("[submissions] Turnstile validation result", verified);
+    if (!verified.success) return jsonResponse({ ok: false, message: verified.message }, { status: 400 });
+
+    const serverClient = await createClient();
+    if (!serverClient) {
+      return jsonResponse({ ok: false, message: "Database client is not configured." }, { status: 500 });
+    }
+
+    const {
+      data: { user },
+      error: userError
+    } = await serverClient.auth.getUser();
+    if (userError || !user) {
+      return jsonResponse({ ok: false, message: "Authentication required to submit." }, { status: 401 });
+    }
+
+    const supabase = createAdminClient();
+    if (!supabase) {
+      return jsonResponse({ ok: false, message: "Admin database client is not configured." }, { status: 500 });
+    }
+
+    console.log("[submissions] DB insert start");
+    const { data: submission, error } = await supabase
+      .from("user_submissions")
+      .insert({
+        user_id: user.id,
+        raw_payload: parsed.data,
+        raw_text: parsed.data.raw_text,
+        source_links: (parsed.data.source_links ?? "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        status: "pending"
+      })
+      .select("id")
+      .single();
+    console.log("[submissions] DB insert end", {
+      insertedId: submission?.id ?? null,
+      hasError: Boolean(error)
+    });
+
+    if (error || !submission) {
+      return jsonResponse({ ok: false, message: error?.message ?? "Failed to store submission." }, { status: 500 });
+    }
+
+    if (!normalizationEnabled) {
+      console.log("[submissions] bypass path used", { submissionId: submission.id });
+      return jsonResponse({
+        ok: true,
+        message: "Submission received. Automatic normalization is currently disabled, so it was saved for manual review.",
+        normalization: "disabled"
+      });
+    }
+
+    console.log("[submissions] OpenAI path used", { submissionId: submission.id });
+    console.log("[submissions] normalization start");
+    try {
+      const normalized = await normalizeSubmission(parsed.data);
+      console.log("[submissions] normalization end", {
+        hasNormalizedPayload: Boolean(normalized.normalized)
+      });
+
+      if (!normalized.normalized) {
+        return jsonResponse({
+          ok: true,
+          message: "Submission saved for manual review. Automatic normalization did not return structured output.",
+          normalization: "failed"
+        });
+      }
+
+      const { error: normalizedInsertError } = await supabase.from("normalized_submission_results").insert({
+        submission_id: submission.id,
+        normalized_payload: normalized.normalized,
+        confidence_score: normalized.confidence_score,
+        processing_notes: normalized.processing_notes
+      });
+
+      if (normalizedInsertError) {
+        console.error("[submissions] normalized result insert failed", normalizedInsertError);
+        return jsonResponse({
+          ok: true,
+          message: "Submission saved, but normalization output could not be stored. It was kept for manual review.",
+          normalization: "failed"
+        });
+      }
+
+      const { error: statusUpdateError } = await supabase.from("user_submissions").update({ status: "normalized" }).eq("id", submission.id);
+      if (statusUpdateError) {
+        console.error("[submissions] submission status update failed", statusUpdateError);
+        return jsonResponse({
+          ok: true,
+          message: "Submission saved, but normalization status update failed. It remains pending manual review.",
+          normalization: "failed"
+        });
+      }
+
+      return jsonResponse({ ok: true, message: "Submission queued for review.", normalized, normalization: "completed" });
+    } catch (normalizationError) {
+      console.error("[submissions] normalization error", normalizationError);
+      return jsonResponse({
+        ok: true,
+        message: "Submission saved. Automatic normalization failed, so it was kept for manual review.",
+        normalization: "failed"
+      });
+    }
+  } catch (error) {
+    console.error("[submissions] caught error", error);
+    return jsonResponse({ ok: false, message: "Unexpected error while processing submission." }, { status: 500 });
+  }
+}
