@@ -53,7 +53,7 @@ export default async function AdminPage() {
           </div>
           <div className="space-y-2">
             {(recentSubmissions.data ?? []).map((row: any) => (
-              <Link key={row.id} href={`/admin/workspace/review/${row.id}`} className="block rounded-lg border border-[rgb(var(--muted)/0.45)] px-3 py-2 hover:bg-[rgb(var(--muted)/0.22)]">
+              <Link key={row.id} href={`/admin/review/${row.id}`} className="block rounded-lg border border-[rgb(var(--muted)/0.45)] px-3 py-2 hover:bg-[rgb(var(--muted)/0.22)]">
                 <p className="text-sm font-medium">{row.raw_payload?.shoe_name ?? "Untitled submission"}</p>
                 <p className="text-xs soft-text">by {Array.isArray(row.profiles) ? row.profiles[0]?.username : row.profiles?.username ?? "unknown"} • {row.status}</p>
               </Link>
