@@ -14,7 +14,7 @@ export default async function AdminReviewPage({ searchParams }: { searchParams: 
   if (!supabase) return <Card className="p-5">Supabase is not configured.</Card>;
 
   const q = typeof params.q === "string" ? params.q : "";
-  const status = typeof params.status === "string" ? params.status : "all";
+  const status = typeof params.status === "string" ? params.status : "queue";
   const brand = typeof params.brand === "string" ? params.brand : "all";
   const submitter = typeof params.submitter === "string" ? params.submitter : "";
   const from = typeof params.from === "string" ? params.from : "";
@@ -26,7 +26,8 @@ export default async function AdminReviewPage({ searchParams }: { searchParams: 
     .order("created_at", { ascending: false })
     .limit(300);
 
-  if (status !== "all") query = query.eq("status", status);
+  if (status === "queue") query = query.in("status", ["pending", "normalized", "draft"]);
+  else if (status !== "all") query = query.eq("status", status);
   if (from) query = query.gte("created_at", from);
   if (to) query = query.lte("created_at", `${to}T23:59:59.999Z`);
 
@@ -54,6 +55,7 @@ export default async function AdminReviewPage({ searchParams }: { searchParams: 
         <form className="mt-4 grid gap-2 md:grid-cols-6" method="GET">
           <Input name="q" placeholder="Search shoe name" defaultValue={q} className="md:col-span-2" />
           <select name="status" defaultValue={status} className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.7)] px-3 py-2 text-sm">
+            <option value="queue">Queue (pending/normalized/draft)</option>
             <option value="all">All statuses</option>
             <option value="pending">Pending</option>
             <option value="normalized">Normalized</option>

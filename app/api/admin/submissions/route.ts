@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
   const q = (searchParams.get("q") ?? "").trim();
-  const status = searchParams.get("status") ?? "all";
+  const status = searchParams.get("status") ?? "queue";
   const brand = searchParams.get("brand") ?? "all";
   const submitter = (searchParams.get("submitter") ?? "").trim();
   const from = searchParams.get("from");
@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
     .order("created_at", { ascending: false })
     .limit(200);
 
-  if (status !== "all") query = query.eq("status", status);
+  if (status === "queue") query = query.in("status", ["pending", "normalized", "draft"]);
+  else if (status !== "all") query = query.eq("status", status);
   if (from) query = query.gte("created_at", from);
   if (to) query = query.lte("created_at", `${to}T23:59:59.999Z`);
 

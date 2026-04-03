@@ -7,6 +7,33 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
+const shoeFields = [
+  ["shoe_name", "Shoe name"],
+  ["brand", "Brand"],
+  ["slug", "Slug"],
+  ["model_line", "Model line"],
+  ["version_name", "Version"],
+  ["category", "Category"],
+  ["player", "Player"],
+  ["weight", "Weight"]
+] as const;
+
+const specTextFields = [
+  ["forefoot_midsole_tech", "Forefoot tech"],
+  ["heel_midsole_tech", "Heel tech"],
+  ["outsole_tech", "Outsole tech"],
+  ["upper_tech", "Upper tech"],
+  ["cushioning_feel", "Cushioning"],
+  ["court_feel", "Court feel"],
+  ["bounce", "Bounce"],
+  ["stability", "Stability"],
+  ["traction", "Traction"],
+  ["fit", "Fit"],
+  ["containment", "Containment"],
+  ["support", "Support"],
+  ["torsional_rigidity", "Torsional rigidity"]
+] as const;
+
 export default function AdminPublishedDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(true);
@@ -18,6 +45,7 @@ export default function AdminPublishedDetailPage() {
 
   const [shoe, setShoe] = useState<any>({});
   const [spec, setSpec] = useState<any>({});
+  const [story, setStory] = useState<any>({});
 
   async function load() {
     setLoading(true);
@@ -33,6 +61,7 @@ export default function AdminPublishedDetailPage() {
     setData(json);
     setShoe(json.shoe ?? {});
     setSpec(json.spec ?? {});
+    setStory(json.story ?? {});
     setLoading(false);
   }
 
@@ -47,7 +76,7 @@ export default function AdminPublishedDetailPage() {
     const res = await fetch(`/api/admin/shoes/${id}/action`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, note, shoe, spec })
+      body: JSON.stringify({ action, note, shoe, spec, story })
     });
 
     const json = await res.json();
@@ -66,20 +95,77 @@ export default function AdminPublishedDetailPage() {
     <div className="space-y-4">
       <Card className="p-4">
         <h2 className="text-lg font-semibold">Live record editing workspace</h2>
-        <p className="text-sm soft-text">You are editing a published sneaker record. Changes apply directly to official tables.</p>
+        <p className="text-sm soft-text">Edit full published data across shoes, specs, and story tables.</p>
       </Card>
 
-      <Card className="p-4 space-y-3">
-        <div className="grid gap-3 md:grid-cols-2">
-          <div><label className="mb-1 block text-xs soft-text">Shoe name</label><Input value={shoe.shoe_name ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, shoe_name: e.target.value }))} /></div>
-          <div><label className="mb-1 block text-xs soft-text">Brand</label><Input value={shoe.brand ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, brand: e.target.value }))} /></div>
-          <div><label className="mb-1 block text-xs soft-text">Model line</label><Input value={shoe.model_line ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, model_line: e.target.value }))} /></div>
-          <div><label className="mb-1 block text-xs soft-text">Version</label><Input value={shoe.version_name ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, version_name: e.target.value }))} /></div>
-          <div><label className="mb-1 block text-xs soft-text">Release year</label><Input type="number" value={shoe.release_year ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, release_year: Number(e.target.value) || null }))} /></div>
-          <div><label className="mb-1 block text-xs soft-text">Category</label><Input value={shoe.category ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, category: e.target.value }))} /></div>
-          <div><label className="mb-1 block text-xs soft-text">Player</label><Input value={shoe.player ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, player: e.target.value }))} /></div>
-          <div><label className="mb-1 block text-xs soft-text">Traction</label><Input value={spec.traction ?? ""} onChange={(e) => setSpec((p: any) => ({ ...p, traction: e.target.value }))} /></div>
-        </div>
+      <Card className="p-4 space-y-4">
+        <section>
+          <h3 className="mb-2 text-sm font-semibold">Core shoe fields</h3>
+          <div className="grid gap-3 md:grid-cols-2">
+            {shoeFields.map(([key, label]) => (
+              <div key={key}>
+                <label className="mb-1 block text-xs soft-text">{label}</label>
+                <Input value={shoe[key] ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, [key]: e.target.value }))} />
+              </div>
+            ))}
+            <div>
+              <label className="mb-1 block text-xs soft-text">Release year</label>
+              <Input type="number" value={shoe.release_year ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, release_year: Number(e.target.value) || null }))} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs soft-text">Price</label>
+              <Input type="number" value={shoe.price ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, price: Number(e.target.value) || null }))} />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h3 className="mb-2 text-sm font-semibold">Technical/spec fields</h3>
+          <div className="grid gap-3 md:grid-cols-2">
+            {specTextFields.map(([key, label]) => (
+              <div key={key}>
+                <label className="mb-1 block text-xs soft-text">{label}</label>
+                <Input value={spec[key] ?? ""} onChange={(e) => setSpec((p: any) => ({ ...p, [key]: e.target.value }))} />
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-1">
+            <div>
+              <label className="mb-1 block text-xs soft-text">Playstyle summary</label>
+              <textarea className="w-full rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.7)] px-3 py-2 text-sm" rows={3} value={spec.playstyle_summary ?? ""} onChange={(e) => setSpec((p: any) => ({ ...p, playstyle_summary: e.target.value }))} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs soft-text">Story summary (spec)</label>
+              <textarea className="w-full rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.7)] px-3 py-2 text-sm" rows={3} value={spec.story_summary ?? ""} onChange={(e) => setSpec((p: any) => ({ ...p, story_summary: e.target.value }))} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs soft-text">Tags (comma separated)</label>
+              <Input value={Array.isArray(spec.tags) ? spec.tags.join(", ") : ""} onChange={(e) => setSpec((p: any) => ({ ...p, tags: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h3 className="mb-2 text-sm font-semibold">Story/background fields</h3>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs soft-text">Story title</label>
+              <Input value={story.title ?? ""} onChange={(e) => setStory((p: any) => ({ ...p, title: e.target.value }))} />
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs soft-text">Story content</label>
+              <textarea className="w-full rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.7)] px-3 py-2 text-sm" rows={5} value={story.content ?? ""} onChange={(e) => setStory((p: any) => ({ ...p, content: e.target.value }))} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs soft-text">Story source label</label>
+              <Input value={story.source_label ?? ""} onChange={(e) => setStory((p: any) => ({ ...p, source_label: e.target.value }))} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs soft-text">Story source URL</label>
+              <Input value={story.source_url ?? ""} onChange={(e) => setStory((p: any) => ({ ...p, source_url: e.target.value }))} />
+            </div>
+          </div>
+        </section>
 
         <div>
           <label className="mb-1 block text-xs soft-text">Audit note</label>
