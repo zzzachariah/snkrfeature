@@ -18,6 +18,7 @@ export default async function AdminPage() {
     supabase
       .from("user_submissions")
       .select("id, status, created_at, raw_payload, profiles!user_submissions_user_id_fkey(username)")
+      .in("status", ["pending", "normalized", "draft"])
       .order("created_at", { ascending: false })
       .limit(8),
     supabase.from("shoes").select("id, slug, shoe_name, brand, updated_at, is_published").order("updated_at", { ascending: false }).limit(8)

@@ -7,9 +7,10 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   const { supabase } = auth;
   const { id } = await params;
 
-  const [shoeRes, specRes, sourceRes, historyRes] = await Promise.all([
+  const [shoeRes, specRes, storyRes, sourceRes, historyRes] = await Promise.all([
     supabase.from("shoes").select("*").eq("id", id).maybeSingle(),
     supabase.from("shoe_specs").select("*").eq("shoe_id", id).maybeSingle(),
+    supabase.from("shoe_stories").select("*").eq("shoe_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("sources").select("id, source_label, source_url, source_type, note").eq("shoe_id", id),
     supabase
       .from("admin_audit_logs")
@@ -21,5 +22,12 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 
   if (shoeRes.error || !shoeRes.data) return NextResponse.json({ ok: false, message: "Shoe record not found." }, { status: 404 });
 
-  return NextResponse.json({ ok: true, shoe: shoeRes.data, spec: specRes.data, sources: sourceRes.data ?? [], history: historyRes.data ?? [] });
+  return NextResponse.json({
+    ok: true,
+    shoe: shoeRes.data,
+    spec: specRes.data,
+    story: storyRes.data,
+    sources: sourceRes.data ?? [],
+    history: historyRes.data ?? []
+  });
 }
