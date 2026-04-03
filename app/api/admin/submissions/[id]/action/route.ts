@@ -221,7 +221,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (sourceInsertError) return badRequest(sourceInsertError.message);
   }
 
-  const { error: submissionUpdateError } = await supabase
+  const { data: updatedSubmission, error: submissionUpdateError } = await supabase
     .from("user_submissions")
     .update({
       status: "published",
@@ -230,8 +230,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       published_shoe_id: shoeId,
       published_at: nowIso
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id, status, published_at, published_shoe_id, reviewed_by")
+    .maybeSingle();
   if (submissionUpdateError) return badRequest(submissionUpdateError.message);
+  if (
+    !updatedSubmission ||
+    updatedSubmission.status !== "published" ||
+    !updatedSubmission.published_at ||
+    updatedSubmission.published_shoe_id !== shoeId ||
+    updatedSubmission.reviewed_by !== user.id
+  ) {
+    return badRequest("Failed to persist submission publish metadata after production writes.");
+  }
 
   const { error: publishLogError } = await supabase.from("admin_audit_logs").insert({
     actor_admin_id: user.id,
