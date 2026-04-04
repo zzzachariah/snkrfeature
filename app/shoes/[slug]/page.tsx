@@ -41,7 +41,7 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
       <CommentSection shoeId={shoe.id} />
 
       <Card className="p-5">
-        <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Related shoes</h2><Link href="/" className="inline-flex items-center gap-1 text-sm soft-text hover:text-[rgb(var(--text))]">Back to database <ArrowRight className="h-3 w-3" /></Link></div>
+        <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Related shoes</h2><Link href="/" className="inline-flex items-center gap-1 text-sm soft-text">Back to database <ArrowRight className="h-3 w-3" /></Link></div>
         <div className="mt-3 grid gap-2 md:grid-cols-3">{related.map((item) => <Link key={item.id} href={`/shoes/${item.slug}`} className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3 hover:bg-[rgb(var(--accent)/0.08)]">{item.shoe_name}</Link>)}</div>
       </Card>
     </main>

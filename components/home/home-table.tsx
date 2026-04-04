@@ -53,16 +53,16 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
     <section className="space-y-4">
       <form className="flex flex-col gap-3 md:flex-row" onSubmit={runSearch}>
         <Input placeholder="Search by name, player, tags, technologies..." value={searchDraft} onChange={(e) => setSearchDraft(e.target.value)} />
-        <select className="rounded-xl border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.95)] px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--ring)/0.4)] focus:border-[rgb(var(--ring)/0.85)] focus:outline-none focus:ring-4 focus:ring-[rgb(var(--ring)/0.18)]" value={brand} onChange={(e) => setBrand(e.target.value)}>
+        <select className="rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.58)] bg-[rgb(var(--glass-bg)/0.97)] px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--accent)/0.4)] focus:border-[rgb(var(--ring)/0.85)] focus:outline-none focus:ring-4 focus:ring-[rgb(var(--ring)/0.18)]" value={brand} onChange={(e) => setBrand(e.target.value)}>
           <option value="all">All brands</option>
           {brands.map((b) => <option key={b}>{b}</option>)}
         </select>
         <Button type="submit" variant="secondary">Search</Button>
       </form>
-      <div className="surface-card overflow-hidden rounded-3xl premium-border">
+      <div className="surface-card liquid-interactive overflow-hidden rounded-3xl premium-border">
         <div className="max-h-[560px] overflow-auto">
-          <table className="w-full min-w-[980px] text-left text-sm">
-            <thead className="sticky top-0 z-10 bg-[rgb(var(--bg-elev)/0.98)] text-[rgb(var(--subtext))] backdrop-blur">
+          <table className="w-full text-left text-sm">
+            <thead className="sticky top-0 z-10 bg-[rgb(var(--glass-bg-strong)/0.98)] text-[rgb(var(--subtext))]">
               <tr>
                 <th className="px-4 py-3">Compare</th>
                 <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("shoe_name")}>Name<ArrowUpDown className="h-3 w-3" /></button></th>
@@ -88,10 +88,10 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.01 }}
-                  className="border-t border-[rgb(var(--muted)/0.3)] odd:bg-[rgb(var(--bg-elev)/0.16)] transition hover:bg-[rgb(var(--accent)/0.08)]"
+                  className="border-t border-[rgb(var(--glass-stroke-soft)/0.35)] odd:bg-[rgb(var(--glass-bg-strong)/0.5)] transition hover:bg-[rgb(var(--accent)/0.08)]"
                 >
                   <td className="px-4 py-3 align-middle"><input className="h-4 w-4 accent-[rgb(var(--accent))]" type="checkbox" checked={selected.includes(shoe.id)} onChange={(e) => setSelected((p) => e.target.checked ? [...p, shoe.id] : p.filter((id) => id !== shoe.id))} /></td>
-                  <td className="px-4 py-3"><Link href={`/shoes/${shoe.slug}`} className="font-medium transition hover:text-[rgb(var(--accent))]">{shoe.shoe_name}</Link><p className="text-xs soft-text">{shoe.player ?? "No player tag"}</p></td>
+                  <td className="px-4 py-3"><Link href={`/shoes/${shoe.slug}`} className="font-medium transition">{shoe.shoe_name}</Link><p className="text-xs soft-text">{shoe.player ?? "No player tag"}</p></td>
                   <td className="px-4 py-3">{shoe.brand}</td>
                   <td className="px-4 py-3">{shoe.category ?? "—"}</td>
                   <td className="px-4 py-3">{shoe.release_year ?? "—"}</td>
@@ -103,7 +103,7 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
         </div>
       </div>
       {selected.length > 1 && (
-        <div className="sticky bottom-4 flex items-center justify-between rounded-2xl border border-[rgb(var(--accent)/0.35)] bg-[rgb(var(--accent)/0.12)] p-3 backdrop-blur">
+        <div className="sticky bottom-4 flex items-center justify-between rounded-2xl border border-[rgb(var(--accent)/0.38)] bg-[rgb(var(--accent)/0.12)] p-3">
           <p className="text-sm">{selected.length} shoes selected for compare</p>
           <Link href={`/compare?ids=${selected.join(",")}`}><Button>Compare now</Button></Link>
         </div>
