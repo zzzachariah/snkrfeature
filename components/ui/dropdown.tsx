@@ -8,13 +8,13 @@ export function Dropdown({ label, options, onSelect }: { label: string; options:
 
   return (
     <div className="relative">
-      <button type="button" className="inline-flex items-center gap-2 rounded-xl bg-[rgb(var(--bg-elev)/0.75)] px-3 py-2 text-sm premium-border" onClick={() => setOpen((o) => !o)}>
+      <button type="button" className="liquid-interactive interactive-soft inline-flex items-center gap-2 rounded-xl bg-[rgb(var(--glass-bg)/0.62)] px-3 py-2 text-sm premium-border" onClick={() => setOpen((o) => !o)}>
         {label} <ChevronDown className="h-4 w-4" />
       </button>
       {open && (
-        <div className="surface-card premium-border absolute right-0 z-20 mt-2 w-44 rounded-xl p-1">
+        <div className="surface-card liquid-interactive premium-border absolute right-0 z-20 mt-2 w-44 rounded-xl p-1">
           {options.map((option) => (
-            <button key={option} className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[rgb(var(--muted)/0.35)]" onClick={() => { onSelect(option); setOpen(false); }}>
+            <button key={option} className="w-full rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[rgb(var(--glass-bg-strong)/0.6)]" onClick={() => { onSelect(option); setOpen(false); }}>
               {option}
             </button>
           ))}

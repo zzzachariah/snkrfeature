@@ -59,9 +59,9 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
         </select>
         <Button type="submit" variant="secondary">Search</Button>
       </form>
-      <div className="surface-card overflow-hidden rounded-3xl premium-border">
+      <div className="surface-card liquid-interactive overflow-hidden rounded-3xl premium-border">
         <div className="max-h-[560px] overflow-auto">
-          <table className="w-full min-w-[980px] text-left text-sm">
+          <table className="w-full text-left text-sm">
             <thead className="sticky top-0 z-10 bg-[rgb(var(--bg-elev)/0.98)] text-[rgb(var(--subtext))] backdrop-blur">
               <tr>
                 <th className="px-4 py-3">Compare</th>
