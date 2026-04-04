@@ -73,7 +73,7 @@ export function Navbar() {
               className={`liquid-interactive rounded-lg px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)] ${
                 pathname === item.href
                   ? "border border-[rgb(var(--accent)/0.32)] bg-[rgb(var(--accent)/0.12)] text-[rgb(var(--accent))] shadow-[inset_0_-1px_0_rgb(var(--accent)/0.45)]"
-                  : "soft-text hover:bg-[rgb(var(--glass-bg-strong)/0.62)] hover:text-[rgb(var(--text))]"
+                  : "soft-text hover:bg-[rgb(var(--glass-bg-strong)/0.62)]"
               }`}
             >
               {item.label}
@@ -93,7 +93,7 @@ export function Navbar() {
           <ThemeToggle />
           <AccountMenu />
           <button
-            className="inline-flex rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.56)] bg-[rgb(var(--bg-elev)/0.94)] p-2 soft-text transition hover:border-[rgb(var(--accent)/0.45)] hover:text-[rgb(var(--text))] md:hidden"
+            className="inline-flex rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.56)] bg-[rgb(var(--bg-elev)/0.94)] p-2 soft-text transition hover:border-[rgb(var(--accent)/0.45)] md:hidden"
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle mobile menu"

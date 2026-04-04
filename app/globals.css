@@ -24,8 +24,6 @@
   --glass-overlay: 14 18 28;
   --glass-blur: 4px;
   --glass-blur-strong: 8px;
-  --mx: 50%;
-  --my: 18%;
 }
 
 .dark {
@@ -50,8 +48,6 @@
   --glass-overlay: 2 5 12;
   --glass-blur: 4px;
   --glass-blur-strong: 8px;
-  --mx: 50%;
-  --my: 18%;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -86,7 +82,7 @@ body {
   color: rgb(var(--text));
   background-color: rgb(var(--bg));
   background-image:
-    radial-gradient(880px 380px at var(--mx) var(--my), rgb(var(--accent) / 0.1), transparent 68%),
+    radial-gradient(880px 380px at 50% 16%, rgb(var(--accent) / 0.1), transparent 68%),
     radial-gradient(1100px 560px at 8% -12%, rgb(var(--accent) / 0.12), transparent 68%),
     radial-gradient(940px 420px at 94% 4%, rgb(var(--muted) / 0.3), transparent 74%),
     linear-gradient(180deg, rgb(var(--bg-elev) / 0.94) 0%, rgb(var(--bg)) 34%, rgb(var(--bg)) 100%);
@@ -113,7 +109,7 @@ body {
   z-index: 0;
   background:
     linear-gradient(180deg, rgb(var(--glass-highlight) / 0.38), transparent 22%),
-    radial-gradient(260px 100px at var(--mx) 0%, rgb(var(--glass-highlight) / 0.16), transparent 72%);
+    radial-gradient(260px 100px at 50% 0%, rgb(var(--glass-highlight) / 0.16), transparent 72%);
   opacity: 0.75;
 }
 .premium-border {
@@ -141,18 +137,7 @@ body {
   overflow: hidden;
 }
 .liquid-interactive::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(220px circle at var(--mx) var(--my), rgb(var(--accent) / 0.12), transparent 74%);
-  opacity: 0;
-  transition: opacity 220ms ease;
-}
-.liquid-interactive:hover::after,
-.liquid-interactive:focus-visible::after {
-  opacity: 1;
+  content: none;
 }
 
 @layer base {
