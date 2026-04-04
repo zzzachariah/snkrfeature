@@ -12,10 +12,8 @@ export default async function AdminPage() {
     return <Card className="p-5">Supabase is not configured.</Card>;
   }
 
-  const [pending, approved, rejected, recentSubmissions, recentPublished] = await Promise.all([
+  const [pending, recentSubmissions, recentPublished] = await Promise.all([
     supabase.from("user_submissions").select("id", { count: "exact", head: true }).in("status", ["pending", "normalized", "draft"]),
-    supabase.from("user_submissions").select("id", { count: "exact", head: true }).eq("status", "published"),
-    supabase.from("user_submissions").select("id", { count: "exact", head: true }).eq("status", "rejected"),
     supabase
       .from("user_submissions")
       .select("id, status, created_at, raw_payload, profiles!user_submissions_user_id_fkey(username)")
@@ -40,10 +38,11 @@ export default async function AdminPage() {
         <p className="mt-2 text-sm soft-text">Use Review Queue for pending moderation. Use Published Records for live edits.</p>
       </Card>
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <Card className="p-4"><p className="text-xs soft-text">Pending queue</p><p className="mt-1 text-2xl font-semibold">{pending.count ?? 0}</p></Card>
-        <Card className="p-4"><p className="text-xs soft-text">Published submissions</p><p className="mt-1 text-2xl font-semibold">{approved.count ?? 0}</p></Card>
-        <Card className="p-4"><p className="text-xs soft-text">Rejected submissions</p><p className="mt-1 text-2xl font-semibold">{rejected.count ?? 0}</p></Card>
+      <section className="grid gap-3">
+        <Card className="p-4">
+          <p className="text-xs soft-text">Pending queue</p>
+          <p className="mt-1 text-2xl font-semibold">{pending.count ?? 0}</p>
+        </Card>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
