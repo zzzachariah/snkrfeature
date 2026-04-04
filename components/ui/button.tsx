@@ -7,9 +7,9 @@ const buttonStyles = cva(
   {
     variants: {
       variant: {
-        primary: "border-[rgb(var(--accent)/0.38)] bg-[linear-gradient(170deg,rgb(var(--glass-highlight)/0.32),rgb(var(--accent)/0.9)_44%,rgb(var(--accent)/0.84))] text-white shadow-[0_12px_28px_rgb(var(--accent)/0.28),inset_0_1px_0_rgb(255_255_255/0.35)] hover:border-[rgb(var(--accent)/0.5)] hover:brightness-105",
-        secondary: "border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[linear-gradient(170deg,rgb(var(--glass-highlight)/0.28),rgb(var(--glass-bg)/0.62))] text-[rgb(var(--text))] shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.3)] hover:bg-[linear-gradient(170deg,rgb(var(--glass-highlight)/0.34),rgb(var(--glass-bg-strong)/0.7))]",
-        ghost: "border-transparent bg-transparent text-[rgb(var(--text))] hover:border-[rgb(var(--glass-stroke-soft)/0.4)] hover:bg-[rgb(var(--glass-bg)/0.35)]"
+        primary: "border-[rgb(var(--accent)/0.5)] bg-[rgb(var(--accent)/0.95)] text-white shadow-[0_10px_22px_rgb(var(--accent)/0.28)] hover:bg-[rgb(var(--accent))] hover:shadow-[0_12px_24px_rgb(var(--accent)/0.32)]",
+        secondary: "border-[rgb(var(--glass-stroke-soft)/0.62)] bg-[rgb(var(--glass-bg)/0.96)] text-[rgb(var(--text))] shadow-[0_4px_12px_rgb(var(--glass-shadow)/0.1)] hover:bg-[rgb(var(--glass-bg-strong)/0.98)]",
+        ghost: "border-transparent bg-transparent text-[rgb(var(--text))] hover:border-[rgb(var(--glass-stroke-soft)/0.46)] hover:bg-[rgb(var(--accent)/0.08)]"
       }
     },
     defaultVariants: {

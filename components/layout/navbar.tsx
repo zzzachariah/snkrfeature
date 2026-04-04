@@ -63,17 +63,17 @@ export function Navbar() {
 
   return (
     <header className="sticky top-3 z-40 px-2 md:px-4">
-      <div className="container-shell surface-card premium-border relative flex h-16 items-center gap-2 rounded-2xl md:gap-4">
+      <div className="container-shell relative flex h-16 items-center gap-2 rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.65)] bg-[rgb(var(--glass-bg)/0.96)] shadow-[0_14px_34px_rgb(var(--glass-shadow)/0.16)] md:gap-4">
         <Link href="/" className="text-lg font-semibold tracking-[0.08em]">snkrfeature</Link>
-        <nav className="ml-1 hidden items-center gap-1 rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.4)] bg-[rgb(var(--glass-bg)/0.34)] p-1 text-sm shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.24)] md:flex">
+        <nav className="ml-1 hidden items-center gap-1 rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--bg-elev)/0.92)] p-1 text-sm md:flex">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={`liquid-interactive rounded-lg px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)] ${
                 pathname === item.href
-                  ? "border border-[rgb(var(--glass-stroke)/0.54)] bg-[rgb(var(--glass-bg-strong)/0.68)] text-[rgb(var(--text))] shadow-[0_8px_20px_rgb(var(--glass-shadow)/0.16),inset_0_1px_0_rgb(var(--glass-highlight)/0.34)]"
-                  : "soft-text hover:bg-[rgb(var(--glass-bg-strong)/0.45)] hover:text-[rgb(var(--text))]"
+                  ? "border border-[rgb(var(--accent)/0.32)] bg-[rgb(var(--accent)/0.12)] text-[rgb(var(--accent))] shadow-[inset_0_-1px_0_rgb(var(--accent)/0.45)]"
+                  : "soft-text hover:bg-[rgb(var(--glass-bg-strong)/0.62)] hover:text-[rgb(var(--text))]"
               }`}
             >
               {item.label}
@@ -93,7 +93,7 @@ export function Navbar() {
           <ThemeToggle />
           <AccountMenu />
           <button
-            className="inline-flex rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--glass-bg)/0.58)] p-2 soft-text transition hover:border-[rgb(var(--glass-stroke)/0.54)] hover:text-[rgb(var(--text))] md:hidden"
+            className="inline-flex rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.56)] bg-[rgb(var(--bg-elev)/0.94)] p-2 soft-text transition hover:border-[rgb(var(--accent)/0.45)] hover:text-[rgb(var(--text))] md:hidden"
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle mobile menu"
@@ -103,9 +103,9 @@ export function Navbar() {
         </div>
       </div>
 
-      {mobileOpen && <button aria-label="Close mobile navigation" className="fixed inset-0 z-30 bg-[rgb(var(--glass-overlay)/0.28)] backdrop-blur-[2px] md:hidden" onClick={() => setMobileOpen(false)} />}
+      {mobileOpen && <button aria-label="Close mobile navigation" className="fixed inset-0 z-30 bg-[rgb(var(--glass-overlay)/0.28)] md:hidden" onClick={() => setMobileOpen(false)} />}
 
-      <div className={`fixed right-0 top-16 z-40 h-[calc(100vh-4rem)] w-[min(84vw,340px)] border-l border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--glass-bg-strong)/0.74)] p-4 shadow-[0_24px_60px_rgb(var(--glass-shadow)/0.32)] backdrop-blur-[var(--glass-blur-strong)] transition-transform duration-200 md:hidden ${mobileOpen ? "translate-x-0" : "translate-x-full"}`}>
+      <div className={`fixed right-0 top-16 z-40 h-[calc(100vh-4rem)] w-[min(84vw,340px)] border-l border-[rgb(var(--glass-stroke-soft)/0.62)] bg-[rgb(var(--glass-bg-strong)/0.96)] p-4 shadow-[0_24px_60px_rgb(var(--glass-shadow)/0.32)] transition-transform duration-200 md:hidden ${mobileOpen ? "translate-x-0" : "translate-x-full"}`}>
         <nav className="grid gap-2 text-sm">
           {navItems.map((item) => (
             <Link
