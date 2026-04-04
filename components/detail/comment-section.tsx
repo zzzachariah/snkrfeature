@@ -110,7 +110,7 @@ export function CommentSection({ shoeId }: { shoeId: string }) {
         {!userId && (
           <div className="mt-4 rounded-2xl border border-[rgb(var(--muted)/0.65)] bg-[rgb(var(--bg-elev)/0.45)] p-4">
             <p className="text-sm soft-text">You need to be logged in to post a comment.</p>
-            <Link href="/login" className="mt-3 inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--muted)/0.5)] px-3 py-1.5 text-sm transition hover:border-[rgb(var(--ring)/0.45)] hover:text-[rgb(var(--text))]">
+            <Link href="/login" className="mt-3 inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--muted)/0.5)] px-3 py-1.5 text-sm transition hover:border-[rgb(var(--ring)/0.45)]">
               <LogIn className="h-4 w-4" /> Log in
             </Link>
           </div>
@@ -164,7 +164,7 @@ export function CommentSection({ shoeId }: { shoeId: string }) {
                     <p className="text-xs soft-text">{new Date(comment.createdAt).toLocaleString()}</p>
                   </div>
                   {isOwn && (
-                    <button type="button" className="inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--muted)/0.5)] px-2 py-1 text-xs soft-text transition hover:border-red-300 hover:text-red-400" onClick={() => deleteComment(comment.id)} aria-label="Delete my comment">
+                    <button type="button" className="inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--muted)/0.5)] px-2 py-1 text-xs soft-text transition hover:border-red-300" onClick={() => deleteComment(comment.id)} aria-label="Delete my comment">
                       <Trash2 className="h-3.5 w-3.5" /> Delete
                     </button>
                   )}
@@ -175,14 +175,14 @@ export function CommentSection({ shoeId }: { shoeId: string }) {
                 <div className="mt-3 flex items-center gap-2 text-xs">
                   <button
                     type="button"
-                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 transition ${comment.myVote === "like" ? "border-emerald-400/80 bg-emerald-400/10 text-emerald-400" : "border-[rgb(var(--muted)/0.5)] soft-text hover:border-emerald-300/70 hover:text-emerald-400"}`}
+                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 transition ${comment.myVote === "like" ? "border-emerald-400/80 bg-emerald-400/10 text-emerald-400" : "border-[rgb(var(--muted)/0.5)] soft-text hover:border-emerald-300/70"}`}
                     onClick={() => submitVote(comment.id, "like")}
                   >
                     <ThumbsUp className="h-3.5 w-3.5" /> {comment.likes}
                   </button>
                   <button
                     type="button"
-                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 transition ${comment.myVote === "dislike" ? "border-rose-400/80 bg-rose-400/10 text-rose-400" : "border-[rgb(var(--muted)/0.5)] soft-text hover:border-rose-300/70 hover:text-rose-400"}`}
+                    className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 transition ${comment.myVote === "dislike" ? "border-rose-400/80 bg-rose-400/10 text-rose-400" : "border-[rgb(var(--muted)/0.5)] soft-text hover:border-rose-300/70"}`}
                     onClick={() => submitVote(comment.id, "dislike")}
                   >
                     <ThumbsDown className="h-3.5 w-3.5" /> {comment.dislikes}
