@@ -90,8 +90,18 @@ body {
   transition: background-color 320ms ease, color 320ms ease, background-image 220ms ease;
 }
 
+.app-ambient-bg {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(226, 232, 240, 0.82), transparent 44%),
+    radial-gradient(circle at 95% 10%, rgba(191, 219, 254, 0.34), transparent 40%);
+}
+
 .dark body {
   background-image: none;
+}
+
+.dark .app-ambient-bg {
+  background: none;
 }
 
 .container-shell { @apply mx-auto w-full max-w-[1320px] px-4 md:px-8; }
@@ -164,6 +174,10 @@ body {
 @media (prefers-color-scheme: dark) {
   html:not(.light) body {
     background-image: none;
+  }
+
+  html:not(.light) .app-ambient-bg {
+    background: none;
   }
 
   html:not(.light) .surface-card {
