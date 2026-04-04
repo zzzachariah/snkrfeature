@@ -75,7 +75,7 @@ export function AccountMenu() {
 
   return (
     <div ref={wrapperRef} className="relative">
-      <button type="button" onClick={() => setOpen((o) => !o)} className="inline-flex max-w-[170px] items-center gap-1 truncate rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.48)] bg-[rgb(var(--glass-bg)/0.58)] px-2.5 py-1.5 text-sm soft-text shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.26)] transition hover:border-[rgb(var(--glass-stroke)/0.5)] hover:text-[rgb(var(--text))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="inline-flex max-w-[170px] items-center gap-1 truncate rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.48)] bg-[rgb(var(--glass-bg)/0.58)] px-2.5 py-1.5 text-sm soft-text shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.26)] transition hover:border-[rgb(var(--glass-stroke)/0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]">
         <span className="truncate">{label}</span> <ChevronDown className="h-4 w-4 shrink-0" />
       </button>
 
