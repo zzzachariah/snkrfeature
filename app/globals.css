@@ -14,6 +14,16 @@
   --shadow: 18 24 42;
   --success: 16 185 129;
   --error: 239 68 68;
+  --glass-bg: 255 255 255;
+  --glass-bg-strong: 250 252 255;
+  --glass-stroke: 255 255 255;
+  --glass-stroke-soft: 170 184 212;
+  --glass-highlight: 255 255 255;
+  --glass-shadow: 18 24 42;
+  --glass-shadow-ambient: 108 122 153;
+  --glass-overlay: 14 18 28;
+  --glass-blur: 18px;
+  --glass-blur-strong: 24px;
 }
 
 .dark {
@@ -28,6 +38,16 @@
   --shadow: 3 8 18;
   --success: 52 211 153;
   --error: 248 113 113;
+  --glass-bg: 30 40 60;
+  --glass-bg-strong: 38 49 73;
+  --glass-stroke: 173 190 219;
+  --glass-stroke-soft: 71 88 117;
+  --glass-highlight: 206 223 255;
+  --glass-shadow: 2 8 20;
+  --glass-shadow-ambient: 9 15 28;
+  --glass-overlay: 2 5 12;
+  --glass-blur: 20px;
+  --glass-blur-strong: 28px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -43,6 +63,16 @@
     --shadow: 3 8 18;
     --success: 52 211 153;
     --error: 248 113 113;
+    --glass-bg: 30 40 60;
+    --glass-bg-strong: 38 49 73;
+    --glass-stroke: 173 190 219;
+    --glass-stroke-soft: 71 88 117;
+    --glass-highlight: 206 223 255;
+    --glass-shadow: 2 8 20;
+    --glass-shadow-ambient: 9 15 28;
+    --glass-overlay: 2 5 12;
+    --glass-blur: 20px;
+    --glass-blur-strong: 28px;
   }
 }
 
@@ -62,25 +92,66 @@ body {
 
 .container-shell { @apply mx-auto w-full max-w-[1320px] px-4 md:px-8; }
 .surface-card {
-  background: linear-gradient(170deg, rgb(var(--bg-elev) / 0.95), rgb(var(--surface) / 0.9));
-  box-shadow: 0 18px 42px rgb(var(--shadow) / 0.16);
-  backdrop-filter: blur(5px);
+  background:
+    linear-gradient(160deg, rgb(var(--glass-highlight) / 0.24), transparent 38%),
+    linear-gradient(175deg, rgb(var(--glass-bg-strong) / 0.72), rgb(var(--glass-bg) / 0.58));
+  box-shadow:
+    0 16px 36px rgb(var(--glass-shadow) / 0.2),
+    0 3px 10px rgb(var(--glass-shadow-ambient) / 0.12),
+    inset 0 1px 0 rgb(var(--glass-highlight) / 0.42);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
 }
-.premium-border { border: 1px solid rgb(var(--muted) / 0.56); }
+.premium-border {
+  border: 1px solid rgb(var(--glass-stroke-soft) / 0.45);
+  box-shadow: inset 0 1px 0 rgb(var(--glass-highlight) / 0.24);
+}
 .soft-text { color: rgb(var(--subtext)); }
 
 .interactive-soft {
-  transition: transform 160ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease, color 180ms ease;
+  transition: transform 180ms ease, box-shadow 220ms ease, border-color 220ms ease, background-color 220ms ease, color 220ms ease, filter 220ms ease;
 }
 .interactive-soft:hover {
-  transform: translateY(-1px);
-  border-color: rgb(var(--ring) / 0.45);
-  box-shadow: 0 14px 28px rgb(var(--shadow) / 0.18);
+  transform: translateY(-0.5px);
+  border-color: rgb(var(--glass-stroke) / 0.52);
+  box-shadow: 0 15px 30px rgb(var(--glass-shadow) / 0.24), inset 0 1px 0 rgb(var(--glass-highlight) / 0.35);
+  filter: saturate(1.04);
 }
 .interactive-soft:focus-visible {
   outline: none;
-  border-color: rgb(var(--ring) / 0.9);
-  box-shadow: 0 0 0 4px rgb(var(--ring) / 0.2), 0 10px 24px rgb(var(--shadow) / 0.2);
+  border-color: rgb(var(--ring) / 0.85);
+  box-shadow: 0 0 0 4px rgb(var(--ring) / 0.22), 0 14px 30px rgb(var(--glass-shadow) / 0.26), inset 0 1px 0 rgb(var(--glass-highlight) / 0.32);
+}
+
+@layer base {
+  button, a, input, textarea, select {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input,
+  textarea,
+  select {
+    border-color: rgb(var(--glass-stroke-soft) / 0.46);
+    background:
+      linear-gradient(180deg, rgb(var(--glass-highlight) / 0.2), transparent 52%),
+      rgb(var(--glass-bg) / 0.62);
+    box-shadow: inset 0 1px 0 rgb(var(--glass-highlight) / 0.28);
+    backdrop-filter: blur(calc(var(--glass-blur) * 0.55));
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.55));
+    transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+  }
+
+  input:hover,
+  textarea:hover,
+  select:hover {
+    border-color: rgb(var(--glass-stroke) / 0.55);
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    box-shadow: 0 0 0 4px rgb(var(--ring) / 0.18), inset 0 1px 0 rgb(var(--glass-highlight) / 0.34);
+  }
 }
 
 .feedback {
