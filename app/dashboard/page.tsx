@@ -399,7 +399,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`w-full rounded-lg border px-2 py-1.5 text-left transition ${activeTab === tab ? "border-[rgb(var(--accent)/0.55)] bg-[rgb(var(--accent)/0.15)] text-[rgb(var(--text))]" : "border-transparent soft-text hover:border-[rgb(var(--muted)/0.5)] hover:bg-[rgb(var(--bg-elev)/0.6)] hover:text-[rgb(var(--text))]"}`}
+                  className={`w-full rounded-lg border px-2 py-1.5 text-left transition ${activeTab === tab ? "border-[rgb(var(--accent)/0.55)] bg-[rgb(var(--accent)/0.15)] text-[rgb(var(--text))]" : "border-transparent soft-text hover:border-[rgb(var(--muted)/0.5)] hover:bg-[rgb(var(--bg-elev)/0.6)]"}`}
                 >
                   {tab}
                 </button>
