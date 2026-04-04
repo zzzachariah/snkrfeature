@@ -90,6 +90,10 @@ body {
   transition: background-color 320ms ease, color 320ms ease, background-image 220ms ease;
 }
 
+.dark body {
+  background-image: none;
+}
+
 .container-shell { @apply mx-auto w-full max-w-[1320px] px-4 md:px-8; }
 .surface-card {
   position: relative;
@@ -111,6 +115,14 @@ body {
     linear-gradient(180deg, rgb(var(--glass-highlight) / 0.38), transparent 22%),
     radial-gradient(260px 100px at 50% 0%, rgb(var(--glass-highlight) / 0.16), transparent 72%);
   opacity: 0.75;
+}
+
+.dark .surface-card {
+  background: rgb(var(--glass-bg) / 0.96);
+}
+
+.dark .surface-card::before {
+  content: none;
 }
 .premium-border {
   border: 1px solid rgb(var(--glass-stroke-soft) / 0.6);
@@ -138,6 +150,38 @@ body {
 }
 .liquid-interactive::after {
   content: none;
+}
+
+.dark .skeleton {
+  background: rgb(var(--muted) / 0.45);
+}
+
+.dark .brand-shimmer {
+  background: none;
+  color: rgb(var(--text));
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light) body {
+    background-image: none;
+  }
+
+  html:not(.light) .surface-card {
+    background: rgb(var(--glass-bg) / 0.96);
+  }
+
+  html:not(.light) .surface-card::before {
+    content: none;
+  }
+
+  html:not(.light) .skeleton {
+    background: rgb(var(--muted) / 0.45);
+  }
+
+  html:not(.light) .brand-shimmer {
+    background: none;
+    color: rgb(var(--text));
+  }
 }
 
 @layer base {
