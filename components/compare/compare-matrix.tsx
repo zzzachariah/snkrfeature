@@ -56,7 +56,7 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
                 <th key={s.id} className="sticky top-0 z-20 bg-[rgb(var(--bg-elev)/0.98)] px-4 py-3 text-left align-top">
                   <div className="flex items-start justify-between gap-2">
                     <div><p className="font-medium text-[rgb(var(--text))]">{s.shoe_name}</p><p className="text-xs soft-text">{s.brand}</p></div>
-                    <button onClick={() => setShoes((prev) => prev.filter((p) => p.id !== s.id))} className="rounded-md border border-[rgb(var(--muted)/0.6)] p-1 soft-text transition hover:border-[rgb(var(--ring)/0.45)] hover:text-[rgb(var(--text))]"><X className="h-3 w-3" /></button>
+                    <button onClick={() => setShoes((prev) => prev.filter((p) => p.id !== s.id))} className="rounded-md border border-[rgb(var(--muted)/0.6)] p-1 soft-text transition hover:border-[rgb(var(--ring)/0.45)]"><X className="h-3 w-3" /></button>
                   </div>
                 </th>
               ))}
@@ -69,7 +69,7 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
                 {shoes.map((s) => (
                   <td
                     key={`${f.key}-${s.id}`}
-                    className={`px-4 py-3 soft-text transition group-hover:text-[rgb(var(--text))] ${
+                    className={`px-4 py-3 soft-text transition ${
                       highlightDiffs && f.differs
                         ? "bg-[rgb(var(--accent)/0.09)] text-[rgb(var(--text))] shadow-[inset_0_0_0_1px_rgb(var(--ring)/0.24)]"
                         : ""
