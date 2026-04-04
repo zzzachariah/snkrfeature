@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, Search, X } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -12,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 type NavHref = "/" | "/compare" | "/submit" | "/dashboard" | "/admin" | "/search/advanced";
 
 export function Navbar() {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -60,12 +62,22 @@ export function Navbar() {
   }, [isAdmin]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--glass-bg)/0.52)] shadow-[0_8px_24px_rgb(var(--glass-shadow)/0.12)] backdrop-blur-[var(--glass-blur)]">
-      <div className="container-shell flex h-16 items-center gap-2 md:gap-4">
+    <header className="sticky top-3 z-40 px-2 md:px-4">
+      <div className="container-shell surface-card premium-border relative flex h-16 items-center gap-2 rounded-2xl md:gap-4">
         <Link href="/" className="text-lg font-semibold tracking-[0.08em]">snkrfeature</Link>
-        <nav className="hidden items-center gap-2 text-sm md:flex">
+        <nav className="ml-1 hidden items-center gap-1 rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.4)] bg-[rgb(var(--glass-bg)/0.34)] p-1 text-sm shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.24)] md:flex">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="rounded-lg px-2.5 py-1.5 soft-text transition hover:bg-[rgb(var(--glass-bg-strong)/0.45)] hover:text-[rgb(var(--text))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]">{item.label}</Link>
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`liquid-interactive rounded-lg px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)] ${
+                pathname === item.href
+                  ? "border border-[rgb(var(--glass-stroke)/0.54)] bg-[rgb(var(--glass-bg-strong)/0.68)] text-[rgb(var(--text))] shadow-[0_8px_20px_rgb(var(--glass-shadow)/0.16),inset_0_1px_0_rgb(var(--glass-highlight)/0.34)]"
+                  : "soft-text hover:bg-[rgb(var(--glass-bg-strong)/0.45)] hover:text-[rgb(var(--text))]"
+              }`}
+            >
+              {item.label}
+            </Link>
           ))}
         </nav>
 

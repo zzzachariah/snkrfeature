@@ -24,6 +24,8 @@
   --glass-overlay: 14 18 28;
   --glass-blur: 18px;
   --glass-blur-strong: 24px;
+  --mx: 50%;
+  --my: 18%;
 }
 
 .dark {
@@ -48,6 +50,8 @@
   --glass-overlay: 2 5 12;
   --glass-blur: 20px;
   --glass-blur-strong: 28px;
+  --mx: 50%;
+  --my: 18%;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -77,21 +81,25 @@
 }
 
 * { border-color: rgb(var(--muted) / 0.52); }
-html, body { min-height: 100%; }
+html, body { min-height: 100%; overflow-x: clip; }
 body {
   color: rgb(var(--text));
   background-color: rgb(var(--bg));
   background-image:
+    radial-gradient(980px 520px at var(--mx) var(--my), rgb(var(--glass-highlight) / 0.22), transparent 68%),
     radial-gradient(1100px 500px at 12% -8%, rgb(var(--accent) / 0.17), transparent 66%),
     radial-gradient(880px 420px at 92% 8%, rgb(var(--accent) / 0.09), transparent 70%),
     radial-gradient(620px 380px at 50% 100%, rgb(var(--muted) / 0.32), transparent 72%),
     linear-gradient(180deg, rgb(var(--bg-elev) / 0.7) 0%, rgb(var(--bg)) 30%, rgb(var(--bg)) 100%);
   background-attachment: fixed;
-  transition: background-color 320ms ease, color 320ms ease;
+  transition: background-color 320ms ease, color 320ms ease, background-image 220ms ease;
 }
 
 .container-shell { @apply mx-auto w-full max-w-[1320px] px-4 md:px-8; }
 .surface-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background:
     linear-gradient(160deg, rgb(var(--glass-highlight) / 0.24), transparent 38%),
     linear-gradient(175deg, rgb(var(--glass-bg-strong) / 0.72), rgb(var(--glass-bg) / 0.58));
@@ -101,6 +109,16 @@ body {
     inset 0 1px 0 rgb(var(--glass-highlight) / 0.42);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+.surface-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(360px 140px at var(--mx) calc(var(--my) - 16%), rgb(var(--glass-highlight) / 0.22), transparent 72%),
+    linear-gradient(180deg, rgb(var(--glass-highlight) / 0.18), transparent 30% 72%, rgb(var(--glass-shadow) / 0.07));
 }
 .premium-border {
   border: 1px solid rgb(var(--glass-stroke-soft) / 0.45);
@@ -121,6 +139,24 @@ body {
   outline: none;
   border-color: rgb(var(--ring) / 0.85);
   box-shadow: 0 0 0 4px rgb(var(--ring) / 0.22), 0 14px 30px rgb(var(--glass-shadow) / 0.26), inset 0 1px 0 rgb(var(--glass-highlight) / 0.32);
+}
+.liquid-interactive {
+  position: relative;
+  overflow: hidden;
+}
+.liquid-interactive::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(240px circle at var(--mx) var(--my), rgb(var(--glass-highlight) / 0.28), transparent 70%);
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+.liquid-interactive:hover::after,
+.liquid-interactive:focus-visible::after {
+  opacity: 1;
 }
 
 @layer base {
@@ -151,6 +187,21 @@ body {
   textarea:focus,
   select:focus {
     box-shadow: 0 0 0 4px rgb(var(--ring) / 0.18), inset 0 1px 0 rgb(var(--glass-highlight) / 0.34);
+  }
+
+  .surface-card table thead {
+    background: rgb(var(--glass-bg-strong) / 0.76);
+    backdrop-filter: blur(calc(var(--glass-blur) * 0.9));
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.9));
+  }
+
+  .surface-card table tbody tr {
+    transition: background-color 170ms ease, box-shadow 170ms ease;
+  }
+
+  .surface-card table tbody tr:hover {
+    background-color: rgb(var(--accent) / 0.09);
+    box-shadow: inset 0 1px 0 rgb(var(--glass-highlight) / 0.26);
   }
 }
 

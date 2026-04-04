@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonStyles = cva(
-  "interactive-soft inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium transition duration-200 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgb(var(--ring)/0.2)]",
+  "liquid-interactive interactive-soft inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium transition duration-200 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgb(var(--ring)/0.2)]",
   {
     variants: {
       variant: {
