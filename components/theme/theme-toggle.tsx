@@ -40,7 +40,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={cycleTheme}
-      className="inline-flex items-center gap-1.5 rounded-xl border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.85)] px-2 py-1 text-xs text-[rgb(var(--text))] transition hover:border-[rgb(var(--ring)/0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]"
+      className="inline-flex items-center gap-1.5 rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--glass-bg)/0.62)] px-2 py-1 text-xs text-[rgb(var(--text))] shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.28)] transition hover:border-[rgb(var(--ring)/0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]"
       aria-label={`Theme: ${theme}. Click to cycle theme.`}
       title={`Theme: ${theme}`}
     >

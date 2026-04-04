@@ -75,7 +75,7 @@ export function AccountMenu() {
 
   return (
     <div ref={wrapperRef} className="relative">
-      <button type="button" onClick={() => setOpen((o) => !o)} className="inline-flex max-w-[170px] items-center gap-1 truncate rounded-lg border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.75)] px-2.5 py-1.5 text-sm soft-text transition hover:border-[rgb(var(--ring)/0.45)] hover:text-[rgb(var(--text))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="inline-flex max-w-[170px] items-center gap-1 truncate rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.48)] bg-[rgb(var(--glass-bg)/0.58)] px-2.5 py-1.5 text-sm soft-text shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.26)] transition hover:border-[rgb(var(--glass-stroke)/0.5)] hover:text-[rgb(var(--text))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]">
         <span className="truncate">{label}</span> <ChevronDown className="h-4 w-4 shrink-0" />
       </button>
 
@@ -83,16 +83,16 @@ export function AccountMenu() {
         <div className="surface-card premium-border absolute right-0 z-50 mt-2 w-52 rounded-2xl p-1.5 shadow-2xl">
           {!signedIn ? (
             <>
-              <Link href="/login" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-[rgb(var(--muted)/0.35)]"><LogIn className="h-4 w-4" /> Log in</Link>
-              <Link href="/signup" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-[rgb(var(--muted)/0.35)]"><UserPlus className="h-4 w-4" /> Sign up</Link>
+              <Link href="/login" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-[rgb(var(--glass-bg-strong)/0.46)]"><LogIn className="h-4 w-4" /> Log in</Link>
+              <Link href="/signup" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-[rgb(var(--glass-bg-strong)/0.46)]"><UserPlus className="h-4 w-4" /> Sign up</Link>
             </>
           ) : (
             <>
-              <Link href="/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-[rgb(var(--muted)/0.35)]"><LayoutDashboard className="h-4 w-4" /> Dashboard</Link>
+              <Link href="/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-[rgb(var(--glass-bg-strong)/0.46)]"><LayoutDashboard className="h-4 w-4" /> Dashboard</Link>
               {isAdmin && (
-                <Link href="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-[rgb(var(--muted)/0.35)]"><Shield className="h-4 w-4" /> Admin</Link>
+                <Link href="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-[rgb(var(--glass-bg-strong)/0.46)]"><Shield className="h-4 w-4" /> Admin</Link>
               )}
-              <button type="button" onClick={logout} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[rgb(var(--muted)/0.35)]"><LogOut className="h-4 w-4" /> Log out</button>
+              <button type="button" onClick={logout} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[rgb(var(--glass-bg-strong)/0.46)]"><LogOut className="h-4 w-4" /> Log out</button>
             </>
           )}
         </div>
