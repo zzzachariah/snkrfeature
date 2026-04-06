@@ -114,14 +114,14 @@ export function AccountMenu({ className }: { className?: string }) {
   }
 
   return (
-    <div ref={wrapperRef} className="relative inline-flex">
+    <div ref={wrapperRef} className="relative shrink-0">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
-          "inline-flex h-10 max-w-[190px] items-center gap-2 truncate rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--glass-bg)/0.62)] px-3 text-sm text-[rgb(var(--text))] shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.28)] transition hover:border-[rgb(var(--ring)/0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]",
+          "inline-flex h-10 w-[11rem] items-center justify-between gap-2 truncate rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--glass-bg)/0.62)] px-3 text-sm text-[rgb(var(--text))] shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.28)] transition hover:border-[rgb(var(--ring)/0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]",
           className
         )}
       >
@@ -135,7 +135,7 @@ export function AccountMenu({ className }: { className?: string }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.985 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="surface-card premium-border absolute right-0 top-full z-[70] mt-2 w-56 origin-top-right overflow-hidden rounded-2xl p-1.5 shadow-2xl"
+            className="surface-card premium-border absolute right-0 top-full z-[70] mt-2 w-56 min-w-full origin-top-right overflow-hidden rounded-2xl p-1.5 shadow-2xl"
             role="menu"
           >
           {!signedIn ? (
