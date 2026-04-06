@@ -127,8 +127,22 @@ body {
   opacity: 0.75;
 }
 
+.nav-dropdown-panel {
+  background: linear-gradient(180deg, rgb(var(--glass-bg) / 0.97), rgb(var(--glass-bg-strong) / 0.94));
+  box-shadow:
+    0 20px 44px rgb(var(--glass-shadow) / 0.22),
+    0 2px 10px rgb(var(--glass-shadow-ambient) / 0.16),
+    inset 0 1px 0 rgb(var(--glass-highlight) / 0.44);
+  border: 1px solid rgb(var(--glass-stroke-soft) / 0.64);
+  backdrop-filter: blur(var(--glass-blur-strong));
+}
+
 .dark .surface-card {
   background: rgb(var(--glass-bg) / 0.96);
+}
+
+.dark .nav-dropdown-panel {
+  background: rgb(var(--glass-bg) / 0.98);
 }
 
 .dark .surface-card::before {
