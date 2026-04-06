@@ -13,7 +13,20 @@ export function AccountMenu({ className }: { className?: string }) {
   const [signedIn, setSignedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [label, setLabel] = useState("Account");
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  function updateMenuPosition() {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    setMenuPosition({
+      top: rect.bottom + 8,
+      right: Math.max(8, window.innerWidth - rect.right)
+    });
+  }
 
   async function refreshAuthStateFromSession(session: Session | null, source: "initial" | "auth_change") {
     if (process.env.NODE_ENV !== "production") console.info("[account-menu] auth refresh start", { source, userId: session?.user?.id ?? null });
@@ -74,6 +87,22 @@ export function AccountMenu({ className }: { className?: string }) {
       document.removeEventListener("keydown", onKeyDown);
     };
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updateMenuPosition();
+
+    function onViewportChange() {
+      updateMenuPosition();
+    }
+
+    window.addEventListener("resize", onViewportChange);
+    window.addEventListener("scroll", onViewportChange, true);
+    return () => {
+      window.removeEventListener("resize", onViewportChange);
+      window.removeEventListener("scroll", onViewportChange, true);
+    };
+  }, [open]);
 
   async function logout() {
     const supabase = createClient();
