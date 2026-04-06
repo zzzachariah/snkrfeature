@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, LayoutDashboard, LogIn, Shield, UserPlus } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 
-export function AccountMenu() {
+export function AccountMenu({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -60,8 +62,15 @@ export function AccountMenu() {
     function onClickOutside(e: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false);
     }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
     document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, []);
 
   async function logout() {
@@ -74,29 +83,49 @@ export function AccountMenu() {
   }
 
   return (
-    <div ref={wrapperRef} className="relative">
-      <button type="button" onClick={() => setOpen((o) => !o)} className="inline-flex max-w-[170px] items-center gap-1 truncate rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.48)] bg-[rgb(var(--glass-bg)/0.58)] px-2.5 py-1.5 text-sm soft-text shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.26)] transition hover:border-[rgb(var(--glass-stroke)/0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]">
+    <div ref={wrapperRef} className="relative inline-flex" onBlur={(e) => {
+      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
+    }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={cn(
+          "inline-flex h-10 max-w-[190px] items-center gap-2 truncate rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--glass-bg)/0.62)] px-3 text-sm text-[rgb(var(--text))] shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.28)] transition hover:border-[rgb(var(--ring)/0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]",
+          className
+        )}
+      >
         <span className="truncate">{label}</span> <ChevronDown className="h-4 w-4 shrink-0" />
       </button>
 
-      {open && (
-        <div className="surface-card premium-border absolute right-0 z-50 mt-2 w-52 rounded-2xl p-1.5 shadow-2xl">
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.985 }}
+            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+            className="surface-card premium-border absolute right-0 top-full z-50 mt-2 w-56 origin-top-right overflow-hidden rounded-2xl p-1.5 shadow-2xl"
+            role="menu"
+          >
           {!signedIn ? (
             <>
-              <Link href="/login" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-[rgb(var(--glass-bg-strong)/0.46)]"><LogIn className="h-4 w-4" /> Log in</Link>
-              <Link href="/signup" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-[rgb(var(--glass-bg-strong)/0.46)]"><UserPlus className="h-4 w-4" /> Sign up</Link>
+              <Link href="/login" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"><LogIn className="h-4 w-4" /> Log in</Link>
+              <Link href="/signup" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"><UserPlus className="h-4 w-4" /> Sign up</Link>
             </>
           ) : (
             <>
-              <Link href="/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-[rgb(var(--glass-bg-strong)/0.46)]"><LayoutDashboard className="h-4 w-4" /> Dashboard</Link>
+              <Link href="/dashboard" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"><LayoutDashboard className="h-4 w-4" /> Dashboard</Link>
               {isAdmin && (
-                <Link href="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-[rgb(var(--glass-bg-strong)/0.46)]"><Shield className="h-4 w-4" /> Admin</Link>
+                <Link href="/admin" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"><Shield className="h-4 w-4" /> Admin</Link>
               )}
-              <button type="button" onClick={logout} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[rgb(var(--glass-bg-strong)/0.46)]"><LogOut className="h-4 w-4" /> Log out</button>
+              <button type="button" role="menuitem" onClick={logout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"><LogOut className="h-4 w-4" /> Log out</button>
             </>
           )}
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
