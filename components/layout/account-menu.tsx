@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, LayoutDashboard, LogIn, Shield, UserPlus } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { createPortal } from "react-dom";
 import type { Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -13,7 +14,20 @@ export function AccountMenu({ className }: { className?: string }) {
   const [signedIn, setSignedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [label, setLabel] = useState("Account");
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  function updateMenuPosition() {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    setMenuPosition({
+      top: rect.bottom + 8,
+      right: Math.max(8, window.innerWidth - rect.right)
+    });
+  }
 
   async function refreshAuthStateFromSession(session: Session | null, source: "initial" | "auth_change") {
     if (process.env.NODE_ENV !== "production") console.info("[account-menu] auth refresh start", { source, userId: session?.user?.id ?? null });
@@ -60,7 +74,13 @@ export function AccountMenu({ className }: { className?: string }) {
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (wrapperRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setOpen(false);
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
@@ -73,6 +93,22 @@ export function AccountMenu({ className }: { className?: string }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!open) return;
+    updateMenuPosition();
+
+    function onViewportChange() {
+      updateMenuPosition();
+    }
+
+    window.addEventListener("resize", onViewportChange);
+    window.addEventListener("scroll", onViewportChange, true);
+    return () => {
+      window.removeEventListener("resize", onViewportChange);
+      window.removeEventListener("scroll", onViewportChange, true);
+    };
+  }, [open]);
+
   async function logout() {
     const supabase = createClient();
     if (supabase) await supabase.auth.signOut();
@@ -83,10 +119,9 @@ export function AccountMenu({ className }: { className?: string }) {
   }
 
   return (
-    <div ref={wrapperRef} className="relative inline-flex" onBlur={(e) => {
-      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
-    }}>
+    <div ref={wrapperRef} className="relative inline-flex">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
@@ -100,14 +135,16 @@ export function AccountMenu({ className }: { className?: string }) {
       </button>
 
       <AnimatePresence>
-        {open && (
+        {open && typeof document !== "undefined" && createPortal(
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, y: -6, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.985 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="surface-card premium-border absolute right-0 top-full z-50 mt-2 w-56 origin-top-right overflow-hidden rounded-2xl p-1.5 shadow-2xl"
+            className="surface-card premium-border fixed z-[70] w-56 origin-top-right overflow-hidden rounded-2xl p-1.5 shadow-2xl"
             role="menu"
+            style={{ top: menuPosition.top, right: menuPosition.right }}
           >
           {!signedIn ? (
             <>
@@ -124,7 +161,7 @@ export function AccountMenu({ className }: { className?: string }) {
             </>
           )}
           </motion.div>
-        )}
+        , document.body)}
       </AnimatePresence>
     </div>
   );
