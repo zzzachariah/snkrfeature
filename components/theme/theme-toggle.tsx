@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun, Laptop } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Theme = "light" | "dark" | "system";
 
@@ -18,7 +19,7 @@ function applyTheme(theme: Theme) {
 
 const cycleOrder: Theme[] = ["system", "light", "dark"];
 
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const [theme, setTheme] = useState<Theme>("system");
 
   useEffect(() => {
@@ -40,12 +41,15 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={cycleTheme}
-      className="inline-flex items-center gap-1.5 rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--glass-bg)/0.62)] px-2 py-1 text-xs text-[rgb(var(--text))] shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.28)] transition hover:border-[rgb(var(--ring)/0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]"
+      className={cn(
+        "inline-flex h-10 items-center gap-2 rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--glass-bg)/0.62)] px-3 text-sm text-[rgb(var(--text))] shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.28)] transition hover:border-[rgb(var(--ring)/0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]",
+        className
+      )}
       aria-label={`Theme: ${theme}. Click to cycle theme.`}
       title={`Theme: ${theme}`}
     >
-      {icon}
-      <span className="hidden sm:inline capitalize">{theme}</span>
+      <span className="grid h-5 w-5 place-items-center">{icon}</span>
+      <span className="hidden min-w-[3.75rem] capitalize sm:inline">{theme}</span>
     </button>
   );
 }
