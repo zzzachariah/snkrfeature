@@ -69,47 +69,49 @@ export default async function AdminReviewPage({ searchParams }: { searchParams: 
             {brands.map((b) => (<option key={b} value={b}>{b}</option>))}
           </select>
           <Input name="submitter" placeholder="Submitter" defaultValue={submitter} />
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Input type="date" name="from" defaultValue={from} />
             <Input type="date" name="to" defaultValue={to} />
           </div>
-          <div className="md:col-span-6 flex gap-2">
-            <Button type="submit">Apply filters</Button>
-            <Link href="/admin/review"><Button type="button" variant="secondary">Reset</Button></Link>
+          <div className="md:col-span-6 flex flex-col gap-2 sm:flex-row">
+            <Button type="submit" className="w-full sm:w-auto">Apply filters</Button>
+            <Link href="/admin/review" className="w-full sm:w-auto"><Button type="button" variant="secondary" className="w-full sm:w-auto">Reset</Button></Link>
           </div>
         </form>
       </Card>
 
       <Card className="p-0 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-[rgb(var(--bg-elev)/0.85)] text-left text-xs soft-text">
-            <tr>
-              <th className="px-3 py-2">Submitted</th>
-              <th className="px-3 py-2">Shoe</th>
-              <th className="px-3 py-2">Brand</th>
-              <th className="px-3 py-2">Submitter</th>
-              <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row: any) => (
-              <tr key={row.id} className="border-t border-[rgb(var(--muted)/0.35)]">
-                <td className="px-3 py-3 text-xs soft-text">{new Date(row.created_at).toLocaleString()}</td>
-                <td className="px-3 py-3 font-medium">{row.raw_payload?.shoe_name ?? "—"}</td>
-                <td className="px-3 py-3">{row.raw_payload?.brand ?? "—"}</td>
-                <td className="px-3 py-3">{Array.isArray(row.profiles) ? row.profiles[0]?.username : row.profiles?.username ?? "unknown"}</td>
-                <td className="px-3 py-3"><span className="rounded-full bg-[rgb(var(--muted)/0.45)] px-2 py-1 text-xs">{row.status}</span></td>
-                <td className="px-3 py-3"><Link href={`/admin/review/${row.id}`} className="text-[rgb(var(--accent))]">Open workspace</Link></td>
-              </tr>
-            ))}
-            {rows.length === 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-sm">
+            <thead className="bg-[rgb(var(--bg-elev)/0.85)] text-left text-xs soft-text">
               <tr>
-                <td colSpan={6} className="px-3 py-10 text-center text-sm soft-text">No submissions match current filters.</td>
+                <th className="px-3 py-2">Submitted</th>
+                <th className="px-3 py-2">Shoe</th>
+                <th className="px-3 py-2">Brand</th>
+                <th className="px-3 py-2">Submitter</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">Action</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row: any) => (
+                <tr key={row.id} className="border-t border-[rgb(var(--muted)/0.35)]">
+                  <td className="px-3 py-3 text-xs soft-text">{new Date(row.created_at).toLocaleString()}</td>
+                  <td className="px-3 py-3 font-medium">{row.raw_payload?.shoe_name ?? "—"}</td>
+                  <td className="px-3 py-3">{row.raw_payload?.brand ?? "—"}</td>
+                  <td className="px-3 py-3">{Array.isArray(row.profiles) ? row.profiles[0]?.username : row.profiles?.username ?? "unknown"}</td>
+                  <td className="px-3 py-3"><span className="rounded-full bg-[rgb(var(--muted)/0.45)] px-2 py-1 text-xs">{row.status}</span></td>
+                  <td className="px-3 py-3"><Link href={`/admin/review/${row.id}`} className="text-[rgb(var(--accent))]">Open workspace</Link></td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-3 py-10 text-center text-sm soft-text">No submissions match current filters.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </Card>
     </div>
   );

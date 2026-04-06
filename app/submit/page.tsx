@@ -131,8 +131,8 @@ export default function SubmitPage() {
           <TurnstileWidget onToken={setToken} />
         </div>
 
-        <div className="md:col-span-2 flex items-center gap-3">
-          <Button type="submit" disabled={isSubmitting}>
+        <div className="md:col-span-2 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+          <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
             {isSubmitting ? "Submitting..." : "Submit for review"}
           </Button>
           {message && isError && <p className="text-xs text-red-400">{message}</p>}
