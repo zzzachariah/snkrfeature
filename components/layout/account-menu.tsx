@@ -83,7 +83,7 @@ export function AccountMenu({ className }: { className?: string }) {
   }
 
   return (
-    <div ref={wrapperRef} className="relative" onBlur={(e) => {
+    <div ref={wrapperRef} className="relative inline-flex" onBlur={(e) => {
       if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
     }}>
       <button
@@ -106,7 +106,7 @@ export function AccountMenu({ className }: { className?: string }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.985 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="surface-card premium-border absolute right-0 z-50 mt-2 w-56 origin-top-right overflow-hidden rounded-2xl p-1.5 shadow-2xl"
+            className="surface-card premium-border absolute right-0 top-full z-50 mt-2 w-56 origin-top-right overflow-hidden rounded-2xl p-1.5 shadow-2xl"
             role="menu"
           >
           {!signedIn ? (
