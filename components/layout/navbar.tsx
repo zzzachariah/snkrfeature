@@ -70,7 +70,7 @@ export function Navbar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`liquid-interactive rounded-lg px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)] ${
+              className={`liquid-interactive inline-flex h-10 items-center rounded-xl px-3.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)] ${
                 pathname === item.href
                   ? "border border-[rgb(var(--accent)/0.32)] bg-[rgb(var(--accent)/0.12)] text-[rgb(var(--accent))] shadow-[inset_0_-1px_0_rgb(var(--accent)/0.45)]"
                   : "soft-text hover:bg-[rgb(var(--glass-bg-strong)/0.62)]"
@@ -83,7 +83,7 @@ export function Navbar() {
 
         <div className="ml-auto hidden items-center md:flex">
           <Link href="/search/advanced">
-            <Button variant="secondary" className="inline-flex items-center gap-1.5">
+            <Button variant="secondary" className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3.5">
               <Search className="h-4 w-4" /> Advanced Search
             </Button>
           </Link>
@@ -93,7 +93,7 @@ export function Navbar() {
           <ThemeToggle />
           <AccountMenu />
           <button
-            className="inline-flex rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.56)] bg-[rgb(var(--bg-elev)/0.94)] p-2 soft-text transition hover:border-[rgb(var(--accent)/0.45)] md:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.56)] bg-[rgb(var(--bg-elev)/0.94)] soft-text transition hover:border-[rgb(var(--accent)/0.45)] md:hidden"
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Toggle mobile menu"
