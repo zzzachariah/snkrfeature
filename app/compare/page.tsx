@@ -64,8 +64,8 @@ export default async function ComparePage({
             <h2 className="text-xl font-semibold">Search to add</h2>
             <p className="mt-1 text-sm soft-text">Find more shoes by keyword and filters, then add them directly to this comparison.</p>
           </div>
-          <Link href={`/compare?ids=${selected.map((s) => s.id).join(",")}&showAdd=${shouldShowAddPanel ? "0" : "1"}`}>
-            <Button variant={shouldShowAddPanel ? "secondary" : "primary"} className="inline-flex items-center gap-1.5">
+          <Link href={`/compare?ids=${selected.map((s) => s.id).join(",")}&showAdd=${shouldShowAddPanel ? "0" : "1"}`} className="w-full md:w-auto">
+            <Button variant={shouldShowAddPanel ? "secondary" : "primary"} className="inline-flex w-full items-center justify-center gap-1.5 md:w-auto">
               <Search className="h-4 w-4" />
               {shouldShowAddPanel ? "Hide search" : "Open search"}
             </Button>
@@ -103,10 +103,10 @@ export default async function ComparePage({
                 <label className="mb-1 block text-xs soft-text">Tech</label>
                 <Input name="tech" defaultValue={rawTech ?? ""} placeholder="e.g. Zoom, plate" />
               </div>
-              <div className="flex items-end gap-2">
-                <Button type="submit" className="inline-flex items-center gap-1.5"><Search className="h-4 w-4" /> Search</Button>
-                <Link href={`/compare?ids=${selected.map((s) => s.id).join(",")}&showAdd=1`}>
-                  <Button type="button" variant="secondary">Reset</Button>
+              <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-end">
+                <Button type="submit" className="inline-flex w-full items-center justify-center gap-1.5 sm:w-auto"><Search className="h-4 w-4" /> Search</Button>
+                <Link href={`/compare?ids=${selected.map((s) => s.id).join(",")}&showAdd=1`} className="w-full sm:w-auto">
+                  <Button type="button" variant="secondary" className="w-full sm:w-auto">Reset</Button>
                 </Link>
               </div>
             </form>

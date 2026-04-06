@@ -3,97 +3,90 @@
 @tailwind utilities;
 
 :root {
-  --bg: 246 247 252;
+  --bg: 245 245 247;
   --bg-elev: 255 255 255;
-  --surface: 244 246 255;
-  --muted: 223 228 242;
-  --text: 25 31 44;
-  --subtext: 92 103 126;
-  --accent: 99 102 241;
-  --ring: 129 140 248;
-  --shadow: 18 24 42;
+  --surface: 251 251 253;
+  --muted: 226 226 230;
+  --text: 29 29 31;
+  --subtext: 96 96 102;
+  --accent: 0 113 227;
+  --ring: 0 113 227;
+  --shadow: 17 17 17;
   --success: 16 185 129;
   --error: 239 68 68;
-  --glass-bg: 252 253 255;
-  --glass-bg-strong: 245 248 255;
-  --glass-stroke: 195 208 236;
-  --glass-stroke-soft: 170 184 212;
+  --glass-bg: 255 255 255;
+  --glass-bg-strong: 249 249 251;
+  --glass-stroke: 216 216 222;
+  --glass-stroke-soft: 206 206 212;
   --glass-highlight: 255 255 255;
-  --glass-shadow: 18 24 42;
-  --glass-shadow-ambient: 108 122 153;
-  --glass-overlay: 14 18 28;
-  --glass-blur: 4px;
-  --glass-blur-strong: 8px;
+  --glass-shadow: 15 15 16;
+  --glass-shadow-ambient: 86 86 90;
+  --glass-overlay: 0 0 0;
+  --glass-blur: 0px;
+  --glass-blur-strong: 0px;
 }
 
 .dark {
-  --bg: 14 17 24;
-  --bg-elev: 21 26 38;
-  --surface: 24 31 46;
-  --muted: 36 46 68;
-  --text: 233 237 244;
-  --subtext: 148 160 186;
-  --accent: 129 140 248;
-  --ring: 129 140 248;
-  --shadow: 3 8 18;
+  --bg: 8 8 10;
+  --bg-elev: 18 18 20;
+  --surface: 22 22 25;
+  --muted: 48 48 52;
+  --text: 245 245 247;
+  --subtext: 168 168 173;
+  --accent: 0 113 227;
+  --ring: 0 113 227;
+  --shadow: 0 0 0;
   --success: 52 211 153;
   --error: 248 113 113;
-  --glass-bg: 28 36 54;
-  --glass-bg-strong: 34 45 68;
-  --glass-stroke: 173 190 219;
-  --glass-stroke-soft: 71 88 117;
-  --glass-highlight: 206 223 255;
-  --glass-shadow: 2 8 20;
-  --glass-shadow-ambient: 9 15 28;
-  --glass-overlay: 2 5 12;
-  --glass-blur: 4px;
-  --glass-blur-strong: 8px;
+  --glass-bg: 19 19 22;
+  --glass-bg-strong: 15 15 17;
+  --glass-stroke: 54 54 60;
+  --glass-stroke-soft: 44 44 48;
+  --glass-highlight: 52 52 58;
+  --glass-shadow: 0 0 0;
+  --glass-shadow-ambient: 0 0 0;
+  --glass-overlay: 0 0 0;
+  --glass-blur: 0px;
+  --glass-blur-strong: 0px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    --bg: 14 17 24;
-    --bg-elev: 21 26 38;
-    --surface: 24 31 46;
-    --muted: 36 46 68;
-    --text: 233 237 244;
-    --subtext: 148 160 186;
-    --accent: 129 140 248;
-    --ring: 129 140 248;
-    --shadow: 3 8 18;
+    --bg: 8 8 10;
+    --bg-elev: 18 18 20;
+    --surface: 22 22 25;
+    --muted: 48 48 52;
+    --text: 245 245 247;
+    --subtext: 168 168 173;
+    --accent: 0 113 227;
+    --ring: 0 113 227;
+    --shadow: 0 0 0;
     --success: 52 211 153;
     --error: 248 113 113;
-    --glass-bg: 28 36 54;
-    --glass-bg-strong: 34 45 68;
-    --glass-stroke: 173 190 219;
-    --glass-stroke-soft: 71 88 117;
-    --glass-highlight: 206 223 255;
-    --glass-shadow: 2 8 20;
-    --glass-shadow-ambient: 9 15 28;
-    --glass-overlay: 2 5 12;
-    --glass-blur: 4px;
-    --glass-blur-strong: 8px;
+    --glass-bg: 19 19 22;
+    --glass-bg-strong: 15 15 17;
+    --glass-stroke: 54 54 60;
+    --glass-stroke-soft: 44 44 48;
+    --glass-highlight: 52 52 58;
+    --glass-shadow: 0 0 0;
+    --glass-shadow-ambient: 0 0 0;
+    --glass-overlay: 0 0 0;
+    --glass-blur: 0px;
+    --glass-blur-strong: 0px;
   }
 }
 
 * { border-color: rgb(var(--muted) / 0.52); }
 html, body { min-height: 100%; overflow-x: clip; }
 body {
+  font-family: "SF Pro Display", "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: rgb(var(--text));
   background-color: rgb(var(--bg));
-  background-image:
-    radial-gradient(880px 380px at 50% 16%, rgb(var(--accent) / 0.1), transparent 68%),
-    radial-gradient(1100px 560px at 8% -12%, rgb(var(--accent) / 0.12), transparent 68%),
-    radial-gradient(940px 420px at 94% 4%, rgb(var(--muted) / 0.3), transparent 74%),
-    linear-gradient(180deg, rgb(var(--bg-elev) / 0.94) 0%, rgb(var(--bg)) 34%, rgb(var(--bg)) 100%);
-  background-attachment: fixed;
-  transition: background-color 320ms ease, color 320ms ease, background-image 220ms ease;
+  transition: background-color 240ms ease, color 240ms ease;
 }
 
 .app-ambient-bg {
-  background:
-    radial-gradient(circle at 8% 0%, rgba(226, 232, 240, 0.82), transparent 44%),
-    radial-gradient(circle at 95% 10%, rgba(191, 219, 254, 0.34), transparent 40%);
+  background: transparent;
 }
 
 .dark body {
@@ -106,67 +99,41 @@ body {
 
 .container-shell { @apply mx-auto w-full max-w-[1320px] px-4 md:px-8; }
 .surface-card {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  background: linear-gradient(180deg, rgb(var(--glass-bg) / 0.96), rgb(var(--glass-bg-strong) / 0.92));
+  background: rgb(var(--glass-bg) / 0.96);
   box-shadow:
-    0 14px 30px rgb(var(--glass-shadow) / 0.14),
-    0 2px 8px rgb(var(--glass-shadow-ambient) / 0.1),
-    inset 0 1px 0 rgb(var(--glass-highlight) / 0.6);
-}
-.surface-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    linear-gradient(180deg, rgb(var(--glass-highlight) / 0.38), transparent 22%),
-    radial-gradient(260px 100px at 50% 0%, rgb(var(--glass-highlight) / 0.16), transparent 72%);
-  opacity: 0.75;
+    0 1px 0 rgb(var(--glass-highlight) / 0.34),
+    0 8px 24px rgb(var(--glass-shadow) / 0.06);
 }
 
 .nav-dropdown-panel {
-  background: linear-gradient(180deg, rgb(var(--glass-bg) / 0.97), rgb(var(--glass-bg-strong) / 0.94));
+  background: rgb(var(--bg-elev) / 0.98);
   box-shadow:
-    0 20px 44px rgb(var(--glass-shadow) / 0.22),
-    0 2px 10px rgb(var(--glass-shadow-ambient) / 0.16),
-    inset 0 1px 0 rgb(var(--glass-highlight) / 0.44);
-  border: 1px solid rgb(var(--glass-stroke-soft) / 0.64);
-  backdrop-filter: blur(var(--glass-blur-strong));
-}
-
-.dark .surface-card {
-  background: rgb(var(--glass-bg) / 0.96);
+    0 1px 0 rgb(var(--glass-highlight) / 0.24),
+    0 16px 28px rgb(var(--glass-shadow) / 0.18);
+  border: 1px solid rgb(var(--glass-stroke-soft) / 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
 }
 
 .dark .nav-dropdown-panel {
-  background: rgb(var(--glass-bg) / 0.98);
-}
-
-.dark .surface-card::before {
-  content: none;
+  background: rgb(20 20 23 / 0.96);
 }
 .premium-border {
-  border: 1px solid rgb(var(--glass-stroke-soft) / 0.6);
-  box-shadow: inset 0 1px 0 rgb(var(--glass-highlight) / 0.26);
+  border: 1px solid rgb(var(--glass-stroke-soft) / 0.56);
+  box-shadow: inset 0 1px 0 rgb(var(--glass-highlight) / 0.16);
 }
 .soft-text { color: rgb(var(--subtext)); }
 
 .interactive-soft {
-  transition: transform 180ms ease, box-shadow 220ms ease, border-color 220ms ease, background-color 220ms ease, color 220ms ease, filter 220ms ease;
+  transition: box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 .interactive-soft:hover {
-  transform: translateY(-0.5px);
-  border-color: rgb(var(--accent) / 0.4);
-  box-shadow: 0 12px 24px rgb(var(--glass-shadow) / 0.16), inset 0 1px 0 rgb(var(--glass-highlight) / 0.44);
-  filter: saturate(1.02);
+  border-color: rgb(var(--accent) / 0.48);
+  box-shadow: 0 8px 18px rgb(var(--glass-shadow) / 0.12);
 }
 .interactive-soft:focus-visible {
   outline: none;
   border-color: rgb(var(--ring) / 0.85);
-  box-shadow: 0 0 0 4px rgb(var(--ring) / 0.22), 0 14px 30px rgb(var(--glass-shadow) / 0.26), inset 0 1px 0 rgb(var(--glass-highlight) / 0.32);
+  box-shadow: 0 0 0 4px rgb(var(--ring) / 0.22);
 }
 .liquid-interactive {
   position: relative;
@@ -198,10 +165,6 @@ body {
     background: rgb(var(--glass-bg) / 0.96);
   }
 
-  html:not(.light) .surface-card::before {
-    content: none;
-  }
-
   html:not(.light) .skeleton {
     background: rgb(var(--muted) / 0.45);
   }
@@ -220,10 +183,10 @@ body {
   input,
   textarea,
   select {
-    border-color: rgb(var(--glass-stroke-soft) / 0.46);
-    background: rgb(var(--glass-bg) / 0.97);
-    box-shadow: inset 0 1px 0 rgb(var(--glass-highlight) / 0.28);
-    transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+    border-color: rgb(var(--glass-stroke-soft) / 0.7);
+    background: rgb(var(--bg-elev) / 0.96);
+    box-shadow: none;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
   }
 
   input:hover,
@@ -235,7 +198,7 @@ body {
   input:focus,
   textarea:focus,
   select:focus {
-    box-shadow: 0 0 0 4px rgb(var(--ring) / 0.18), inset 0 1px 0 rgb(var(--glass-highlight) / 0.34);
+    box-shadow: 0 0 0 4px rgb(var(--ring) / 0.2);
   }
 
   .surface-card table thead {
@@ -247,16 +210,18 @@ body {
   }
 
   .surface-card table tbody tr:hover {
-    background-color: rgb(var(--accent) / 0.09);
-    box-shadow: inset 0 1px 0 rgb(var(--glass-highlight) / 0.26);
+    background-color: rgb(var(--accent) / 0.08);
+    box-shadow: none;
   }
 
   h1, h2, h3 {
-    letter-spacing: -0.015em;
+    letter-spacing: -0.022em;
+    line-height: 1.14;
   }
 
   p {
-    line-height: 1.56;
+    line-height: 1.48;
+    letter-spacing: -0.005em;
   }
 }
 
