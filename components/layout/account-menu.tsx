@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, LayoutDashboard, LogIn, Shield, UserPlus } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { createPortal } from "react-dom";
 import type { Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -73,22 +72,18 @@ export function AccountMenu({ className }: { className?: string }) {
   }, []);
 
   useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
+    function onPointerDownOutside(e: PointerEvent) {
       const target = e.target as Node;
       if (wrapperRef.current?.contains(target)) return;
-      if (panelRef.current?.contains(target)) return;
       setOpen(false);
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
     }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("pointerdown", onPointerDownOutside);
     document.addEventListener("keydown", onKeyDown);
     return () => {
-      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("pointerdown", onPointerDownOutside);
       document.removeEventListener("keydown", onKeyDown);
     };
   }, []);
@@ -121,7 +116,6 @@ export function AccountMenu({ className }: { className?: string }) {
   return (
     <div ref={wrapperRef} className="relative inline-flex">
       <button
-        ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
@@ -135,16 +129,14 @@ export function AccountMenu({ className }: { className?: string }) {
       </button>
 
       <AnimatePresence>
-        {open && typeof document !== "undefined" && createPortal(
+        {open && (
           <motion.div
-            ref={panelRef}
             initial={{ opacity: 0, y: -6, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.985 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="surface-card premium-border fixed z-[70] w-56 origin-top-right overflow-hidden rounded-2xl p-1.5 shadow-2xl"
+            className="surface-card premium-border absolute right-0 top-full z-[70] mt-2 w-56 origin-top-right overflow-hidden rounded-2xl p-1.5 shadow-2xl"
             role="menu"
-            style={{ top: menuPosition.top, right: menuPosition.right }}
           >
           {!signedIn ? (
             <>
@@ -161,7 +153,7 @@ export function AccountMenu({ className }: { className?: string }) {
             </>
           )}
           </motion.div>
-        , document.body)}
+        )}
       </AnimatePresence>
     </div>
   );
