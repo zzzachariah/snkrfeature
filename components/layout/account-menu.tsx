@@ -13,47 +13,64 @@ export function AccountMenu({ className }: { className?: string }) {
   const [signedIn, setSignedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [label, setLabel] = useState("Account");
-  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
 
-  function updateMenuPosition() {
-    const trigger = triggerRef.current;
-    if (!trigger) return;
-    const rect = trigger.getBoundingClientRect();
-    setMenuPosition({
-      top: rect.bottom + 8,
-      right: Math.max(8, window.innerWidth - rect.right)
-    });
-  }
+  async function refreshAuthStateFromSession(
+    session: Session | null,
+    source: "initial" | "auth_change"
+  ) {
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[account-menu] auth refresh start", {
+        source,
+        userId: session?.user?.id ?? null,
+      });
+    }
 
-  async function refreshAuthStateFromSession(session: Session | null, source: "initial" | "auth_change") {
-    if (process.env.NODE_ENV !== "production") console.info("[account-menu] auth refresh start", { source, userId: session?.user?.id ?? null });
     const authenticated = Boolean(session);
     setSignedIn(authenticated);
 
     if (!authenticated || !session?.user?.id) {
       setIsAdmin(false);
       setLabel("Account");
-      if (process.env.NODE_ENV !== "production") console.info("[account-menu] auth refresh end", { source, authenticated: false });
+
+      if (process.env.NODE_ENV !== "production") {
+        console.info("[account-menu] auth refresh end", {
+          source,
+          authenticated: false,
+        });
+      }
       return;
     }
 
     const supabase = createClient();
     if (!supabase) return;
 
-    if (process.env.NODE_ENV !== "production") console.info("[account-menu] profile fetch start", { userId: session.user.id, source });
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[account-menu] profile fetch start", {
+        userId: session.user.id,
+        source,
+      });
+    }
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("username, role")
       .eq("id", session.user.id)
       .maybeSingle();
 
-    if (process.env.NODE_ENV !== "production") console.info("[account-menu] profile fetch end", { source, profile });
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[account-menu] profile fetch end", { source, profile });
+    }
+
     setIsAdmin(profile?.role === "admin");
     setLabel(profile?.username ?? session.user.email?.split("@")[0] ?? "Account");
-    if (process.env.NODE_ENV !== "production") console.info("[account-menu] auth refresh end", { source, authenticated: true });
+
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[account-menu] auth refresh end", {
+        source,
+        authenticated: true,
+      });
+    }
   }
 
   useEffect(() => {
@@ -65,9 +82,15 @@ export function AccountMenu({ className }: { className?: string }) {
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (process.env.NODE_ENV !== "production") console.info("[account-menu] auth state changed", { event, userId: session?.user?.id ?? null });
+      if (process.env.NODE_ENV !== "production") {
+        console.info("[account-menu] auth state changed", {
+          event,
+          userId: session?.user?.id ?? null,
+        });
+      }
       void refreshAuthStateFromSession(session, "auth_change");
     });
+
     return () => listener.subscription.unsubscribe();
   }, []);
 
@@ -77,32 +100,19 @@ export function AccountMenu({ className }: { className?: string }) {
       if (wrapperRef.current?.contains(target)) return;
       setOpen(false);
     }
+
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
     }
+
     document.addEventListener("pointerdown", onPointerDownOutside);
     document.addEventListener("keydown", onKeyDown);
+
     return () => {
       document.removeEventListener("pointerdown", onPointerDownOutside);
       document.removeEventListener("keydown", onKeyDown);
     };
   }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    updateMenuPosition();
-
-    function onViewportChange() {
-      updateMenuPosition();
-    }
-
-    window.addEventListener("resize", onViewportChange);
-    window.addEventListener("scroll", onViewportChange, true);
-    return () => {
-      window.removeEventListener("resize", onViewportChange);
-      window.removeEventListener("scroll", onViewportChange, true);
-    };
-  }, [open]);
 
   async function logout() {
     const supabase = createClient();
@@ -125,7 +135,8 @@ export function AccountMenu({ className }: { className?: string }) {
           className
         )}
       >
-        <span className="truncate">{label}</span> <ChevronDown className="h-4 w-4 shrink-0" />
+        <span className="truncate">{label}</span>
+        <ChevronDown className="h-4 w-4 shrink-0" />
       </button>
 
       <AnimatePresence>
@@ -138,20 +149,62 @@ export function AccountMenu({ className }: { className?: string }) {
             className="nav-dropdown-panel absolute right-0 top-full z-[70] mt-2 w-56 min-w-full origin-top-right rounded-2xl p-1.5"
             role="menu"
           >
-          {!signedIn ? (
-            <>
-              <Link href="/login" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"><LogIn className="h-4 w-4" /> Log in</Link>
-              <Link href="/signup" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"><UserPlus className="h-4 w-4" /> Sign up</Link>
-            </>
-          ) : (
-            <>
-              <Link href="/dashboard" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"><LayoutDashboard className="h-4 w-4" /> Dashboard</Link>
-              {isAdmin && (
-                <Link href="/admin" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"><Shield className="h-4 w-4" /> Admin</Link>
-              )}
-              <button type="button" role="menuitem" onClick={logout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"><LogOut className="h-4 w-4" /> Log out</button>
-            </>
-          )}
+            {!signedIn ? (
+              <>
+                <Link
+                  href="/login"
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Log in
+                </Link>
+                <Link
+                  href="/signup"
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Sign up
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/dashboard"
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    role="menuitem"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"
+                  >
+                    <Shield className="h-4 w-4" />
+                    Admin
+                  </Link>
+                )}
+
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={logout}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--glass-bg-strong)/0.5)]"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Log out
+                </button>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
