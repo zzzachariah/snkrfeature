@@ -57,7 +57,7 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
           <option value="all">All brands</option>
           {brands.map((b) => <option key={b}>{b}</option>)}
         </select>
-        <Button type="submit" variant="secondary">Search</Button>
+        <Button type="submit" variant="secondary" className="w-full md:w-auto">Search</Button>
       </form>
       <div className="surface-card liquid-interactive overflow-hidden rounded-3xl premium-border">
         <div className="max-h-[560px] overflow-auto">
@@ -103,9 +103,9 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
         </div>
       </div>
       {selected.length > 1 && (
-        <div className="sticky bottom-4 flex items-center justify-between rounded-2xl border border-[rgb(var(--accent)/0.38)] bg-[rgb(var(--accent)/0.12)] p-3">
+        <div className="sticky bottom-4 flex flex-col gap-2 rounded-2xl border border-[rgb(var(--accent)/0.38)] bg-[rgb(var(--accent)/0.12)] p-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm">{selected.length} shoes selected for compare</p>
-          <Link href={`/compare?ids=${selected.join(",")}`}><Button>Compare now</Button></Link>
+          <Link href={`/compare?ids=${selected.join(",")}`} className="w-full sm:w-auto"><Button className="w-full sm:w-auto">Compare now</Button></Link>
         </div>
       )}
     </section>

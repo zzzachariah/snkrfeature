@@ -64,7 +64,7 @@ export function Navbar() {
   return (
     <header className="sticky top-3 z-40 px-2 md:px-4">
       <div className="container-shell relative flex h-16 items-center gap-2 rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.65)] bg-[rgb(var(--glass-bg)/0.96)] shadow-[0_14px_34px_rgb(var(--glass-shadow)/0.16)] md:gap-4">
-        <Link href="/" className="text-lg font-semibold tracking-[0.08em]">snkrfeature</Link>
+        <Link href="/" className="max-w-[7.6rem] truncate text-base font-semibold tracking-[0.08em] sm:max-w-[9.5rem] md:max-w-none md:text-lg">snkrfeature</Link>
         <nav className="ml-1 hidden items-center gap-1 rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--bg-elev)/0.92)] p-1 text-sm md:flex">
           {navItems.map((item) => (
             <Link
@@ -89,9 +89,9 @@ export function Navbar() {
           </Link>
         </div>
 
-        <div className="ml-auto flex items-center gap-2 md:ml-0">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2 md:ml-0">
           <ThemeToggle />
-          <AccountMenu />
+          <AccountMenu className="w-[8.25rem] px-2.5 text-xs sm:w-[9.5rem] sm:px-3 sm:text-sm md:w-[11rem]" />
           <button
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.56)] bg-[rgb(var(--bg-elev)/0.94)] soft-text transition hover:border-[rgb(var(--accent)/0.45)] md:hidden"
             type="button"

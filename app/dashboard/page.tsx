@@ -352,17 +352,17 @@ export default function DashboardPage() {
               </div>
               <div>
                 <label className="mb-1 block text-xs soft-text">Current password</label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                   <Input value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} type={showCurrentPassword ? "text" : "password"} placeholder="Enter current password" />
-                  <Button type="button" variant="secondary" onClick={() => setShowCurrentPassword((v) => !v)}>{showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
+                  <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setShowCurrentPassword((v) => !v)}>{showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
                 </div>
               </div>
               <div className="flex items-end">
                 <Button type="button" onClick={() => setChangePasswordOpen(true)}>Change password</Button>
               </div>
             </div>
-            <div className="mt-4 flex items-center gap-3">
-              <Button type="button" onClick={saveSettings}>Save profile</Button>
+            <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+              <Button type="button" className="w-full sm:w-auto" onClick={saveSettings}>Save profile</Button>
               {settingsMessage && <FeedbackMessage message={settingsMessage} isError={settingsError} />}
             </div>
 
@@ -393,7 +393,7 @@ export default function DashboardPage() {
         <aside className="surface-card premium-border rounded-3xl p-4">
           <h2 className="font-semibold tracking-[0.01em]">User center</h2>
           {role === "admin" && <p className="mt-1 text-xs font-medium text-emerald-400">Admin</p>}
-          <ul className="mt-3 space-y-2 text-sm">
+          <ul className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 lg:grid-cols-1">
             {tabs.map((tab) => (
               <li key={tab}>
                 <button
