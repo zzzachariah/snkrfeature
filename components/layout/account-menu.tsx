@@ -131,7 +131,7 @@ export function AccountMenu({ className }: { className?: string }) {
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
-          "inline-flex h-10 w-[11rem] items-center justify-between gap-2 truncate rounded-xl border border-white/20 bg-white/10 px-3 text-sm text-[rgb(245,245,247)] transition hover:border-[rgb(var(--accent)/0.75)] hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.65)]",
+          "inline-flex h-10 w-[11rem] items-center justify-between gap-2 truncate rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.62)] bg-[rgb(var(--surface)/0.78)] px-3 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--accent)/0.72)] hover:bg-[rgb(var(--accent)/0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.65)]",
           className
         )}
       >
