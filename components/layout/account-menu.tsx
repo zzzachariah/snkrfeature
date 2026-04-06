@@ -135,7 +135,7 @@ export function AccountMenu({ className }: { className?: string }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.985 }}
             transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-            className="surface-card premium-border absolute right-0 top-full z-[70] mt-2 w-56 min-w-full origin-top-right overflow-hidden rounded-2xl p-1.5 shadow-2xl"
+            className="nav-dropdown-panel absolute right-0 top-full z-[70] mt-2 w-56 min-w-full origin-top-right rounded-2xl p-1.5"
             role="menu"
           >
           {!signedIn ? (
