@@ -7,7 +7,6 @@ import { ArrowUpDown, SearchX } from "lucide-react";
 import { Shoe } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 
 type SortKey = "shoe_name" | "brand" | "release_year";
 
@@ -67,13 +66,14 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
                 <th className="px-4 py-3">Compare</th>
                 <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("shoe_name")}>Name<ArrowUpDown className="h-3 w-3" /></button></th>
                 <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("brand")}>Brand<ArrowUpDown className="h-3 w-3" /></button></th>
-                <th className="px-4 py-3">Category</th><th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("release_year")}>Release<ArrowUpDown className="h-3 w-3" /></button></th><th className="px-4 py-3">Traction</th>
+                <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("release_year")}>Release<ArrowUpDown className="h-3 w-3" /></button></th>
+                <th className="px-4 py-3">Tag</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center soft-text">
+                  <td colSpan={5} className="px-4 py-16 text-center soft-text">
                     <div className="mx-auto flex max-w-md flex-col items-center gap-2">
                       <SearchX className="h-5 w-5" />
                       <p>No sneakers match this search.</p>
@@ -93,9 +93,8 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
                   <td className="px-4 py-3 align-middle"><input className="h-4 w-4 accent-[rgb(var(--accent))]" type="checkbox" checked={selected.includes(shoe.id)} onChange={(e) => setSelected((p) => e.target.checked ? [...p, shoe.id] : p.filter((id) => id !== shoe.id))} /></td>
                   <td className="px-4 py-3"><Link href={`/shoes/${shoe.slug}`} className="font-medium transition">{shoe.shoe_name}</Link><p className="text-xs soft-text">{shoe.player ?? "No player tag"}</p></td>
                   <td className="px-4 py-3">{shoe.brand}</td>
-                  <td className="px-4 py-3">{shoe.category ?? "—"}</td>
                   <td className="px-4 py-3">{shoe.release_year ?? "—"}</td>
-                  <td className="px-4 py-3"><Badge>{shoe.spec.traction ?? "Not yet added"}</Badge></td>
+                  <td className="px-4 py-3">{shoe.spec.tags?.[0] ?? "—"}</td>
                 </motion.tr>
               ))}
             </tbody>
