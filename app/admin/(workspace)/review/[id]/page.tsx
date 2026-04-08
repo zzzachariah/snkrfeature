@@ -2,10 +2,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
 
 type SubmissionDetails = {
   submission: any;
@@ -46,12 +47,14 @@ function pick(obj: Record<string, any>, key: string) {
 
 export default function AdminSubmissionDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const id = params.id;
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<SubmissionDetails | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState<null | "save_draft" | "approve_publish" | "reject">(null);
+  const [confirmRejectOpen, setConfirmRejectOpen] = useState(false);
   const [note, setNote] = useState("");
   const [form, setForm] = useState<Record<string, any>>({ tags: [], source_links: [] });
 
@@ -115,6 +118,12 @@ export default function AdminSubmissionDetailPage() {
     setMessage(json.message ?? (json.ok ? "Saved." : "Action failed."));
     setSaving(null);
     if (res.ok && json.ok) {
+      if (action === "reject") {
+        setConfirmRejectOpen(false);
+        router.push("/admin/review?status=queue");
+        router.refresh();
+        return;
+      }
       await load();
     }
   }
@@ -197,7 +206,7 @@ export default function AdminSubmissionDetailPage() {
 
       <Card className="p-4">
         <h3 className="font-semibold">Publishing controls</h3>
-        <p className="text-sm soft-text">Save draft for later, reject the submission, or approve and publish the admin-corrected final version.</p>
+        <p className="text-sm soft-text">Save draft for later, delete the submission via reject, or approve and publish the admin-corrected final version.</p>
         <div className="mt-3">
           <label className="mb-1 block text-xs soft-text">Audit note (recommended)</label>
           <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Explain what changed and why" />
@@ -205,10 +214,29 @@ export default function AdminSubmissionDetailPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           <Button disabled={saving !== null} onClick={() => submitAction("save_draft")}>{saving === "save_draft" ? "Saving..." : "Save draft"}</Button>
           <Button disabled={saving !== null} variant="secondary" onClick={() => submitAction("approve_publish")}>{saving === "approve_publish" ? "Publishing..." : "Approve & publish"}</Button>
-          <Button disabled={saving !== null} variant="ghost" className="border border-red-500/35 text-red-500 hover:bg-red-500/10" onClick={() => submitAction("reject")}>{saving === "reject" ? "Rejecting..." : "Reject"}</Button>
+          <Button disabled={saving !== null} variant="ghost" className="border border-red-500/35 text-red-500 hover:bg-red-500/10" onClick={() => setConfirmRejectOpen(true)}>{saving === "reject" ? "Deleting..." : "Reject"}</Button>
         </div>
         {message && <p className={`mt-2 text-sm ${error ? "text-red-500" : "text-emerald-500"}`}>{message}</p>}
       </Card>
+      <Modal
+        open={confirmRejectOpen}
+        onClose={() => {
+          if (saving !== "reject") setConfirmRejectOpen(false);
+        }}
+        title="Delete this submission?"
+      >
+        <p className="text-sm soft-text">
+          Reject will permanently delete this submission and remove it from the pending review queue.
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="secondary" disabled={saving === "reject"} onClick={() => setConfirmRejectOpen(false)}>
+            Cancel
+          </Button>
+          <Button className="border border-red-500/35 bg-red-500/10 text-red-500 hover:bg-red-500/20" disabled={saving === "reject"} onClick={() => submitAction("reject")}>
+            {saving === "reject" ? "Deleting..." : "Confirm delete"}
+          </Button>
+        </div>
+      </Modal>
 
       <Card className="p-4">
         <h3 className="font-semibold">Audit history</h3>
