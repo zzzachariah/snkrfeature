@@ -31,7 +31,7 @@ const finalSchema = z.object({
 
 const bodySchema = z.object({
   action: z.enum(["save_draft", "approve_publish", "reject"]),
-  finalPayload: finalSchema,
+  finalPayload: finalSchema.optional(),
   note: z.string().optional()
 });
 
@@ -78,17 +78,30 @@ export async function POST(
     );
   }
 
-  const { error: draftVersionError } = await supabase
-    .from("submission_admin_versions")
-    .upsert(
-      {
-        submission_id: id,
-        final_payload: payload.data.finalPayload,
-        last_edited_by: user.id,
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: "submission_id" }
-    );
+  if (payload.data.action === "reject") {
+    const { error: deleteError } = await supabase
+      .from("user_submissions")
+      .delete()
+      .eq("id", id);
+
+    if (deleteError) return badRequest(deleteError.message);
+
+    return NextResponse.json({ ok: true, message: "Submission deleted." });
+  }
+
+  if (!payload.data.finalPayload) {
+    return badRequest("Final payload is required for this action.");
+  }
+
+  const { error: draftVersionError } = await supabase.from("submission_admin_versions").upsert(
+    {
+      submission_id: id,
+      final_payload: payload.data.finalPayload,
+      last_edited_by: user.id,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "submission_id" }
+  );
 
   if (draftVersionError) return badRequest(draftVersionError.message);
 
@@ -118,34 +131,6 @@ export async function POST(
     if (draftLogError) return badRequest(draftLogError.message);
 
     return NextResponse.json({ ok: true, message: "Draft saved." });
-  }
-
-  if (payload.data.action === "reject") {
-    const { error: rejectUpdateError } = await supabase
-      .from("user_submissions")
-      .update({
-        status: "rejected",
-        reviewed_by: user.id,
-        reviewer_notes: payload.data.note ?? null
-      })
-      .eq("id", id);
-
-    if (rejectUpdateError) return badRequest(rejectUpdateError.message);
-
-    const { error: rejectLogError } = await supabase
-      .from("admin_audit_logs")
-      .insert({
-        actor_admin_id: user.id,
-        target_type: "submission",
-        target_submission_id: id,
-        action: "rejected",
-        note: payload.data.note ?? "Submission rejected",
-        after_payload: payload.data.finalPayload
-      });
-
-    if (rejectLogError) return badRequest(rejectLogError.message);
-
-    return NextResponse.json({ ok: true, message: "Submission rejected." });
   }
 
   const final = payload.data.finalPayload;
