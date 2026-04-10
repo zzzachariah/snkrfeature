@@ -12,6 +12,9 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
   const shoe = await getShoeBySlug(slug);
   if (!shoe) return notFound();
   const related = (await getShoes()).filter((s) => s.brand === shoe.brand && s.id !== shoe.id).slice(0, 3);
+  const storyTitle = shoe.story?.title?.trim();
+  const storyContent = shoe.story?.content?.trim();
+  const hasStory = Boolean(storyTitle || storyContent);
 
   return (
     <main className="container-shell space-y-6 py-8">
@@ -23,7 +26,7 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
             <p className="mt-3 text-sm leading-6 soft-text md:text-base">{shoe.spec.playstyle_summary ?? "No playstyle summary available yet."}</p>
             <div className="mt-4 flex flex-wrap gap-2">{(shoe.spec.tags ?? []).map((tag) => <Badge key={tag}>{tag}</Badge>)}</div>
           </div>
-          <div className="flex gap-2"><Link href={`/compare?ids=${shoe.id}`}><Button>Add to compare</Button></Link><Link href="/submit"><Button variant="secondary">Submit correction</Button></Link></div>
+          <div className="flex gap-2"><Link href={`/compare?ids=${shoe.id}`}><Button>Add to compare</Button></Link><Link href={`/submit/correction/${shoe.id}`}><Button variant="secondary">Submit correction</Button></Link></div>
         </div>
       </section>
 
@@ -35,7 +38,20 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
 
       <section className="grid gap-4 md:grid-cols-2">
         <Card className="p-5"><h2 className="text-lg font-semibold">Performance profile</h2><dl className="mt-3 space-y-2 text-sm"><div className="flex justify-between"><dt className="soft-text">Cushioning</dt><dd>{shoe.spec.cushioning_feel ?? "Not yet added"}</dd></div><div className="flex justify-between"><dt className="soft-text">Court feel</dt><dd>{shoe.spec.court_feel ?? "Not yet added"}</dd></div><div className="flex justify-between"><dt className="soft-text">Bounce</dt><dd>{shoe.spec.bounce ?? "Not yet added"}</dd></div><div className="flex justify-between"><dt className="soft-text">Stability</dt><dd>{shoe.spec.stability ?? "Not yet added"}</dd></div><div className="flex justify-between"><dt className="soft-text">Traction</dt><dd>{shoe.spec.traction ?? "Not yet added"}</dd></div><div className="flex justify-between"><dt className="soft-text">Fit</dt><dd>{shoe.spec.fit ?? "Not yet added"}</dd></div></dl></Card>
-        <Card className="p-5"><h2 className="text-lg font-semibold">Story & provenance</h2><p className="mt-2 text-sm soft-text">{shoe.spec.story_summary ?? "No editorial story yet."}</p><div className="mt-4 rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.66)] p-3 text-xs soft-text">Source/evidence: Seed dataset + community validation pipeline. Admin review required before promotion to official records.</div></Card>
+        <Card className="p-5">
+          <h2 className="text-lg font-semibold">Story & provenance</h2>
+          {hasStory ? (
+            <div className="mt-2 space-y-2">
+              <p className="text-sm font-medium">{storyTitle ?? `${shoe.brand} ${shoe.shoe_name}`}</p>
+              <p className="text-sm soft-text">{storyContent ?? "No editorial story content yet."}</p>
+            </div>
+          ) : (
+            <>
+              <p className="mt-2 text-sm soft-text">No editorial story yet.</p>
+              <div className="mt-4 rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.66)] p-3 text-xs soft-text">Source/evidence: Seed dataset + community validation pipeline. Admin review required before promotion to official records.</div>
+            </>
+          )}
+        </Card>
       </section>
 
       <CommentSection shoeId={shoe.id} />

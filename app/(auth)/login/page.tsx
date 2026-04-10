@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BrandLoader } from "@/components/ui/brand-loader";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,9 @@ export default function LoginPage() {
   const [error, setError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next");
+  const redirectTarget = nextPath && nextPath.startsWith("/") ? nextPath : "/dashboard";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -87,9 +90,9 @@ export default function LoginPage() {
       }
       devLog("session sync end", "client session synchronized");
 
-      setMessage("Login successful. Redirecting to dashboard...");
-      devLog("redirect start", { target: "/dashboard" });
-      router.replace("/dashboard");
+      setMessage("Login successful. Redirecting...");
+      devLog("redirect start", { target: redirectTarget });
+      router.replace(redirectTarget);
       devLog("redirect end");
       devLog("router refresh start");
       router.refresh();
