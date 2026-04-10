@@ -40,6 +40,9 @@ export function RequiredReadingGate({ onContinue }: { onContinue: () => void }) 
               <p>
                 By the way, if this turned out to be liked by many, perhaps I will charge a one-time fee of a dollar per account in order to cover the fees of databases and domains, etc. I hate ads myself, so there will maybe be 1 or 2, but definitely not scattered around the page. I&apos;ll decide it later.
               </p>
+              <p>
+                In the meantime, enjoy!
+              </p>
             </div>
 
             <div className="mt-5 border-t border-[rgb(var(--muted)/0.35)] pt-4">
