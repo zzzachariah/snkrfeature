@@ -22,7 +22,7 @@ export default async function AdminReviewPage({ searchParams }: { searchParams: 
 
   let query = supabase
     .from("user_submissions")
-    .select("id, status, created_at, raw_payload, profiles!user_submissions_user_id_fkey(username)")
+    .select("id, status, created_at, submission_type, target_shoe_id, raw_payload, profiles!user_submissions_user_id_fkey(username), shoes!user_submissions_target_shoe_id_fkey(shoe_name, slug)")
     .order("created_at", { ascending: false })
     .limit(300);
 
@@ -89,6 +89,7 @@ export default async function AdminReviewPage({ searchParams }: { searchParams: 
                 <th className="px-3 py-2">Shoe</th>
                 <th className="px-3 py-2">Brand</th>
                 <th className="px-3 py-2">Submitter</th>
+                <th className="px-3 py-2">Type</th>
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">Action</th>
               </tr>
@@ -100,13 +101,25 @@ export default async function AdminReviewPage({ searchParams }: { searchParams: 
                   <td className="px-3 py-3 font-medium">{row.raw_payload?.shoe_name ?? "—"}</td>
                   <td className="px-3 py-3">{row.raw_payload?.brand ?? "—"}</td>
                   <td className="px-3 py-3">{Array.isArray(row.profiles) ? row.profiles[0]?.username : row.profiles?.username ?? "unknown"}</td>
+                  <td className="px-3 py-3">
+                    {row.submission_type === "correction" ? (
+                      <div className="space-y-1">
+                        <span className="rounded-full bg-[rgb(var(--accent)/0.16)] px-2 py-1 text-xs text-[rgb(var(--accent))]">Correction</span>
+                        <p className="text-xs soft-text">
+                          Target: {Array.isArray(row.shoes) ? row.shoes[0]?.shoe_name : row.shoes?.shoe_name ?? row.target_shoe_id ?? "unknown"}
+                        </p>
+                      </div>
+                    ) : (
+                      <span className="rounded-full bg-[rgb(var(--muted)/0.45)] px-2 py-1 text-xs">New shoe</span>
+                    )}
+                  </td>
                   <td className="px-3 py-3"><span className="rounded-full bg-[rgb(var(--muted)/0.45)] px-2 py-1 text-xs">{row.status}</span></td>
                   <td className="px-3 py-3"><Link href={`/admin/review/${row.id}`} className="text-[rgb(var(--accent))]">Open workspace</Link></td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-10 text-center text-sm soft-text">No submissions match current filters.</td>
+                  <td colSpan={7} className="px-3 py-10 text-center text-sm soft-text">No submissions match current filters.</td>
                 </tr>
               )}
             </tbody>

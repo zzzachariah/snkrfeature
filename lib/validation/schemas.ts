@@ -33,5 +33,16 @@ export const submissionSchema = z.object({
   story_notes: z.string().optional(),
   raw_text: z.string().min(20, "Please add detailed notes so normalization is reliable."),
   source_links: z.string().optional(),
+  submission_type: z.enum(["new_shoe", "correction"]).optional().default("new_shoe"),
+  target_shoe_id: z.string().uuid().optional(),
+  original_snapshot: z.string().optional(),
   turnstileToken: z.string().min(1)
+}).superRefine((data, ctx) => {
+  if (data.submission_type === "correction" && !data.target_shoe_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["target_shoe_id"],
+      message: "Correction submissions must include a target shoe."
+    });
+  }
 });

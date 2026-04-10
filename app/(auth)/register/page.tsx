@@ -7,6 +7,7 @@ import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TurnstileWidget } from "@/components/ui/turnstile";
+import { RequiredReadingGate } from "@/components/auth/required-reading-gate";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ username: "", email: "", password: "" });
@@ -14,6 +15,7 @@ export default function RegisterPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [gateOpen, setGateOpen] = useState(true);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,7 +45,8 @@ export default function RegisterPage() {
 
   return (
     <main className="container-shell py-10">
-      <form onSubmit={onSubmit} className="surface-card premium-border mx-auto max-w-md space-y-4 rounded-3xl p-7">
+      {gateOpen && <RequiredReadingGate onContinue={() => setGateOpen(false)} />}
+      <form onSubmit={onSubmit} className={`surface-card premium-border mx-auto max-w-md space-y-4 rounded-3xl p-7 ${gateOpen ? "pointer-events-none select-none" : ""}`}>
         <h1 className="text-2xl font-semibold tracking-[0.02em]">Register</h1>
         <p className="text-sm soft-text">Create your snkrfeature account. Public identity is username-based.</p>
         <div><label className="mb-1 block text-xs soft-text">Username</label><Input value={form.username} onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))} placeholder="snkrfan23" required /></div>

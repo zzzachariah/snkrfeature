@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BrandLoader } from "@/components/ui/brand-loader";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TurnstileWidget } from "@/components/ui/turnstile";
+import { RequiredReadingGate } from "@/components/auth/required-reading-gate";
 import { createClient } from "@/lib/supabase/client";
 
 const CLIENT_TIMEOUT_MS = 12000;
@@ -33,7 +34,11 @@ export default function SignupPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [gateOpen, setGateOpen] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next");
+  const redirectTarget = nextPath && nextPath.startsWith("/") ? nextPath : "/dashboard";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -94,8 +99,8 @@ export default function SignupPage() {
       }
 
       setMessage("Account created successfully. Redirecting...");
-      devLog("navigation start", { target: "/dashboard" });
-      router.push("/dashboard");
+      devLog("navigation start", { target: redirectTarget });
+      router.push(redirectTarget);
     } catch {
       setError(true);
       setMessage("Signup request timed out or failed. Please try again.");
@@ -108,7 +113,8 @@ export default function SignupPage() {
 
   return (
     <main className="container-shell py-10">
-      <form onSubmit={onSubmit} className="surface-card premium-border mx-auto max-w-md space-y-4 rounded-3xl p-7">
+      {gateOpen && <RequiredReadingGate onContinue={() => setGateOpen(false)} />}
+      <form onSubmit={onSubmit} className={`surface-card premium-border mx-auto max-w-md space-y-4 rounded-3xl p-7 ${gateOpen ? "pointer-events-none select-none" : ""}`}>
         <h1 className="text-2xl font-semibold tracking-[0.02em]">Sign up</h1>
         <p className="text-sm soft-text">Create your account to submit sneaker data and join discussions.</p>
         <div><label className="mb-1 block text-xs soft-text">Username</label><Input value={form.username} onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))} required /></div>
