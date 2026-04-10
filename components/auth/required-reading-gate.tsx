@@ -22,9 +22,9 @@ export function RequiredReadingGate({ onContinue }: { onContinue: () => void }) 
         <div className="flex min-h-full items-start justify-center p-4 pb-8 pt-24 md:pt-28">
           <div className="surface-card premium-border w-full max-w-2xl rounded-3xl p-5 shadow-[0_30px_72px_rgb(var(--glass-shadow)/0.42)] md:p-6">
             <div className="border-b border-[rgb(var(--muted)/0.35)] pb-4">
-              <h2 className="text-2xl font-semibold tracking-[0.015em] md:text-3xl">Sample</h2>
-              <p className="mt-1 text-sm soft-text">Sample subtitle</p>
-              <p className="mt-2 text-xs soft-text">By Sample author</p>
+              <h2 className="text-2xl font-semibold tracking-[0.015em] md:text-3xl">Welcome!</h2>
+              <p className="mt-1 text-sm soft-text">Story behind snkrfeature</p>
+              <p className="mt-2 text-xs soft-text">By zzz</p>
             </div>
 
             <div className="mt-4 max-h-[46vh] space-y-3 overflow-y-auto pr-1 text-sm leading-relaxed soft-text md:max-h-[50vh]">
