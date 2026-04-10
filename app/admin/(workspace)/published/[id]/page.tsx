@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -47,10 +47,11 @@ export default function AdminPublishedDetailPage() {
   const [spec, setSpec] = useState<any>({});
   const [story, setStory] = useState<any>({});
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     const res = await fetch(`/api/admin/shoes/${id}`, { cache: "no-store" });
     const json = await res.json();
+
     if (!res.ok || !json.ok) {
       setError(true);
       setMessage(json.message ?? "Could not load record.");
@@ -63,11 +64,11 @@ export default function AdminPublishedDetailPage() {
     setSpec(json.spec ?? {});
     setStory(json.story ?? {});
     setLoading(false);
-  }
+  }, [id]);
 
   useEffect(() => {
     void load();
-  }, [id]);
+  }, [load]);
 
   async function act(action: "update" | "publish" | "unpublish") {
     setMessage("");
@@ -95,26 +96,51 @@ export default function AdminPublishedDetailPage() {
     <div className="space-y-4">
       <Card className="p-4">
         <h2 className="text-lg font-semibold">Live record editing workspace</h2>
-        <p className="text-sm soft-text">Edit full published data across shoes, specs, and story tables.</p>
+        <p className="text-sm soft-text">
+          Edit full published data across shoes, specs, and story tables.
+        </p>
       </Card>
 
-      <Card className="p-4 space-y-4">
+      <Card className="space-y-4 p-4">
         <section>
           <h3 className="mb-2 text-sm font-semibold">Core shoe fields</h3>
           <div className="grid gap-3 md:grid-cols-2">
             {shoeFields.map(([key, label]) => (
               <div key={key}>
                 <label className="mb-1 block text-xs soft-text">{label}</label>
-                <Input value={shoe[key] ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, [key]: e.target.value }))} />
+                <Input
+                  value={shoe[key] ?? ""}
+                  onChange={(e) =>
+                    setShoe((p: any) => ({ ...p, [key]: e.target.value }))
+                  }
+                />
               </div>
             ))}
             <div>
               <label className="mb-1 block text-xs soft-text">Release year</label>
-              <Input type="number" value={shoe.release_year ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, release_year: Number(e.target.value) || null }))} />
+              <Input
+                type="number"
+                value={shoe.release_year ?? ""}
+                onChange={(e) =>
+                  setShoe((p: any) => ({
+                    ...p,
+                    release_year: Number(e.target.value) || null
+                  }))
+                }
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs soft-text">Price</label>
-              <Input type="number" value={shoe.price ?? ""} onChange={(e) => setShoe((p: any) => ({ ...p, price: Number(e.target.value) || null }))} />
+              <Input
+                type="number"
+                value={shoe.price ?? ""}
+                onChange={(e) =>
+                  setShoe((p: any) => ({
+                    ...p,
+                    price: Number(e.target.value) || null
+                  }))
+                }
+              />
             </div>
           </div>
         </section>
@@ -125,22 +151,52 @@ export default function AdminPublishedDetailPage() {
             {specTextFields.map(([key, label]) => (
               <div key={key}>
                 <label className="mb-1 block text-xs soft-text">{label}</label>
-                <Input value={spec[key] ?? ""} onChange={(e) => setSpec((p: any) => ({ ...p, [key]: e.target.value }))} />
+                <Input
+                  value={spec[key] ?? ""}
+                  onChange={(e) =>
+                    setSpec((p: any) => ({ ...p, [key]: e.target.value }))
+                  }
+                />
               </div>
             ))}
           </div>
           <div className="mt-3 grid gap-3 md:grid-cols-1">
             <div>
               <label className="mb-1 block text-xs soft-text">Playstyle summary</label>
-              <textarea className="w-full rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.7)] px-3 py-2 text-sm" rows={3} value={spec.playstyle_summary ?? ""} onChange={(e) => setSpec((p: any) => ({ ...p, playstyle_summary: e.target.value }))} />
+              <textarea
+                className="w-full rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.7)] px-3 py-2 text-sm"
+                rows={3}
+                value={spec.playstyle_summary ?? ""}
+                onChange={(e) =>
+                  setSpec((p: any) => ({ ...p, playstyle_summary: e.target.value }))
+                }
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs soft-text">Story summary (spec)</label>
-              <textarea className="w-full rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.7)] px-3 py-2 text-sm" rows={3} value={spec.story_summary ?? ""} onChange={(e) => setSpec((p: any) => ({ ...p, story_summary: e.target.value }))} />
+              <textarea
+                className="w-full rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.7)] px-3 py-2 text-sm"
+                rows={3}
+                value={spec.story_summary ?? ""}
+                onChange={(e) =>
+                  setSpec((p: any) => ({ ...p, story_summary: e.target.value }))
+                }
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs soft-text">Tags (comma separated)</label>
-              <Input value={Array.isArray(spec.tags) ? spec.tags.join(", ") : ""} onChange={(e) => setSpec((p: any) => ({ ...p, tags: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} />
+              <Input
+                value={Array.isArray(spec.tags) ? spec.tags.join(", ") : ""}
+                onChange={(e) =>
+                  setSpec((p: any) => ({
+                    ...p,
+                    tags: e.target.value
+                      .split(",")
+                      .map((x) => x.trim())
+                      .filter(Boolean)
+                  }))
+                }
+              />
             </div>
           </div>
         </section>
@@ -150,34 +206,68 @@ export default function AdminPublishedDetailPage() {
           <div className="grid gap-3 md:grid-cols-2">
             <div className="md:col-span-2">
               <label className="mb-1 block text-xs soft-text">Story title</label>
-              <Input value={story.title ?? ""} onChange={(e) => setStory((p: any) => ({ ...p, title: e.target.value }))} />
+              <Input
+                value={story.title ?? ""}
+                onChange={(e) =>
+                  setStory((p: any) => ({ ...p, title: e.target.value }))
+                }
+              />
             </div>
             <div className="md:col-span-2">
               <label className="mb-1 block text-xs soft-text">Story content</label>
-              <textarea className="w-full rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.7)] px-3 py-2 text-sm" rows={5} value={story.content ?? ""} onChange={(e) => setStory((p: any) => ({ ...p, content: e.target.value }))} />
+              <textarea
+                className="w-full rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.7)] px-3 py-2 text-sm"
+                rows={5}
+                value={story.content ?? ""}
+                onChange={(e) =>
+                  setStory((p: any) => ({ ...p, content: e.target.value }))
+                }
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs soft-text">Story source label</label>
-              <Input value={story.source_label ?? ""} onChange={(e) => setStory((p: any) => ({ ...p, source_label: e.target.value }))} />
+              <Input
+                value={story.source_label ?? ""}
+                onChange={(e) =>
+                  setStory((p: any) => ({ ...p, source_label: e.target.value }))
+                }
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs soft-text">Story source URL</label>
-              <Input value={story.source_url ?? ""} onChange={(e) => setStory((p: any) => ({ ...p, source_url: e.target.value }))} />
+              <Input
+                value={story.source_url ?? ""}
+                onChange={(e) =>
+                  setStory((p: any) => ({ ...p, source_url: e.target.value }))
+                }
+              />
             </div>
           </div>
         </section>
 
         <div>
           <label className="mb-1 block text-xs soft-text">Audit note</label>
-          <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Reason for live record change" />
+          <Input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Reason for live record change"
+          />
         </div>
 
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => act("update")}>Update published record</Button>
           {data.shoe.is_published ? (
-            <Button variant="ghost" className="border border-red-500/35 text-red-500 hover:bg-red-500/10" onClick={() => setShowConfirm(true)}>Unpublish</Button>
+            <Button
+              variant="ghost"
+              className="border border-red-500/35 text-red-500 hover:bg-red-500/10"
+              onClick={() => setShowConfirm(true)}
+            >
+              Unpublish
+            </Button>
           ) : (
-            <Button variant="secondary" onClick={() => act("publish")}>Republish</Button>
+            <Button variant="secondary" onClick={() => act("publish")}>
+              Republish
+            </Button>
           )}
         </div>
 
@@ -185,13 +275,24 @@ export default function AdminPublishedDetailPage() {
           <div className="rounded-xl border border-red-500/35 bg-red-500/10 p-3 text-sm">
             <p>Unpublish this live record? It will be hidden from public listing until republished.</p>
             <div className="mt-2 flex gap-2">
-              <Button className="bg-red-500 hover:bg-red-500/80" onClick={() => act("unpublish")}>Confirm unpublish</Button>
-              <Button variant="secondary" onClick={() => setShowConfirm(false)}>Cancel</Button>
+              <Button
+                className="bg-red-500 hover:bg-red-500/80"
+                onClick={() => act("unpublish")}
+              >
+                Confirm unpublish
+              </Button>
+              <Button variant="secondary" onClick={() => setShowConfirm(false)}>
+                Cancel
+              </Button>
             </div>
           </div>
         )}
 
-        {message && <p className={`text-sm ${error ? "text-red-500" : "text-emerald-500"}`}>{message}</p>}
+        {message && (
+          <p className={`text-sm ${error ? "text-red-500" : "text-emerald-500"}`}>
+            {message}
+          </p>
+        )}
       </Card>
 
       <Card className="p-4">
@@ -199,7 +300,12 @@ export default function AdminPublishedDetailPage() {
         <div className="mt-3 space-y-2">
           {(data.history ?? []).map((row: any) => (
             <div key={row.id} className="rounded-lg border border-[rgb(var(--muted)/0.35)] p-3">
-              <div className="text-xs soft-text">{new Date(row.created_at).toLocaleString()} • {row.action} • by {Array.isArray(row.profiles) ? row.profiles[0]?.username : row.profiles?.username ?? "unknown"}</div>
+              <div className="text-xs soft-text">
+                {new Date(row.created_at).toLocaleString()} • {row.action} • by{" "}
+                {Array.isArray(row.profiles)
+                  ? row.profiles[0]?.username
+                  : row.profiles?.username ?? "unknown"}
+              </div>
               {row.note && <p className="mt-1 text-sm">{row.note}</p>}
             </div>
           ))}

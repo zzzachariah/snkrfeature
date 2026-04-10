@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Route } from "next";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BrandLoader } from "@/components/ui/brand-loader";
@@ -12,15 +13,23 @@ import { RequiredReadingGate } from "@/components/auth/required-reading-gate";
 import { createClient } from "@/lib/supabase/client";
 
 const CLIENT_TIMEOUT_MS = 12000;
+
 function devLog(step: string, payload?: unknown) {
   if (process.env.NODE_ENV !== "production") {
     console.info(`[signup] ${step}`, payload ?? "");
   }
 }
 
+function normalizeRedirectTarget(raw: string | null): Route {
+  if (!raw) return "/dashboard" as Route;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard" as Route;
+  return raw as Route;
+}
+
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = CLIENT_TIMEOUT_MS) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     return await fetch(url, { ...init, signal: controller.signal });
   } finally {
@@ -55,16 +64,19 @@ export default function SignupPage() {
         setMessage("Please fill in username, email, and password.");
         return;
       }
+
       if (!form.email.includes("@")) {
         setError(true);
         setMessage("Please enter a valid email address.");
         return;
       }
+
       if (form.password.length < 8) {
         setError(true);
         setMessage("Password must be at least 8 characters.");
         return;
       }
+
       if (!turnstileToken) {
         setError(true);
         setMessage("Please complete verification before signing up.");
@@ -88,8 +100,15 @@ export default function SignupPage() {
 
       const supabase = createClient();
       if (supabase) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
-        devLog("supabase sign-in completed", signInError ? { error: signInError.message } : { ok: true });
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: form.email,
+          password: form.password
+        });
+
+        devLog(
+          "supabase sign-in completed",
+          signInError ? { error: signInError.message } : { ok: true }
+        );
 
         if (signInError) {
           setError(true);
@@ -116,15 +135,54 @@ export default function SignupPage() {
       {gateOpen && <RequiredReadingGate onContinue={() => setGateOpen(false)} />}
       <form onSubmit={onSubmit} className={`surface-card premium-border mx-auto max-w-md space-y-4 rounded-3xl p-7 ${gateOpen ? "pointer-events-none select-none" : ""}`}>
         <h1 className="text-2xl font-semibold tracking-[0.02em]">Sign up</h1>
-        <p className="text-sm soft-text">Create your account to submit sneaker data and join discussions.</p>
-        <div><label className="mb-1 block text-xs soft-text">Username</label><Input value={form.username} onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))} required /></div>
-        <div><label className="mb-1 block text-xs soft-text">Email</label><Input value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} type="email" required /></div>
-        <div><label className="mb-1 block text-xs soft-text">Password</label><Input value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} type="password" required /></div>
+        <p className="text-sm soft-text">
+          Create your account to submit sneaker data and join discussions.
+        </p>
+
+        <div>
+          <label className="mb-1 block text-xs soft-text">Username</label>
+          <Input
+            value={form.username}
+            onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
+            required
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs soft-text">Email</label>
+          <Input
+            value={form.email}
+            onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+            type="email"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs soft-text">Password</label>
+          <Input
+            value={form.password}
+            onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+            type="password"
+            required
+          />
+        </div>
+
         <TurnstileWidget onToken={setTurnstileToken} />
-        <Button type="submit" className="w-full" disabled={submitting}>{submitting ? "Creating account..." : "Create account"}</Button>
+
+        <Button type="submit" className="w-full" disabled={submitting}>
+          {submitting ? "Creating account..." : "Create account"}
+        </Button>
+
         {submitting && <BrandLoader compact label="Creating your account" />}
         {message && <FeedbackMessage message={message} isError={error} />}
-        <p className="text-xs soft-text">Already have an account? <Link href="/login" className="text-[rgb(var(--accent))] hover:underline">Log in</Link></p>
+
+        <p className="text-xs soft-text">
+          Already have an account?{" "}
+          <Link href="/login" className="text-[rgb(var(--accent))] hover:underline">
+            Log in
+          </Link>
+        </p>
       </form>
     </main>
   );
