@@ -48,10 +48,9 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
     setQuery(searchDraft);
   }
 
-  function clearSearchAndReload() {
+  function clearSearch() {
     setSearchDraft("");
     setQuery("");
-    window.location.reload();
   }
 
   return (
@@ -67,7 +66,7 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
           {searchDraft.trim().length > 0 && (
             <button
               type="button"
-              onClick={clearSearchAndReload}
+              onClick={clearSearch}
               aria-label="Clear search"
               className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-[rgb(var(--subtext))] transition hover:bg-[rgb(var(--muted)/0.32)] hover:text-[rgb(var(--text))]"
             >
