@@ -48,7 +48,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next");
-  const redirectTarget = nextPath && nextPath.startsWith("/") ? nextPath : "/dashboard";
+  const redirectTarget = normalizeRedirectTarget(nextPath);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
