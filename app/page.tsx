@@ -14,9 +14,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     <main className="container-shell space-y-8 py-8">
       <section className="grid items-stretch gap-4 lg:grid-cols-[1.35fr_0.9fr]">
         <div className="surface-card premium-border rounded-3xl p-7 md:p-8">
-          <p className="text-xs uppercase tracking-[0.2em] soft-text">Sneaker intelligence platform</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-[0.02em] md:text-4xl">Structured basketball sneaker intelligence.</h1>
-          <p className="mt-3 max-w-2xl soft-text">Search, compare, discuss, and submit performance data with moderation-first workflows and provenance-aware records.</p>
+          <p className="text-xs uppercase tracking-[0.2em] soft-text">Integrated Basketball Sneaker Feature Platform</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-[0.02em] md:text-4xl">Compare, Discuss, and Choose your ideal basketball sneaker on SNKRFEATURE</h1>
+          <p className="mt-3 max-w-2xl soft-text">If you want to contribute to our community, submit corrections or new shoe info.</p>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link href="/submit"><Button>Submit new shoe info</Button></Link>
             <Link href="/compare"><Button variant="ghost" className="inline-flex items-center gap-1">Open compare <ArrowRight className="h-4 w-4" /></Button></Link>
