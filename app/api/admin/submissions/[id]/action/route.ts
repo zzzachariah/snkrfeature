@@ -31,7 +31,7 @@ const finalSchema = z.object({
 
 const bodySchema = z.object({
   action: z.enum(["save_draft", "approve_publish", "reject"]),
-  finalPayload: finalSchema,
+  finalPayload: finalSchema.optional(),
   note: z.string().optional()
 });
 
@@ -78,17 +78,30 @@ export async function POST(
     );
   }
 
-  const { error: draftVersionError } = await supabase
-    .from("submission_admin_versions")
-    .upsert(
-      {
-        submission_id: id,
-        final_payload: payload.data.finalPayload,
-        last_edited_by: user.id,
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: "submission_id" }
-    );
+  if (payload.data.action === "reject") {
+    const { error: deleteError } = await supabase
+      .from("user_submissions")
+      .delete()
+      .eq("id", id);
+
+    if (deleteError) return badRequest(deleteError.message);
+
+    return NextResponse.json({ ok: true, message: "Submission deleted." });
+  }
+
+  if (!payload.data.finalPayload) {
+    return badRequest("Final payload is required for this action.");
+  }
+
+  const { error: draftVersionError } = await supabase.from("submission_admin_versions").upsert(
+    {
+      submission_id: id,
+      final_payload: payload.data.finalPayload,
+      last_edited_by: user.id,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "submission_id" }
+  );
 
   if (draftVersionError) return badRequest(draftVersionError.message);
 
@@ -120,43 +133,22 @@ export async function POST(
     return NextResponse.json({ ok: true, message: "Draft saved." });
   }
 
-  if (payload.data.action === "reject") {
-    const { error: rejectUpdateError } = await supabase
-      .from("user_submissions")
-      .update({
-        status: "rejected",
-        reviewed_by: user.id,
-        reviewer_notes: payload.data.note ?? null
-      })
-      .eq("id", id);
-
-    if (rejectUpdateError) return badRequest(rejectUpdateError.message);
-
-    const { error: rejectLogError } = await supabase
-      .from("admin_audit_logs")
-      .insert({
-        actor_admin_id: user.id,
-        target_type: "submission",
-        target_submission_id: id,
-        action: "rejected",
-        note: payload.data.note ?? "Submission rejected",
-        after_payload: payload.data.finalPayload
-      });
-
-    if (rejectLogError) return badRequest(rejectLogError.message);
-
-    return NextResponse.json({ ok: true, message: "Submission rejected." });
-  }
-
   const final = payload.data.finalPayload;
   const nowIso = new Date().toISOString();
   const storyContent =
     final.story_summary ??
     final.playstyle_summary ??
     `${final.brand} ${final.shoe_name}`;
+  const isCorrection = currentSubmission.submission_type === "correction";
 
-  let shoeId = currentSubmission.published_shoe_id as string | null;
+  let shoeId = (isCorrection
+    ? currentSubmission.target_shoe_id
+    : currentSubmission.published_shoe_id) as string | null;
   let beforeShoePayload: unknown = null;
+
+  if (!shoeId && isCorrection) {
+    return badRequest("Correction submissions must target an existing published shoe.");
+  }
 
   if (!shoeId) {
     const baseSlug = slugify(`${final.brand}-${final.shoe_name}`);
@@ -192,9 +184,7 @@ export async function POST(
       .maybeSingle();
 
     if (loadShoeError || !currentShoe) {
-      return badRequest(
-        loadShoeError?.message ?? "Published shoe record is missing."
-      );
+      return badRequest(loadShoeError?.message ?? "Published shoe record is missing.");
     }
 
     beforeShoePayload = currentShoe;
@@ -347,15 +337,19 @@ export async function POST(
     .from("admin_audit_logs")
     .insert({
       actor_admin_id: user.id,
-      target_type: currentSubmission.published_shoe_id ? "shoe" : "submission",
+      target_type: isCorrection || currentSubmission.published_shoe_id ? "shoe" : "submission",
       target_submission_id: id,
       target_shoe_id: shoeId,
       action: currentSubmission.published_shoe_id
         ? "updated"
-        : "approved_published",
+        : isCorrection
+          ? "correction_approved"
+          : "approved_published",
       note:
         payload.data.note ??
-        (currentSubmission.published_shoe_id
+        (isCorrection
+          ? "Correction approved and existing published record updated"
+          : currentSubmission.published_shoe_id
           ? "Published record updated"
           : "Submission approved and published"),
       before_payload: beforeShoePayload ?? currentSubmission.raw_payload,
@@ -366,9 +360,11 @@ export async function POST(
 
   return NextResponse.json({
     ok: true,
-    message: currentSubmission.published_shoe_id
-      ? "Published record updated."
-      : "Published to official shoes table.",
+    message: isCorrection
+      ? "Correction approved and existing shoe updated."
+      : currentSubmission.published_shoe_id
+        ? "Published record updated."
+        : "Published to official shoes table.",
     shoeId
   });
 }

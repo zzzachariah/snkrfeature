@@ -32,4 +32,10 @@ export interface Shoe {
   price?: number | null;
   weight?: string | null;
   spec: ShoeSpec;
+  story?: {
+    title?: string | null;
+    content?: string | null;
+    source_label?: string | null;
+    source_url?: string | null;
+  } | null;
 }
