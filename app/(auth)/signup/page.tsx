@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BrandLoader } from "@/components/ui/brand-loader";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,9 @@ export default function SignupPage() {
   const [submitting, setSubmitting] = useState(false);
   const [gateOpen, setGateOpen] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next");
+  const redirectTarget = nextPath && nextPath.startsWith("/") ? nextPath : "/dashboard";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -96,8 +99,8 @@ export default function SignupPage() {
       }
 
       setMessage("Account created successfully. Redirecting...");
-      devLog("navigation start", { target: "/dashboard" });
-      router.push("/dashboard");
+      devLog("navigation start", { target: redirectTarget });
+      router.push(redirectTarget);
     } catch {
       setError(true);
       setMessage("Signup request timed out or failed. Please try again.");
