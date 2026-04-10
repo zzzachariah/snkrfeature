@@ -139,9 +139,16 @@ export async function POST(
     final.story_summary ??
     final.playstyle_summary ??
     `${final.brand} ${final.shoe_name}`;
+  const isCorrection = currentSubmission.submission_type === "correction";
 
-  let shoeId = currentSubmission.published_shoe_id as string | null;
+  let shoeId = (isCorrection
+    ? currentSubmission.target_shoe_id
+    : currentSubmission.published_shoe_id) as string | null;
   let beforeShoePayload: unknown = null;
+
+  if (!shoeId && isCorrection) {
+    return badRequest("Correction submissions must target an existing published shoe.");
+  }
 
   if (!shoeId) {
     const baseSlug = slugify(`${final.brand}-${final.shoe_name}`);
@@ -177,9 +184,7 @@ export async function POST(
       .maybeSingle();
 
     if (loadShoeError || !currentShoe) {
-      return badRequest(
-        loadShoeError?.message ?? "Published shoe record is missing."
-      );
+      return badRequest(loadShoeError?.message ?? "Published shoe record is missing.");
     }
 
     beforeShoePayload = currentShoe;
@@ -332,15 +337,19 @@ export async function POST(
     .from("admin_audit_logs")
     .insert({
       actor_admin_id: user.id,
-      target_type: currentSubmission.published_shoe_id ? "shoe" : "submission",
+      target_type: isCorrection || currentSubmission.published_shoe_id ? "shoe" : "submission",
       target_submission_id: id,
       target_shoe_id: shoeId,
       action: currentSubmission.published_shoe_id
         ? "updated"
-        : "approved_published",
+        : isCorrection
+          ? "correction_approved"
+          : "approved_published",
       note:
         payload.data.note ??
-        (currentSubmission.published_shoe_id
+        (isCorrection
+          ? "Correction approved and existing published record updated"
+          : currentSubmission.published_shoe_id
           ? "Published record updated"
           : "Submission approved and published"),
       before_payload: beforeShoePayload ?? currentSubmission.raw_payload,
@@ -351,9 +360,11 @@ export async function POST(
 
   return NextResponse.json({
     ok: true,
-    message: currentSubmission.published_shoe_id
-      ? "Published record updated."
-      : "Published to official shoes table.",
+    message: isCorrection
+      ? "Correction approved and existing shoe updated."
+      : currentSubmission.published_shoe_id
+        ? "Published record updated."
+        : "Published to official shoes table.",
     shoeId
   });
 }

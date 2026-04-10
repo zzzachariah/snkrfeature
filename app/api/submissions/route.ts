@@ -35,6 +35,36 @@ export async function POST(request: Request) {
       return jsonResponse({ ok: false, message: parsed.error.issues[0]?.message ?? "Invalid submission payload." }, { status: 400 });
     }
 
+    let originalSnapshot: unknown = null;
+    if (parsed.data.original_snapshot) {
+      try {
+        originalSnapshot = JSON.parse(parsed.data.original_snapshot);
+      } catch {
+        return jsonResponse({ ok: false, message: "Invalid original snapshot payload." }, { status: 400 });
+      }
+    }
+
+    const rawPayload = {
+      shoe_name: parsed.data.shoe_name,
+      brand: parsed.data.brand,
+      model: parsed.data.model,
+      release_year: parsed.data.release_year,
+      forefoot_midsole_tech: parsed.data.forefoot_midsole_tech,
+      heel_midsole_tech: parsed.data.heel_midsole_tech,
+      outsole_tech: parsed.data.outsole_tech,
+      upper_tech: parsed.data.upper_tech,
+      cushioning_feel: parsed.data.cushioning_feel,
+      court_feel: parsed.data.court_feel,
+      bounce: parsed.data.bounce,
+      stability: parsed.data.stability,
+      traction: parsed.data.traction,
+      fit: parsed.data.fit,
+      tags: parsed.data.tags,
+      story_notes: parsed.data.story_notes,
+      raw_text: parsed.data.raw_text,
+      source_links: parsed.data.source_links
+    };
+
     const verified = await verifyTurnstileToken(parsed.data.turnstileToken);
     console.log("[submissions] Turnstile validation result", verified);
     if (!verified.success) return jsonResponse({ ok: false, message: verified.message }, { status: 400 });
@@ -62,7 +92,10 @@ export async function POST(request: Request) {
       .from("user_submissions")
       .insert({
         user_id: user.id,
-        raw_payload: parsed.data,
+        submission_type: parsed.data.submission_type ?? "new_shoe",
+        target_shoe_id: parsed.data.target_shoe_id ?? null,
+        original_snapshot: originalSnapshot,
+        raw_payload: rawPayload,
         raw_text: parsed.data.raw_text,
         source_links: (parsed.data.source_links ?? "")
           .split(",")
@@ -93,7 +126,7 @@ export async function POST(request: Request) {
     console.log("[submissions] OpenAI path used", { submissionId: submission.id });
     console.log("[submissions] normalization start");
     try {
-      const normalized = await normalizeSubmission(parsed.data);
+      const normalized = await normalizeSubmission(rawPayload);
       console.log("[submissions] normalization end", {
         hasNormalizedPayload: Boolean(normalized.normalized)
       });

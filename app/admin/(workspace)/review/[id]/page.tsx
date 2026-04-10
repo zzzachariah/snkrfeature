@@ -90,6 +90,34 @@ export default function AdminSubmissionDetailPage() {
 
   const normalizedPayload = useMemo(() => data?.normalized?.normalized_payload ?? {}, [data]);
   const rawPayload = useMemo(() => data?.submission?.raw_payload ?? {}, [data]);
+  const submissionType = data?.submission?.submission_type ?? "new_shoe";
+  const targetShoe = data?.submission?.target_shoe ?? null;
+
+  const targetSnapshot = useMemo<Record<string, unknown> | null>(() => {
+    if (!targetShoe) return null;
+    const spec = targetShoe.shoe_specs?.[0] ?? {};
+    return {
+      shoe_name: targetShoe.shoe_name ?? "",
+      brand: targetShoe.brand ?? "",
+      model_line: targetShoe.model_line ?? "",
+      version_name: targetShoe.version_name ?? "",
+      release_year: targetShoe.release_year ?? "",
+      category: targetShoe.category ?? "",
+      player: targetShoe.player ?? "",
+      forefoot_midsole_tech: spec.forefoot_midsole_tech ?? "",
+      heel_midsole_tech: spec.heel_midsole_tech ?? "",
+      outsole_tech: spec.outsole_tech ?? "",
+      upper_tech: spec.upper_tech ?? "",
+      cushioning_feel: spec.cushioning_feel ?? "",
+      court_feel: spec.court_feel ?? "",
+      bounce: spec.bounce ?? "",
+      stability: spec.stability ?? "",
+      traction: spec.traction ?? "",
+      fit: spec.fit ?? "",
+      playstyle_summary: spec.playstyle_summary ?? "",
+      story_summary: targetShoe.shoe_stories?.[0]?.content ?? spec.story_summary ?? ""
+    };
+  }, [targetShoe]);
 
   async function submitAction(action: "save_draft" | "approve_publish" | "reject") {
     setSaving(action);
@@ -139,7 +167,34 @@ export default function AdminSubmissionDetailPage() {
         <div className="mt-2 text-xs soft-text">
           Submitted by {Array.isArray(data.submission.profiles) ? data.submission.profiles[0]?.username : data.submission.profiles?.username ?? "unknown"} • {new Date(data.submission.created_at).toLocaleString()} • status: {data.submission.status}
         </div>
+        <div className="mt-2 text-xs soft-text">
+          Type: {submissionType === "correction" ? "Correction submission" : "New shoe submission"}
+          {submissionType === "correction" && (
+            <> • Target: {targetShoe?.brand} {targetShoe?.shoe_name} ({targetShoe?.id}) • Approval updates the existing published record.</>
+          )}
+        </div>
       </Card>
+
+      {submissionType === "correction" && targetSnapshot && (
+        <Card className="p-4">
+          <h3 className="font-semibold">Current published record vs proposed correction</h3>
+          <p className="mt-1 text-sm soft-text">Highlighted rows are fields where the proposed correction differs from the current published values.</p>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {fieldDefs.map((field) => {
+              const currentValue = String(targetSnapshot[field.key] ?? "—");
+              const proposedValue = String(form[field.key] ?? "—");
+              const changed = currentValue !== proposedValue;
+              return (
+                <div key={field.key} className={`rounded-lg border p-2 ${changed ? "border-[rgb(var(--accent)/0.4)] bg-[rgb(var(--accent)/0.08)]" : "border-[rgb(var(--muted)/0.35)]"}`}>
+                  <p className="text-xs soft-text">{field.label}</p>
+                  <p className="text-xs soft-text">Current: {currentValue || "—"}</p>
+                  <p>Proposed: {proposedValue || "—"}</p>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="p-4">

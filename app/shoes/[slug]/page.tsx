@@ -26,7 +26,7 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
             <p className="mt-3 text-sm leading-6 soft-text md:text-base">{shoe.spec.playstyle_summary ?? "No playstyle summary available yet."}</p>
             <div className="mt-4 flex flex-wrap gap-2">{(shoe.spec.tags ?? []).map((tag) => <Badge key={tag}>{tag}</Badge>)}</div>
           </div>
-          <div className="flex gap-2"><Link href={`/compare?ids=${shoe.id}`}><Button>Add to compare</Button></Link><Link href="/submit"><Button variant="secondary">Submit correction</Button></Link></div>
+          <div className="flex gap-2"><Link href={`/compare?ids=${shoe.id}`}><Button>Add to compare</Button></Link><Link href={`/submit/correction/${shoe.id}`}><Button variant="secondary">Submit correction</Button></Link></div>
         </div>
       </section>
 
