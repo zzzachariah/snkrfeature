@@ -78,6 +78,10 @@
 
 * { border-color: rgb(var(--muted) / 0.52); }
 html, body { min-height: 100%; overflow-x: clip; }
+html {
+  background-color: rgb(var(--bg));
+  transition: background-color 240ms ease;
+}
 body {
   font-family: "SF Pro Display", "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: rgb(var(--text));
