@@ -7,38 +7,26 @@ export function RequiredReadingGate({ onContinue }: { onContinue: () => void }) 
   const [completed, setCompleted] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgb(var(--glass-overlay)/0.72)] p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-[rgb(var(--glass-overlay)/0.72)] p-4 pb-10 pt-24 backdrop-blur-sm md:pt-28">
       <div className="surface-card premium-border w-full max-w-2xl rounded-3xl p-5 shadow-[0_30px_72px_rgb(var(--glass-shadow)/0.42)] md:p-6">
         <div className="border-b border-[rgb(var(--muted)/0.35)] pb-4">
-          <h2 className="text-2xl font-semibold tracking-[0.015em] md:text-3xl">Welcome! Please take some time reading this!</h2>
-          <p className="mt-1 text-sm soft-text">A brief story behing snkrfeature</p>
-          <p className="mt-2 text-xs soft-text">By zzz</p>
+          <h2 className="text-2xl font-semibold tracking-[0.015em] md:text-3xl">Sample</h2>
+          <p className="mt-1 text-sm soft-text">Sample subtitle</p>
+          <p className="mt-2 text-xs soft-text">By Sample author</p>
         </div>
 
         <div className="mt-4 max-h-[46vh] space-y-3 overflow-y-auto pr-1 text-sm leading-relaxed soft-text md:max-h-[50vh]">
           <p>
-            The idea of a platform with information on sneakers has been with me for a year. Back then, AI coding was not yet a well-developed field. Therefore, since I know absolutely nothing about coding (a bit now, I suppose), I quit. The development of technology enabled me to turn the initial idea into reality.
+            This is sample reading content designed to behave like a required pre-signup briefing. It demonstrates how longer content remains comfortable to read before account creation.
           </p>
           <p>
-            I always spend tons of time choosing which sneaker to purchase. YouTube channels and blogs tend to have biased opinions on a shoe. Moreover, the technologies each brand presents vary in their names, function, and appeal to players. snkrfeature is designed to show unbiased information in the hope of saving you some time when deciding which shoe to purchase, and to make a purchase that fits best with your preference and taste. 
+            The purpose of this step is to make sure users intentionally acknowledge key information before they proceed. The layout keeps typography calm and clear while preserving focus.
           </p>
           <p>
-            As a high school student, I am new to both building a website from scratch and maintaining a community. If you have any advice or would like to join as an admin (review shoe uploads) or developer, please feel free to go to the bottom of any page and press &quot;contact&quot;. At the same time, please do not attack or post offensive comments that attack others(you can say a sneaker is shit, though)
+            You can replace this placeholder with policy details, platform expectations, moderation standards, and other onboarding context at any time without changing the signup logic itself.
           </p>
           <p>
-            By the way, if this turned out to be liked by many, perhaps I will charge a one-time fee of a dollar per account in order to cover the fees of databases and domains, etc. I hate ads myself, so there will maybe be 1 or 2, but definitely not scattered around the page. I&apos;ll decide it later.
-          </p>
-          <p>
-            In the meantime, I hope you enjoy!
-          </p>
-          <p>
-            Sincerely,
-          </p>
-          <p>
-            zzz
-          </p>
-          <p>
-            Written at 2:31AM, April 2026.
+            Once the reading is complete, check the confirmation box below. The continue action will then unlock the existing signup form exactly as it currently works.
           </p>
         </div>
 

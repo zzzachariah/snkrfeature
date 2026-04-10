@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -128,9 +128,7 @@ export default function AdminSubmissionDetailPage() {
 
   const targetSnapshot = useMemo<Record<string, unknown> | null>(() => {
     if (!targetShoe) return null;
-
     const spec = targetShoe.shoe_specs?.[0] ?? {};
-
     return {
       shoe_name: targetShoe.shoe_name ?? "",
       brand: targetShoe.brand ?? "",
@@ -193,7 +191,6 @@ export default function AdminSubmissionDetailPage() {
         router.refresh();
         return;
       }
-
       await load();
     }
   }
@@ -227,30 +224,25 @@ export default function AdminSubmissionDetailPage() {
             </>
           )}
         </div>
+        <div className="mt-2 text-xs soft-text">
+          Type: {submissionType === "correction" ? "Correction submission" : "New shoe submission"}
+          {submissionType === "correction" && (
+            <> • Target: {targetShoe?.brand} {targetShoe?.shoe_name} ({targetShoe?.id}) • Approval updates the existing published record.</>
+          )}
+        </div>
       </Card>
 
       {submissionType === "correction" && targetSnapshot && (
         <Card className="p-4">
           <h3 className="font-semibold">Current published record vs proposed correction</h3>
-          <p className="mt-1 text-sm soft-text">
-            Highlighted rows are fields where the proposed correction differs from the current
-            published values.
-          </p>
+          <p className="mt-1 text-sm soft-text">Highlighted rows are fields where the proposed correction differs from the current published values.</p>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             {fieldDefs.map((field) => {
               const currentValue = String(targetSnapshot[field.key] ?? "—");
               const proposedValue = String(form[field.key] ?? "—");
               const changed = currentValue !== proposedValue;
-
               return (
-                <div
-                  key={field.key}
-                  className={`rounded-lg border p-2 ${
-                    changed
-                      ? "border-[rgb(var(--accent)/0.4)] bg-[rgb(var(--accent)/0.08)]"
-                      : "border-[rgb(var(--muted)/0.35)]"
-                  }`}
-                >
+                <div key={field.key} className={`rounded-lg border p-2 ${changed ? "border-[rgb(var(--accent)/0.4)] bg-[rgb(var(--accent)/0.08)]" : "border-[rgb(var(--muted)/0.35)]"}`}>
                   <p className="text-xs soft-text">{field.label}</p>
                   <p className="text-xs soft-text">Current: {currentValue || "—"}</p>
                   <p>Proposed: {proposedValue || "—"}</p>
@@ -360,10 +352,7 @@ export default function AdminSubmissionDetailPage() {
 
       <Card className="p-4">
         <h3 className="font-semibold">Publishing controls</h3>
-        <p className="text-sm soft-text">
-          Save draft for later, delete the submission via reject, or approve and publish the
-          admin-corrected final version.
-        </p>
+        <p className="text-sm soft-text">Save draft for later, delete the submission via reject, or approve and publish the admin-corrected final version.</p>
         <div className="mt-3">
           <label className="mb-1 block text-xs soft-text">Audit note (recommended)</label>
           <Input
@@ -373,24 +362,9 @@ export default function AdminSubmissionDetailPage() {
           />
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button disabled={saving !== null} onClick={() => submitAction("save_draft")}>
-            {saving === "save_draft" ? "Saving..." : "Save draft"}
-          </Button>
-          <Button
-            disabled={saving !== null}
-            variant="secondary"
-            onClick={() => submitAction("approve_publish")}
-          >
-            {saving === "approve_publish" ? "Publishing..." : "Approve & publish"}
-          </Button>
-          <Button
-            disabled={saving !== null}
-            variant="ghost"
-            className="border border-red-500/35 text-red-500 hover:bg-red-500/10"
-            onClick={() => setConfirmRejectOpen(true)}
-          >
-            {saving === "reject" ? "Deleting..." : "Reject"}
-          </Button>
+          <Button disabled={saving !== null} onClick={() => submitAction("save_draft")}>{saving === "save_draft" ? "Saving..." : "Save draft"}</Button>
+          <Button disabled={saving !== null} variant="secondary" onClick={() => submitAction("approve_publish")}>{saving === "approve_publish" ? "Publishing..." : "Approve & publish"}</Button>
+          <Button disabled={saving !== null} variant="ghost" className="border border-red-500/35 text-red-500 hover:bg-red-500/10" onClick={() => setConfirmRejectOpen(true)}>{saving === "reject" ? "Deleting..." : "Reject"}</Button>
         </div>
         {message && (
           <p className={`mt-2 text-sm ${error ? "text-red-500" : "text-emerald-500"}`}>
@@ -398,6 +372,25 @@ export default function AdminSubmissionDetailPage() {
           </p>
         )}
       </Card>
+      <Modal
+        open={confirmRejectOpen}
+        onClose={() => {
+          if (saving !== "reject") setConfirmRejectOpen(false);
+        }}
+        title="Delete this submission?"
+      >
+        <p className="text-sm soft-text">
+          Reject will permanently delete this submission and remove it from the pending review queue.
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="secondary" disabled={saving === "reject"} onClick={() => setConfirmRejectOpen(false)}>
+            Cancel
+          </Button>
+          <Button className="border border-red-500/35 bg-red-500/10 text-red-500 hover:bg-red-500/20" disabled={saving === "reject"} onClick={() => submitAction("reject")}>
+            {saving === "reject" ? "Deleting..." : "Confirm delete"}
+          </Button>
+        </div>
+      </Modal>
 
       <Modal
         open={confirmRejectOpen}
