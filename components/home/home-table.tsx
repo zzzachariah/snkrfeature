@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowUpDown, SearchX } from "lucide-react";
+import { ArrowUpDown, SearchX, X } from "lucide-react";
 import { Shoe } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,10 +48,33 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
     setQuery(searchDraft);
   }
 
+  function clearSearchAndReload() {
+    setSearchDraft("");
+    setQuery("");
+    window.location.reload();
+  }
+
   return (
     <section className="space-y-4">
       <form className="flex flex-col gap-3 md:flex-row" onSubmit={runSearch}>
-        <Input placeholder="Search by name, player, tags, technologies..." value={searchDraft} onChange={(e) => setSearchDraft(e.target.value)} />
+        <div className="relative w-full">
+          <Input
+            placeholder="Search by name, player, tags, technologies..."
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
+            className={searchDraft ? "pr-10" : undefined}
+          />
+          {searchDraft.trim().length > 0 && (
+            <button
+              type="button"
+              onClick={clearSearchAndReload}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-[rgb(var(--subtext))] transition hover:bg-[rgb(var(--muted)/0.32)] hover:text-[rgb(var(--text))]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
         <select className="rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.58)] bg-[rgb(var(--glass-bg)/0.97)] px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--accent)/0.4)] focus:border-[rgb(var(--ring)/0.85)] focus:outline-none focus:ring-4 focus:ring-[rgb(var(--ring)/0.18)]" value={brand} onChange={(e) => setBrand(e.target.value)}>
           <option value="all">All brands</option>
           {brands.map((b) => <option key={b}>{b}</option>)}
