@@ -44,10 +44,11 @@ export default function SignupPage() {
   const [error, setError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [gateOpen, setGateOpen] = useState(true);
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next");
-  const redirectTarget = nextPath && nextPath.startsWith("/") ? nextPath : "/dashboard";
+  const redirectTarget = normalizeRedirectTarget(nextPath);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -133,7 +134,13 @@ export default function SignupPage() {
   return (
     <main className="container-shell py-10">
       {gateOpen && <RequiredReadingGate onContinue={() => setGateOpen(false)} />}
-      <form onSubmit={onSubmit} className={`surface-card premium-border mx-auto max-w-md space-y-4 rounded-3xl p-7 ${gateOpen ? "pointer-events-none select-none" : ""}`}>
+
+      <form
+        onSubmit={onSubmit}
+        className={`surface-card premium-border mx-auto max-w-md space-y-4 rounded-3xl p-7 ${
+          gateOpen ? "pointer-events-none select-none" : ""
+        }`}
+      >
         <h1 className="text-2xl font-semibold tracking-[0.02em]">Sign up</h1>
         <p className="text-sm soft-text">
           Create your account to submit sneaker data and join discussions.
