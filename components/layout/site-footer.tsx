@@ -11,7 +11,9 @@ export function SiteFooter() {
   const [feedback, setFeedback] = useState("");
   const [infoOpen, setInfoOpen] = useState(false);
 
-  if (pathname === "/login" || pathname === "/signup" || pathname === "/register") {
+  const isAuthPath = /^\/(login|signup|register)(\/|$)/.test(pathname);
+
+  if (isAuthPath) {
     return null;
   }
 
