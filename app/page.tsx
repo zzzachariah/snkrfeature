@@ -16,7 +16,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <div className="surface-card premium-border rounded-3xl p-7 md:p-8">
           <p className="text-xs uppercase tracking-[0.2em] soft-text">Integrated Basketball Sneaker Feature Platform</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-[0.02em] md:text-4xl">Compare, discuss, and choose your ideal basketball sneaker on SNKRFEATURE</h1>
-          <p className="mt-3 max-w-2xl soft-text">If you want to contribute to our community, submit corrections or new shoe info.</p>
+          <p className="mt-3 max-w-2xl soft-text">If you want to contribute to our community, please submit corrections, upload a new shoe, and discuss!</p>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link href="/submit"><Button>Submit new shoe info</Button></Link>
             <Link href="/compare"><Button variant="ghost" className="inline-flex items-center gap-1">Open compare <ArrowRight className="h-4 w-4" /></Button></Link>
