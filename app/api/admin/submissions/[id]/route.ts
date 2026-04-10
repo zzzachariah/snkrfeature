@@ -19,7 +19,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 
   const submission = submissionRes.data;
 
-  const [normalizedRes, draftRes, historyRes, publishedShoeRes] = await Promise.all([
+  const [normalizedRes, draftRes, historyRes, publishedShoeRes, targetShoeRes] = await Promise.all([
     supabase.from("normalized_submission_results").select("*").eq("submission_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("submission_admin_versions").select("*").eq("submission_id", id).maybeSingle(),
     supabase
@@ -30,6 +30,13 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
       .limit(100),
     submission.published_shoe_id
       ? supabase.from("shoes").select("id,slug,shoe_name,brand,is_published").eq("id", submission.published_shoe_id).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    submission.target_shoe_id
+      ? supabase
+          .from("shoes")
+          .select("id,slug,shoe_name,brand,model_line,version_name,release_year,category,player,shoe_specs(*),shoe_stories(*)")
+          .eq("id", submission.target_shoe_id)
+          .maybeSingle()
       : Promise.resolve({ data: null, error: null })
   ]);
 
@@ -37,7 +44,8 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     ok: true,
     submission: {
       ...submission,
-      shoes: publishedShoeRes.error ? null : publishedShoeRes.data
+      shoes: publishedShoeRes.error ? null : publishedShoeRes.data,
+      target_shoe: targetShoeRes.error ? null : targetShoeRes.data
     },
     normalized: normalizedRes.error ? null : normalizedRes.data,
     draft: draftRes.error ? null : draftRes.data,
