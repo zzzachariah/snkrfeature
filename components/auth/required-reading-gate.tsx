@@ -23,10 +23,10 @@ export function RequiredReadingGate({ onContinue }: { onContinue: () => void }) 
             I always spend tons of time choosing which sneaker to purchase. YouTube channels and blogs tend to have biased opinions on a shoe. Moreover, the technologies each brand presents vary in their names, function, and appeal to players. snkrfeature is designed to show unbiased information in the hope of saving you some time when deciding which shoe to purchase, and to make a purchase that fits best with your preference and taste.
           </p>
           <p>
-            As a high school student, I am new to both building a website from scratch and maintaining a community. If you have any advice or would like to join as an admin (review shoe uploads) or developer, please feel free to go to the bottom of any page and press "contact". At the same time, please do not attack or post offensive comments that attack others(you can say a sneaker is shit, though)
+            As a high school student, I am new to both building a website from scratch and maintaining a community. If you have any advice or would like to join as an admin (review shoe uploads) or developer, please feel free to go to the bottom of any page and press &quot;contact&quot;. At the same time, please do not attack or post offensive comments that attack others(you can say a sneaker is shit, though)
           </p>
           <p>
-            By the way, if this turned out to be liked by many, perhaps I will charge a one-time fee of a dollar per account in order to cover the fees of databases and domains, etc. I hate ads myself, so there will maybe be 1 or 2, but definitely not scattered around the page. I'll decide it later.
+            By the way, if this turned out to be liked by many, perhaps I will charge a one-time fee of a dollar per account in order to cover the fees of databases and domains, etc. I hate ads myself, so there will maybe be 1 or 2, but definitely not scattered around the page. I&apos;ll decide it later.
           </p>
         </div>
 
