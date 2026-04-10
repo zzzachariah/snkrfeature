@@ -2,12 +2,18 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 const CONTACT_EMAIL = "zzzachariah9828@gmail.com";
 
 export function SiteFooter() {
+  const pathname = usePathname();
   const [feedback, setFeedback] = useState("");
   const [infoOpen, setInfoOpen] = useState(false);
+
+  if (pathname === "/login" || pathname === "/signup" || pathname === "/register") {
+    return null;
+  }
 
   async function copyContact() {
     try {

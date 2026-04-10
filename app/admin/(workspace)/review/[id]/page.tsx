@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -230,6 +230,12 @@ export default function AdminSubmissionDetailPage() {
             <> • Target: {targetShoe?.brand} {targetShoe?.shoe_name} ({targetShoe?.id}) • Approval updates the existing published record.</>
           )}
         </div>
+        <div className="mt-2 text-xs soft-text">
+          Type: {submissionType === "correction" ? "Correction submission" : "New shoe submission"}
+          {submissionType === "correction" && (
+            <> • Target: {targetShoe?.brand} {targetShoe?.shoe_name} ({targetShoe?.id}) • Approval updates the existing published record.</>
+          )}
+        </div>
       </Card>
 
       {submissionType === "correction" && targetSnapshot && (
@@ -387,35 +393,6 @@ export default function AdminSubmissionDetailPage() {
             Cancel
           </Button>
           <Button className="border border-red-500/35 bg-red-500/10 text-red-500 hover:bg-red-500/20" disabled={saving === "reject"} onClick={() => submitAction("reject")}>
-            {saving === "reject" ? "Deleting..." : "Confirm delete"}
-          </Button>
-        </div>
-      </Modal>
-
-      <Modal
-        open={confirmRejectOpen}
-        onClose={() => {
-          if (saving !== "reject") setConfirmRejectOpen(false);
-        }}
-        title="Delete this submission?"
-      >
-        <p className="text-sm soft-text">
-          Reject will permanently delete this submission and remove it from the pending review
-          queue.
-        </p>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button
-            variant="secondary"
-            disabled={saving === "reject"}
-            onClick={() => setConfirmRejectOpen(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            className="border border-red-500/35 bg-red-500/10 text-red-500 hover:bg-red-500/20"
-            disabled={saving === "reject"}
-            onClick={() => submitAction("reject")}
-          >
             {saving === "reject" ? "Deleting..." : "Confirm delete"}
           </Button>
         </div>

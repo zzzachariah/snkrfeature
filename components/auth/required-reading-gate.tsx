@@ -10,9 +10,9 @@ export function RequiredReadingGate({ onContinue }: { onContinue: () => void }) 
     <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-[rgb(var(--glass-overlay)/0.72)] p-4 pb-10 pt-24 backdrop-blur-sm md:pt-28">
       <div className="surface-card premium-border w-full max-w-2xl rounded-3xl p-5 shadow-[0_30px_72px_rgb(var(--glass-shadow)/0.42)] md:p-6">
         <div className="border-b border-[rgb(var(--muted)/0.35)] pb-4">
-          <h2 className="text-2xl font-semibold tracking-[0.015em] md:text-3xl">Welcome! Please take some time reading this!</h2>
-          <p className="mt-1 text-sm soft-text">A brief story behind snkrfeature</p>
-          <p className="mt-2 text-xs soft-text">By zzz</p>
+          <h2 className="text-2xl font-semibold tracking-[0.015em] md:text-3xl">Sample</h2>
+          <p className="mt-1 text-sm soft-text">Sample subtitle</p>
+          <p className="mt-2 text-xs soft-text">By Sample author</p>
         </div>
 
         <div className="mt-4 max-h-[46vh] space-y-3 overflow-y-auto pr-1 text-sm leading-relaxed soft-text md:max-h-[50vh]">
