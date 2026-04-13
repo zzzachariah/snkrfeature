@@ -5,7 +5,17 @@ import { CommentSection } from "@/components/detail/comment-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PerformanceIndicator } from "@/components/shoe/performance-indicator";
 import { getShoeBySlug, getShoes } from "@/lib/data/shoes";
+import {
+  getBounceScore,
+  getCourtFeelScore,
+  getCushioningFeelScore,
+  getFitScore,
+  getPerformanceLabel,
+  getStabilityScore,
+  getTractionScore
+} from "@/lib/shoe-scoring";
 
 export default async function ShoeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -15,6 +25,20 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
   const storyTitle = shoe.story?.title?.trim();
   const storyContent = shoe.story?.content?.trim();
   const hasStory = Boolean(storyTitle || storyContent);
+
+  const stabilityText = shoe.spec.stability ?? "";
+  const tractionText = shoe.spec.traction ?? "";
+  const fitText = shoe.spec.fit ?? "";
+  const cushioningFeelText = shoe.spec.cushioning_feel ?? "";
+  const courtFeelText = shoe.spec.court_feel ?? "";
+  const bounceText = shoe.spec.bounce ?? "";
+
+  const stabilityScore = getStabilityScore(stabilityText);
+  const tractionScore = getTractionScore(tractionText);
+  const fitScore = getFitScore(fitText);
+  const cushioningFeelScore = getCushioningFeelScore(cushioningFeelText);
+  const courtFeelScore = getCourtFeelScore(courtFeelText);
+  const bounceScore = getBounceScore(bounceText);
 
   return (
     <main className="container-shell space-y-6 py-8">
@@ -37,7 +61,48 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <Card className="p-5"><h2 className="text-lg font-semibold">Performance profile</h2><dl className="mt-3 space-y-2 text-sm"><div className="flex justify-between"><dt className="soft-text">Cushioning</dt><dd>{shoe.spec.cushioning_feel ?? "Not yet added"}</dd></div><div className="flex justify-between"><dt className="soft-text">Court feel</dt><dd>{shoe.spec.court_feel ?? "Not yet added"}</dd></div><div className="flex justify-between"><dt className="soft-text">Bounce</dt><dd>{shoe.spec.bounce ?? "Not yet added"}</dd></div><div className="flex justify-between"><dt className="soft-text">Stability</dt><dd>{shoe.spec.stability ?? "Not yet added"}</dd></div><div className="flex justify-between"><dt className="soft-text">Traction</dt><dd>{shoe.spec.traction ?? "Not yet added"}</dd></div><div className="flex justify-between"><dt className="soft-text">Fit</dt><dd>{shoe.spec.fit ?? "Not yet added"}</dd></div></dl></Card>
+        <Card className="p-5">
+          <h2 className="text-lg font-semibold">Performance profile</h2>
+          <div className="mt-3 space-y-2.5">
+            <PerformanceIndicator
+              label="Cushioning Feel"
+              rawText={shoe.spec.cushioning_feel}
+              score={cushioningFeelScore}
+              tier={getPerformanceLabel(cushioningFeelScore)}
+            />
+            <PerformanceIndicator
+              label="Court Feel"
+              rawText={shoe.spec.court_feel}
+              score={courtFeelScore}
+              tier={getPerformanceLabel(courtFeelScore)}
+            />
+            <PerformanceIndicator
+              label="Bounce"
+              rawText={shoe.spec.bounce}
+              score={bounceScore}
+              tier={getPerformanceLabel(bounceScore)}
+            />
+            <PerformanceIndicator
+              label="Stability"
+              rawText={shoe.spec.stability}
+              score={stabilityScore}
+              tier={getPerformanceLabel(stabilityScore)}
+            />
+            <PerformanceIndicator
+              label="Traction"
+              rawText={shoe.spec.traction}
+              score={tractionScore}
+              tier={getPerformanceLabel(tractionScore)}
+            />
+            <PerformanceIndicator
+              label="Fit"
+              rawText={shoe.spec.fit}
+              score={fitScore}
+              tier={getPerformanceLabel(fitScore)}
+            />
+          </div>
+        </Card>
+
         <Card className="p-5">
           <h2 className="text-lg font-semibold">Story & provenance</h2>
           {hasStory ? (
