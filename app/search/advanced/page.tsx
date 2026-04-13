@@ -5,10 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getShoes } from "@/lib/data/shoes";
-
-function normalize(value?: string | null) {
-  return (value ?? "").trim().toLowerCase();
-}
+import { normalizeSearchText, rankShoeMatch } from "@/lib/search/shoe-search";
 
 export default async function AdvancedSearchPage({
   searchParams
@@ -16,30 +13,32 @@ export default async function AdvancedSearchPage({
   searchParams: Promise<{ q?: string; brand?: string; category?: string; player?: string; tech?: string }>;
 }) {
   const params = await searchParams;
-  const q = normalize(params.q);
-  const brand = normalize(params.brand);
-  const category = normalize(params.category);
-  const player = normalize(params.player);
-  const tech = normalize(params.tech);
+  const q = params.q ?? "";
+  const brand = normalizeSearchText(params.brand);
+  const category = normalizeSearchText(params.category);
+  const player = params.player ?? "";
+  const tech = params.tech ?? "";
 
   const shoes = await getShoes();
 
   const brands = Array.from(new Set(shoes.map((s) => s.brand).filter(Boolean))).sort();
   const categories = Array.from(new Set(shoes.map((s) => s.category).filter(Boolean) as string[])).sort();
 
-  const filtered = shoes.filter((shoe) => {
-    const fullText = `${shoe.shoe_name} ${shoe.brand} ${shoe.player ?? ""} ${shoe.category ?? ""} ${(shoe.spec.tags ?? []).join(" ")} ${shoe.spec.forefoot_midsole_tech ?? ""} ${shoe.spec.heel_midsole_tech ?? ""} ${shoe.spec.upper_tech ?? ""} ${shoe.spec.outsole_tech ?? ""}`.toLowerCase();
+  const filtered = shoes
+    .map((shoe) => ({ shoe, score: rankShoeMatch(shoe, q) }))
+    .filter(({ shoe, score }) => {
+      const techText = `${shoe.spec.forefoot_midsole_tech ?? ""} ${shoe.spec.heel_midsole_tech ?? ""} ${shoe.spec.upper_tech ?? ""} ${shoe.spec.outsole_tech ?? ""} ${(shoe.spec.tags ?? []).join(" ")}`;
 
-    const techText = `${shoe.spec.forefoot_midsole_tech ?? ""} ${shoe.spec.heel_midsole_tech ?? ""} ${shoe.spec.upper_tech ?? ""} ${shoe.spec.outsole_tech ?? ""} ${(shoe.spec.tags ?? []).join(" ")}`.toLowerCase();
+      if (score < 0) return false;
+      if (brand && normalizeSearchText(shoe.brand) !== brand) return false;
+      if (category && normalizeSearchText(shoe.category) !== category) return false;
+      if (player && !normalizeSearchText(shoe.player).includes(normalizeSearchText(player))) return false;
+      if (tech && !normalizeSearchText(techText).includes(normalizeSearchText(tech))) return false;
 
-    if (q && !fullText.includes(q)) return false;
-    if (brand && shoe.brand.toLowerCase() !== brand) return false;
-    if (category && (shoe.category ?? "").toLowerCase() !== category) return false;
-    if (player && !(shoe.player ?? "").toLowerCase().includes(player)) return false;
-    if (tech && !techText.includes(tech)) return false;
-
-    return true;
-  });
+      return true;
+    })
+    .sort((a, b) => b.score - a.score)
+    .map(({ shoe }) => shoe);
 
   return (
     <main className="container-shell space-y-6 py-8">
