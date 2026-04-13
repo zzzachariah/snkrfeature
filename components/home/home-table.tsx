@@ -7,6 +7,7 @@ import { ArrowUpDown, SearchX, X } from "lucide-react";
 import { Shoe } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { rankShoeMatch } from "@/lib/search/shoe-search";
 
 type SortKey = "shoe_name" | "brand" | "release_year";
 
@@ -19,18 +20,21 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
   const [selected, setSelected] = useState<string[]>([]);
 
   const filtered = useMemo(() => {
-    const base = shoes.filter((s) => {
-      const term = `${s.shoe_name} ${s.brand} ${s.player ?? ""} ${(s.spec.tags ?? []).join(" ")} ${s.spec.forefoot_midsole_tech ?? ""} ${s.spec.upper_tech ?? ""}`.toLowerCase();
-      return term.includes(query.toLowerCase()) && (brand === "all" || s.brand === brand);
-    });
+    const scored = shoes
+      .map((shoe) => ({ shoe, score: rankShoeMatch(shoe, query) }))
+      .filter(({ shoe, score }) => score >= 0 && (brand === "all" || shoe.brand === brand));
 
-    return base.sort((a, b) => {
-      const av = (a[sortKey] ?? "") as string | number;
-      const bv = (b[sortKey] ?? "") as string | number;
-      if (av < bv) return sortDir === "asc" ? -1 : 1;
-      if (av > bv) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
+    return scored
+      .sort((a, b) => {
+        if (query.trim() && b.score !== a.score) return b.score - a.score;
+
+        const av = (a.shoe[sortKey] ?? "") as string | number;
+        const bv = (b.shoe[sortKey] ?? "") as string | number;
+        if (av < bv) return sortDir === "asc" ? -1 : 1;
+        if (av > bv) return sortDir === "asc" ? 1 : -1;
+        return 0;
+      })
+      .map(({ shoe }) => shoe);
   }, [query, brand, shoes, sortDir, sortKey]);
 
   const brands = Array.from(new Set(shoes.map((s) => s.brand)));
