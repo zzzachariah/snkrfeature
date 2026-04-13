@@ -33,8 +33,7 @@ export function PerformanceIndicator({ label, score, tier, rawText }: Performanc
           />
         </div>
 
-        <span className="min-w-8 text-right text-xs font-semibold text-[rgb(var(--text)/0.92)]">{clampedScore}</span>
-        <span className="hidden text-[10px] tracking-[0.08em] soft-text sm:inline">{resolvedTier}</span>
+        <span className="min-w-9 text-right text-sm font-semibold text-[rgb(var(--text)/0.94)]">{clampedScore}</span>
       </div>
     </div>
   );
