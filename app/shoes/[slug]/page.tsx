@@ -7,7 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PerformanceIndicator } from "@/components/shoe/performance-indicator";
 import { getShoeBySlug, getShoes } from "@/lib/data/shoes";
-import { getFitScore, getPerformanceLabel, getStabilityScore, getTractionScore } from "@/lib/shoe-scoring";
+import {
+  getBounceScore,
+  getCourtFeelScore,
+  getCushioningFeelScore,
+  getFitScore,
+  getPerformanceLabel,
+  getStabilityScore,
+  getTractionScore
+} from "@/lib/shoe-scoring";
 
 export default async function ShoeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -21,10 +29,16 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
   const stabilityText = shoe.spec.stability ?? "";
   const tractionText = shoe.spec.traction ?? "";
   const fitText = shoe.spec.fit ?? "";
+  const cushioningFeelText = shoe.spec.cushioning_feel ?? "";
+  const courtFeelText = shoe.spec.court_feel ?? "";
+  const bounceText = shoe.spec.bounce ?? "";
 
   const stabilityScore = getStabilityScore(stabilityText);
   const tractionScore = getTractionScore(tractionText);
   const fitScore = getFitScore(fitText);
+  const cushioningFeelScore = getCushioningFeelScore(cushioningFeelText);
+  const courtFeelScore = getCourtFeelScore(courtFeelText);
+  const bounceScore = getBounceScore(bounceText);
 
   return (
     <main className="container-shell space-y-6 py-8">
@@ -49,14 +63,25 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
       <section className="grid gap-4 md:grid-cols-2">
         <Card className="p-5">
           <h2 className="text-lg font-semibold">Performance profile</h2>
-
-          <dl className="mt-3 space-y-2 text-sm">
-            <div className="flex justify-between gap-2"><dt className="soft-text">Cushioning</dt><dd className="text-right">{shoe.spec.cushioning_feel ?? "Not yet added"}</dd></div>
-            <div className="flex justify-between gap-2"><dt className="soft-text">Court feel</dt><dd className="text-right">{shoe.spec.court_feel ?? "Not yet added"}</dd></div>
-            <div className="flex justify-between gap-2"><dt className="soft-text">Bounce</dt><dd className="text-right">{shoe.spec.bounce ?? "Not yet added"}</dd></div>
-          </dl>
-
-          <div className="mt-4 space-y-3">
+          <div className="mt-3 space-y-2.5">
+            <PerformanceIndicator
+              label="Cushioning Feel"
+              rawText={shoe.spec.cushioning_feel}
+              score={cushioningFeelScore}
+              tier={getPerformanceLabel(cushioningFeelScore)}
+            />
+            <PerformanceIndicator
+              label="Court Feel"
+              rawText={shoe.spec.court_feel}
+              score={courtFeelScore}
+              tier={getPerformanceLabel(courtFeelScore)}
+            />
+            <PerformanceIndicator
+              label="Bounce"
+              rawText={shoe.spec.bounce}
+              score={bounceScore}
+              tier={getPerformanceLabel(bounceScore)}
+            />
             <PerformanceIndicator
               label="Stability"
               rawText={shoe.spec.stability}
