@@ -18,7 +18,6 @@ const NON_TRANSLATABLE_FIELDS = [
 
 const NON_TRANSLATABLE_FIELD_SET = new Set<string>(NON_TRANSLATABLE_FIELDS);
 const LOCALE_STORAGE_KEY = "locale";
-const translationCache: Record<string, string> = {};
 
 type LocaleContextValue = {
   locale: Locale;
@@ -87,22 +86,18 @@ function collectAttributeCandidates(root: ParentNode) {
   return candidates;
 }
 
-async function translateBatch(texts: string[], target = "zh-CN") {
-  if (!texts.length) return [] as string[];
+async function translateText(text: string, target = "zh-CN") {
+  if (isSkippableText(text)) return text;
 
-  const params = new URLSearchParams({ client: "gtx", sl: "auto", tl: target, dt: "t" });
-  texts.forEach((value) => params.append("q", value));
-
-  const response = await fetch(`https://translate.googleapis.com/translate_a/single?${params.toString()}`);
+  const response = await fetch(
+    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${target}&dt=t&q=${encodeURIComponent(text)}`
+  );
   const data = (await response.json()) as unknown;
-  const translatedRows = Array.isArray(data) && Array.isArray(data[0]) ? data[0] : [];
+  const rows = Array.isArray(data) && Array.isArray(data[0]) ? data[0] : [];
 
-  return translatedRows.map((row, index: number) => {
-    if (!Array.isArray(row)) return texts[index] ?? "";
-    return row
-      .map((segment) => (Array.isArray(segment) && typeof segment[0] === "string" ? segment[0] : ""))
-      .join("") || texts[index] || "";
-  });
+  return rows
+    .map((segment) => (Array.isArray(segment) && typeof segment[0] === "string" ? segment[0] : ""))
+    .join("") || text;
 }
 
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
@@ -110,70 +105,95 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [pendingLocale, setPendingLocale] = useState<Locale | null>(null);
   const [warningOpen, setWarningOpen] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [translationCache, setTranslationCache] = useState<Record<string, string>>({});
+  const cacheRef = useRef<Record<string, string>>({});
   const textSourceMapRef = useRef(new WeakMap<Text, string>());
   const attrSourceMapRef = useRef(new WeakMap<HTMLElement, Partial<Record<TranslatableAttr, string>>>());
 
-  const restoreOriginalContent = useCallback(() => {
-    collectTextNodes(document.body).forEach((node) => {
-      const original = textSourceMapRef.current.get(node);
-      if (original && node.textContent !== original) node.textContent = original;
-    });
-
-    collectAttributeCandidates(document.body).forEach(({ element, attr }) => {
-      const sourceAttrs = attrSourceMapRef.current.get(element);
-      const original = sourceAttrs?.[attr];
-      if (original) element.setAttribute(attr, original);
-    });
-  }, []);
-
-  const applyTranslations = useCallback(async () => {
+  const applyTranslations = useCallback((cache: Record<string, string>) => {
     const textNodes = collectTextNodes(document.body);
     const attrCandidates = collectAttributeCandidates(document.body);
 
-    const uniques = new Set<string>();
-
-    textNodes.forEach((node) => {
-      const existing = textSourceMapRef.current.get(node);
-      const source = existing ?? (node.textContent ?? "").trim();
-      if (!existing && source) textSourceMapRef.current.set(node, source);
-      if (!isSkippableText(source)) uniques.add(source);
-    });
-
-    attrCandidates.forEach(({ element, attr }) => {
-      const existingMap = attrSourceMapRef.current.get(element) ?? {};
-      const existing = existingMap[attr];
-      const source = existing ?? (element.getAttribute(attr) ?? "").trim();
-      if (!existing && source) {
-        attrSourceMapRef.current.set(element, { ...existingMap, [attr]: source });
-      }
-      if (!isSkippableText(source)) uniques.add(source);
-    });
-
-    const missing = Array.from(uniques).filter((text) => !translationCache[text]);
-    const batchSize = 24;
-
-    for (let i = 0; i < missing.length; i += batchSize) {
-      const chunk = missing.slice(i, i + batchSize);
-      const translated = await translateBatch(chunk);
-      chunk.forEach((source, idx) => {
-        translationCache[source] = translated[idx] ?? source;
-      });
-    }
-
     textNodes.forEach((node) => {
       const source = textSourceMapRef.current.get(node) ?? (node.textContent ?? "").trim();
-      const translated = translationCache[source] ?? source;
+      if (!textSourceMapRef.current.get(node) && source) textSourceMapRef.current.set(node, source);
+      const translated = cache[source] ?? source;
       if (translated && node.textContent !== translated) node.textContent = translated;
     });
 
     attrCandidates.forEach(({ element, attr }) => {
-      const source = attrSourceMapRef.current.get(element)?.[attr] ?? element.getAttribute(attr) ?? "";
-      const translated = translationCache[source] ?? source;
+      const sourceAttrs = attrSourceMapRef.current.get(element) ?? {};
+      const source = sourceAttrs[attr] ?? (element.getAttribute(attr) ?? "").trim();
+      if (!sourceAttrs[attr] && source) {
+        attrSourceMapRef.current.set(element, { ...sourceAttrs, [attr]: source });
+      }
+      const translated = cache[source] ?? source;
       if (translated && element.getAttribute(attr) !== translated) {
         element.setAttribute(attr, translated);
       }
     });
   }, []);
+
+  const restoreOriginalContent = useCallback(() => {
+    collectTextNodes(document.body).forEach((node) => {
+      const source = textSourceMapRef.current.get(node);
+      if (source && node.textContent !== source) node.textContent = source;
+    });
+
+    collectAttributeCandidates(document.body).forEach(({ element, attr }) => {
+      const source = attrSourceMapRef.current.get(element)?.[attr];
+      if (source && element.getAttribute(attr) !== source) element.setAttribute(attr, source);
+    });
+  }, []);
+
+  const runTranslation = useCallback(async () => {
+    const textNodes = collectTextNodes(document.body);
+    const attrCandidates = collectAttributeCandidates(document.body);
+    const uniqueTexts = new Set<string>();
+
+    textNodes.forEach((node) => {
+      const source = textSourceMapRef.current.get(node) ?? (node.textContent ?? "").trim();
+      if (!textSourceMapRef.current.get(node) && source) textSourceMapRef.current.set(node, source);
+      if (!isSkippableText(source)) uniqueTexts.add(source);
+    });
+
+    attrCandidates.forEach(({ element, attr }) => {
+      const sourceAttrs = attrSourceMapRef.current.get(element) ?? {};
+      const source = sourceAttrs[attr] ?? (element.getAttribute(attr) ?? "").trim();
+      if (!sourceAttrs[attr] && source) {
+        attrSourceMapRef.current.set(element, { ...sourceAttrs, [attr]: source });
+      }
+      if (!isSkippableText(source)) uniqueTexts.add(source);
+    });
+
+    const pending = Array.from(uniqueTexts).filter((text) => !cacheRef.current[text]);
+    if (!pending.length) {
+      applyTranslations(cacheRef.current);
+      return;
+    }
+
+    const updates: Record<string, string> = {};
+    const batchSize = 20;
+
+    for (let i = 0; i < pending.length; i += batchSize) {
+      const chunk = pending.slice(i, i + batchSize);
+      const translatedChunk = await Promise.all(chunk.map((text) => translateText(text)));
+      chunk.forEach((source, idx) => {
+        updates[source] = translatedChunk[idx] ?? source;
+      });
+    }
+
+    setTranslationCache((prev) => {
+      const merged = { ...prev, ...updates };
+      cacheRef.current = merged;
+      applyTranslations(merged);
+      return merged;
+    });
+  }, [applyTranslations]);
+
+  useEffect(() => {
+    cacheRef.current = translationCache;
+  }, [translationCache]);
 
   useEffect(() => {
     const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
@@ -183,9 +203,9 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem(LOCALE_STORAGE_KEY, locale);
 
-    if (locale !== "zh") {
-      restoreOriginalContent();
+    if (locale === "en") {
       setIsTranslating(false);
+      restoreOriginalContent();
       return;
     }
 
@@ -194,7 +214,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
     const run = async () => {
       try {
-        await applyTranslations();
+        await runTranslation();
       } finally {
         if (active) setIsTranslating(false);
       }
@@ -204,7 +224,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
     const observer = new MutationObserver(() => {
       if (!active) return;
-      void applyTranslations();
+      void runTranslation();
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
@@ -213,7 +233,12 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       active = false;
       observer.disconnect();
     };
-  }, [applyTranslations, locale, restoreOriginalContent]);
+  }, [locale, restoreOriginalContent, runTranslation]);
+
+  useEffect(() => {
+    if (locale !== "zh") return;
+    applyTranslations(translationCache);
+  }, [applyTranslations, locale, translationCache]);
 
   const requestLocaleChange = useCallback((next: Locale) => {
     if (next === locale) return;
@@ -240,14 +265,14 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     requestLocaleChange,
     translate: (text: string) => (locale === "en" ? text : translationCache[text] ?? text),
     isTranslating,
-  }), [isTranslating, locale, requestLocaleChange]);
+  }), [isTranslating, locale, requestLocaleChange, translationCache]);
 
   return (
     <LocaleContext.Provider value={contextValue}>
       {children}
       <Modal open={warningOpen} onClose={() => undefined} title="" dismissible={false}>
         <div className="space-y-4">
-          <p className="text-sm">机器翻译有问题敬请谅解</p>
+          <p className="text-sm">机器翻译可能出现一些问题，敬请谅解</p>
           <button
             type="button"
             onClick={confirmWarning}
