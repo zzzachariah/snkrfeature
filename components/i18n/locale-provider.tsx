@@ -186,6 +186,8 @@ const UI_TRANSLATIONS_ZH: Record<string, string> = {
   "model / version": "型号 / 版本",
   "forefoot midsole tech": "前掌中底科技",
   "heel midsole tech": "后掌中底科技",
+  "forefoot tech": "前掌中底科技",
+  "heel tech": "后掌中底科技",
   "outsole tech": "外底科技",
   "cushioning feel": "缓震脚感",
   "court feel": "场地感",
