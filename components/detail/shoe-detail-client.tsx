@@ -23,7 +23,6 @@ import { DynamicTranslatedText } from "@/components/i18n/dynamic-translated-text
 type TechCardConfig = {
   value: string | null | undefined;
   field: string;
-  noTranslate?: boolean;
 };
 
 export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[] }) {
@@ -85,6 +84,7 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
                 {translate("No playstyle summary available yet.")}
               </p>
             )}
+
             <div className="mt-4 flex flex-wrap gap-2">
               {(shoe.spec.tags ?? []).map((tag) => (
                 <Badge key={tag}>
@@ -107,40 +107,41 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="p-4">
-          <p className="text-xs uppercase tracking-wide soft-text">{translate("Forefoot tech")}</p>
+          <p className="text-xs uppercase tracking-wide soft-text">前掌中底科技</p>
           {shoe.spec.forefoot_midsole_tech ? (
-            <p data-field-key="forefoot_midsole_tech" className="mt-2 font-medium">{shoe.spec.forefoot_midsole_tech}</p>
+            <p data-field-key="forefoot_midsole_tech" className="mt-2 font-medium">
+              {shoe.spec.forefoot_midsole_tech}
+            </p>
           ) : (
-            <p data-field-key="forefoot_midsole_tech" className="mt-2 font-medium">{translate("Not yet added")}</p>
+            <p data-field-key="forefoot_midsole_tech" className="mt-2 font-medium">
+              {translate("Not yet added")}
+            </p>
           )}
         </Card>
 
         <Card className="p-4">
-          <p className="text-xs uppercase tracking-wide soft-text">{translate("Heel tech")}</p>
+          <p className="text-xs uppercase tracking-wide soft-text">后掌中底科技</p>
           {shoe.spec.heel_midsole_tech ? (
-            <p data-field-key="heel_midsole_tech" className="mt-2 font-medium">{shoe.spec.heel_midsole_tech}</p>
+            <p data-field-key="heel_midsole_tech" className="mt-2 font-medium">
+              {shoe.spec.heel_midsole_tech}
+            </p>
           ) : (
-            <p data-field-key="heel_midsole_tech" className="mt-2 font-medium">{translate("Not yet added")}</p>
+            <p data-field-key="heel_midsole_tech" className="mt-2 font-medium">
+              {translate("Not yet added")}
+            </p>
           )}
         </Card>
 
-        {Object.entries({
-          "Outsole tech": { value: shoe.spec.outsole_tech, field: "outsole_tech" },
-          "Upper tech": { value: shoe.spec.upper_tech, field: "upper_tech" }
-        }).map(([k, data]) => (
+        {Object.entries(extraTechCards).map(([k, data]) => (
           <Card key={k} className="p-4">
             <p className="text-xs uppercase tracking-wide soft-text">{translate(k)}</p>
             {data.value ? (
-              data.noTranslate ? (
-                <p className="mt-2 font-medium">{data.value}</p>
-              ) : (
-                <DynamicTranslatedText
-                  as="p"
-                  className="mt-2 font-medium"
-                  text={data.value}
-                  contentType="technology"
-                />
-              )
+              <DynamicTranslatedText
+                as="p"
+                className="mt-2 font-medium"
+                text={data.value}
+                contentType="technology"
+              />
             ) : (
               <p data-field-key={data.field} className="mt-2 font-medium">
                 {translate("Not yet added")}
@@ -202,6 +203,7 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
               ) : (
                 <p data-field-key="shoe_name" className="text-sm font-medium">{`${shoe.brand} ${shoe.shoe_name}`}</p>
               )}
+
               {storyContent ? (
                 <DynamicTranslatedText as="p" className="text-sm soft-text" text={storyContent} />
               ) : (
