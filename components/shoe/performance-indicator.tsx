@@ -1,7 +1,7 @@
 import { getPerformanceLabel } from "@/lib/shoe-scoring";
 
 type PerformanceIndicatorProps = {
-  label: "Cushioning Feel" | "Court Feel" | "Bounce" | "Stability" | "Traction" | "Fit";
+  label: string;
   score: number;
   tier?: string;
   rawText?: string | null;

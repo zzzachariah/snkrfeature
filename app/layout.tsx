@@ -5,6 +5,7 @@ import { ThemeInitScript } from "@/components/theme/theme-toggle";
 import { PageTransition } from "@/components/layout/page-transition";
 import { LiquidPointer } from "@/components/theme/liquid-pointer";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { getLocale } from "@/lib/i18n/get-locale";
 
 export const metadata: Metadata = {
   title: {
@@ -17,9 +18,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body>
         <ThemeInitScript />
         <LiquidPointer />

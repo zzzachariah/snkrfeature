@@ -9,13 +9,30 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { AccountMenu } from "@/components/layout/account-menu";
 import { createClient } from "@/lib/supabase/client";
+import { getDictionary } from "@/lib/i18n/locales";
+import { LOCALE_COOKIE, Locale } from "@/lib/i18n/types";
+import { LanguageToggle } from "@/components/i18n/language-toggle";
 
 type NavHref = "/" | "/compare" | "/submit" | "/dashboard" | "/admin" | "/search/advanced";
+
+function readLocaleFromCookie(): Locale {
+  if (typeof document === "undefined") return "en";
+  const cookieValue = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${LOCALE_COOKIE}=`))
+    ?.split("=")[1];
+  return cookieValue === "zh" ? "zh" : "en";
+}
 
 export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [locale, setLocale] = useState<Locale>("en");
+
+  useEffect(() => {
+    setLocale(readLocaleFromCookie());
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -49,17 +66,19 @@ export function Navbar() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  const t = getDictionary(locale).nav;
+
   const navItems = useMemo(() => {
     const base: Array<{ href: NavHref; label: string }> = [
-      { href: "/", label: "Home" },
-      { href: "/compare", label: "Compare" },
-      { href: "/submit", label: "Submit" },
-      { href: "/dashboard", label: "Dashboard" }
+      { href: "/", label: t.home },
+      { href: "/compare", label: t.compare },
+      { href: "/submit", label: t.submit },
+      { href: "/dashboard", label: t.dashboard }
     ];
 
-    if (isAdmin) base.push({ href: "/admin", label: "Admin" });
+    if (isAdmin) base.push({ href: "/admin", label: t.admin });
     return base;
-  }, [isAdmin]);
+  }, [isAdmin, t.admin, t.compare, t.dashboard, t.home, t.submit]);
 
   return (
     <header className="sticky top-3 z-40 px-2 md:px-4">
@@ -84,26 +103,27 @@ export function Navbar() {
         <div className="ml-auto hidden items-center md:flex">
           <Link href="/search/advanced">
             <Button variant="secondary" className="inline-flex h-10 items-center gap-1.5 px-3.5">
-              <Search className="h-4 w-4" /> Advanced Search
+              <Search className="h-4 w-4" /> {t.advancedSearch}
             </Button>
           </Link>
         </div>
 
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2 md:ml-0">
+          <LanguageToggle locale={locale} onLocaleChange={setLocale} />
           <ThemeToggle />
           <AccountMenu className="w-[8.25rem] px-2.5 text-xs sm:w-[9.5rem] sm:px-3 sm:text-sm md:w-[11rem]" />
           <button
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.62)] bg-[rgb(var(--surface)/0.78)] text-[rgb(var(--text))] transition hover:border-[rgb(var(--accent)/0.62)] md:hidden"
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Toggle mobile menu"
+            aria-label={t.toggleMobileMenu}
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
-      {mobileOpen && <button aria-label="Close mobile navigation" className="fixed inset-0 z-30 bg-black/45 md:hidden" onClick={() => setMobileOpen(false)} />}
+      {mobileOpen && <button aria-label={t.closeMobileNavigation} className="fixed inset-0 z-30 bg-black/45 md:hidden" onClick={() => setMobileOpen(false)} />}
 
       <div className={`fixed right-0 top-16 z-40 h-[calc(100vh-4rem)] w-[min(84vw,340px)] border-l border-[rgb(var(--glass-stroke-soft)/0.72)] bg-[rgb(var(--bg-elev)/0.96)] p-4 text-[rgb(var(--text))] shadow-[0_24px_60px_rgb(var(--shadow)/0.3)] backdrop-blur-[20px] backdrop-saturate-[180%] transition-transform duration-200 md:hidden ${mobileOpen ? "translate-x-0" : "translate-x-full"}`}>
         <nav className="grid gap-2 text-sm">
@@ -122,7 +142,7 @@ export function Navbar() {
             onClick={() => setMobileOpen(false)}
             className="inline-flex items-center gap-2 rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.6)] px-3 py-2 transition hover:border-[rgb(var(--accent)/0.72)] hover:bg-[rgb(var(--accent)/0.08)]"
           >
-            <Search className="h-4 w-4" /> Advanced Search
+            <Search className="h-4 w-4" /> {t.advancedSearch}
           </Link>
         </nav>
       </div>
