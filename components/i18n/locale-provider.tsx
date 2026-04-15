@@ -6,6 +6,16 @@ import { Modal } from "@/components/ui/modal";
 
 export type Locale = "en" | "zh";
 
+const LOCALE_STORAGE_KEY = "locale";
+const SWITCH_OVERLAY_MS = 900;
+
+const UI_TRANSLATIONS_ZH: Record<string, string> = {
+  "continue": "继续",
+  "translating...": "翻译中…",
+  "machine translation may contain some inaccuracies. thank you for your understanding. loading may also take a little time.":
+    "机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。",
+};
+
 export const MANUAL_TRANSLATIONS: Record<string, string> = {
   "shoe indexed": "双鞋子",
   "shoes indexed": "双鞋子",
@@ -61,6 +71,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     const saved = window.localStorage.getItem(LOCALE_STORAGE_KEY);
     return saved === "zh" || saved === "en" ? saved : "en";
   });
+
   const [pendingLocale, setPendingLocale] = useState<Locale | null>(null);
   const [warningOpen, setWarningOpen] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -72,7 +83,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
       const normalized = normalizeKey(text);
 
-      if (normalizeKey(text) === "snkrfeature") return "snkrfeature";
+      if (normalized === "snkrfeature") return "snkrfeature";
 
       if (MANUAL_TRANSLATIONS[normalized]) return MANUAL_TRANSLATIONS[normalized];
 
@@ -92,16 +103,23 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       const normalized = normalizeKey(text);
 
       if (MANUAL_TRANSLATIONS[normalized]) return MANUAL_TRANSLATIONS[normalized];
+      if (UI_TRANSLATIONS_ZH[normalized]) return UI_TRANSLATIONS_ZH[normalized];
       if (translationCache[text]) return translationCache[text];
 
       try {
         const response = await fetch("/api/translate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, target: "zh" })
+          body: JSON.stringify({ text, target: "zh" }),
         });
 
-        if (!response.ok) return text;
+        if (!response.ok) {
+          console.error("[i18n] translateDynamic response not ok", {
+            status: response.status,
+            text,
+          });
+          return text;
+        }
 
         const payload = (await response.json()) as { translatedText?: string };
         const value = payload.translatedText?.trim() || text;
@@ -130,7 +148,10 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       setPendingLocale(null);
       setIsTranslating(false);
       setLocale("en");
-      window.localStorage.setItem(LOCALE_STORAGE_KEY, "en");
+
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(LOCALE_STORAGE_KEY, "en");
+      }
     },
     [locale]
   );
@@ -143,11 +164,16 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     setIsTranslating(true);
 
     setLocale(pendingLocale);
-    window.localStorage.setItem(LOCALE_STORAGE_KEY, pendingLocale);
 
-    window.setTimeout(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(LOCALE_STORAGE_KEY, pendingLocale);
+
+      window.setTimeout(() => {
+        setIsTranslating(false);
+      }, SWITCH_OVERLAY_MS);
+    } else {
       setIsTranslating(false);
-    }, SWITCH_OVERLAY_MS);
+    }
   }, [pendingLocale]);
 
   const contextValue = useMemo<LocaleContextValue>(
@@ -156,7 +182,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       requestLocaleChange,
       translate,
       translateDynamic,
-      isTranslating
+      isTranslating,
     }),
     [isTranslating, locale, requestLocaleChange, translate, translateDynamic]
   );
@@ -167,19 +193,28 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
       <Modal open={warningOpen} onClose={() => undefined} title="" dismissible={false}>
         <div className="space-y-4">
-          <p className="text-sm">机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。</p>
+          <p className="text-sm">
+            {locale === "zh"
+              ? "机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。"
+              : "Machine translation may contain some inaccuracies. Thank you for your understanding. Loading may also take a little time."}
+          </p>
           <button
             type="button"
             onClick={confirmWarning}
             className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-[rgb(var(--accent)/0.55)] bg-[rgb(var(--accent)/0.12)] text-sm font-medium text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.18)]"
           >
-            继续
+            {locale === "zh" ? "继续" : "Continue"}
           </button>
         </div>
       </Modal>
+
       {isTranslating ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgb(var(--bg)/0.78)] backdrop-blur-sm" aria-live="polite" aria-busy="true">
-          <BrandLoader label="Translating..." />
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgb(var(--bg)/0.78)] backdrop-blur-sm"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <BrandLoader label={locale === "zh" ? "翻译中…" : "Translating..."} />
         </div>
       ) : null}
     </LocaleContext.Provider>
