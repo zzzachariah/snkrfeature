@@ -1,4 +1,8 @@
+"use client";
+
 import { getPerformanceLabel } from "@/lib/shoe-scoring";
+import { DynamicTranslatedText } from "@/components/i18n/dynamic-translated-text";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 type PerformanceIndicatorProps = {
   label: string;
@@ -15,14 +19,24 @@ function getToneClass(tier: string) {
 }
 
 export function PerformanceIndicator({ label, score, tier, rawText }: PerformanceIndicatorProps) {
+  const { translate } = useLocale();
   const clampedScore = Math.max(0, Math.min(100, Math.round(score)));
   const resolvedTier = tier ?? getPerformanceLabel(clampedScore);
 
   return (
     <div className="space-y-1.5 rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.45)] bg-[rgb(var(--bg-elev)/0.58)] px-3 py-2.5">
       <div className="flex items-center justify-between gap-2 text-xs">
-        <p className="uppercase tracking-[0.14em] soft-text">{label}</p>
-        <p className="truncate text-right text-[rgb(var(--text)/0.9)]">{rawText?.trim() || "Not yet added"}</p>
+        <p className="uppercase tracking-[0.14em] soft-text">{translate(label)}</p>
+        {rawText?.trim() ? (
+          <DynamicTranslatedText
+            as="p"
+            className="truncate text-right text-[rgb(var(--text)/0.9)]"
+            text={rawText}
+            protectTechTerms={false}
+          />
+        ) : (
+          <p className="truncate text-right text-[rgb(var(--text)/0.9)]">{translate("Not yet added")}</p>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
