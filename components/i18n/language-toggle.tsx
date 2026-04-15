@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import type { Route } from "next";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { LOCALE_COOKIE, Locale } from "@/lib/i18n/types";
@@ -9,7 +10,15 @@ function setLocaleCookie(locale: Locale) {
   document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; samesite=lax`;
 }
 
-export function LanguageToggle({ locale, className, onLocaleChange }: { locale: Locale; className?: string; onLocaleChange?: (locale: Locale) => void }) {
+export function LanguageToggle({
+  locale,
+  className,
+  onLocaleChange
+}: {
+  locale: Locale;
+  className?: string;
+  onLocaleChange?: (locale: Locale) => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -17,12 +26,15 @@ export function LanguageToggle({ locale, className, onLocaleChange }: { locale: 
 
   function changeLocale(next: Locale) {
     if (next === locale) return;
+
     setLocaleCookie(next);
     onLocaleChange?.(next);
+
     const query = searchParams.toString();
 
     startTransition(() => {
-      router.replace(query ? `${pathname}?${query}` : pathname);
+      const nextHref = (query ? `${pathname}?${query}` : pathname) as Route;
+      router.replace(nextHref);
       router.refresh();
     });
   }
@@ -42,7 +54,12 @@ export function LanguageToggle({ locale, className, onLocaleChange }: { locale: 
       <button
         type="button"
         disabled={isPending}
-        className={cn(shared, locale === "en" ? "bg-[rgb(var(--accent)/0.15)] text-[rgb(var(--accent))]" : "hover:bg-[rgb(var(--accent)/0.1)]")}
+        className={cn(
+          shared,
+          locale === "en"
+            ? "bg-[rgb(var(--accent)/0.15)] text-[rgb(var(--accent))]"
+            : "hover:bg-[rgb(var(--accent)/0.1)]"
+        )}
         onClick={() => changeLocale("en")}
       >
         EN
@@ -50,7 +67,12 @@ export function LanguageToggle({ locale, className, onLocaleChange }: { locale: 
       <button
         type="button"
         disabled={isPending}
-        className={cn(shared, locale === "zh" ? "bg-[rgb(var(--accent)/0.15)] text-[rgb(var(--accent))]" : "hover:bg-[rgb(var(--accent)/0.1)]")}
+        className={cn(
+          shared,
+          locale === "zh"
+            ? "bg-[rgb(var(--accent)/0.15)] text-[rgb(var(--accent))]"
+            : "hover:bg-[rgb(var(--accent)/0.1)]"
+        )}
         onClick={() => changeLocale("zh")}
       >
         中文
