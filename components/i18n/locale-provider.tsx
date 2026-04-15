@@ -6,17 +6,16 @@ import { Modal } from "@/components/ui/modal";
 
 export type Locale = "en" | "zh";
 
-const NON_TRANSLATABLE_FIELDS = [
-  "shoe_name",
-  "forefoot_midsole_tech",
-  "heel_midsole_tech",
-  "outsole_tech",
-  "brand",
-  "model_line",
-  "version_name"
-] as const;
-
-const NON_TRANSLATABLE_FIELD_SET = new Set<string>(NON_TRANSLATABLE_FIELDS);
+const MANUAL_TRANSLATIONS: Record<string, string> = {
+  "shoe indexed": "双鞋子",
+  "shoes indexed": "双鞋子",
+  "brand represented": "品牌",
+  "brands represented": "品牌",
+  "live": "实时",
+  "loading": "加载中…",
+  "loading...": "加载中…",
+  "preparing your feed": "加载中…"
+};
 const LOCALE_STORAGE_KEY = "locale";
 
 type LocaleContextValue = {
@@ -37,23 +36,24 @@ function isSkippableText(text: string) {
   return false;
 }
 
-function hasExcludedContext(node: Node) {
-  if (!(node.parentElement instanceof HTMLElement)) return false;
-  const el = node.parentElement;
-  if (el.closest("[data-no-translate='true']")) return true;
+function normalizeTranslationKey(text: string) {
+  return text.trim().toLowerCase();
+}
 
-  const fieldHost = el.closest<HTMLElement>("[data-field-key]");
-  if (!fieldHost) return false;
+function getManualTranslation(text: string) {
+  const normalized = normalizeTranslationKey(text);
+  return MANUAL_TRANSLATIONS[normalized];
+}
 
-  const key = fieldHost.dataset.fieldKey?.trim().toLowerCase();
-  return Boolean(key && NON_TRANSLATABLE_FIELD_SET.has(key));
+function resolveTranslation(text: string, cache: Record<string, string>) {
+  if (text.toLowerCase().includes("snkrfeature")) return "snkrfeature";
+  return getManualTranslation(text) ?? cache[text] ?? text;
 }
 
 function shouldTranslateNode(node: Node) {
   const parentTag = node.parentElement?.tagName.toLowerCase();
   if (!parentTag) return false;
   if (["script", "style", "noscript", "code", "pre"].includes(parentTag)) return false;
-  if (hasExcludedContext(node)) return false;
   return !isSkippableText(node.textContent ?? "");
 }
 
@@ -76,7 +76,6 @@ function collectAttributeCandidates(root: ParentNode) {
   TRANSLATABLE_ATTRS.forEach((attr) => {
     root.querySelectorAll(`[${attr}]`).forEach((element) => {
       if (!(element instanceof HTMLElement)) return;
-      if (element.closest("[data-no-translate='true']")) return;
       const raw = element.getAttribute(attr) ?? "";
       if (isSkippableText(raw)) return;
       candidates.push({ element, attr });
@@ -88,6 +87,10 @@ function collectAttributeCandidates(root: ParentNode) {
 
 async function translateText(text: string, target = "zh-CN") {
   if (isSkippableText(text)) return text;
+
+  const manual = getManualTranslation(text);
+  if (manual) return manual;
+  if (text.toLowerCase().includes("snkrfeature")) return "snkrfeature";
 
   const response = await fetch(
     `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${target}&dt=t&q=${encodeURIComponent(text)}`
@@ -117,7 +120,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     textNodes.forEach((node) => {
       const source = textSourceMapRef.current.get(node) ?? (node.textContent ?? "").trim();
       if (!textSourceMapRef.current.get(node) && source) textSourceMapRef.current.set(node, source);
-      const translated = cache[source] ?? source;
+      const translated = resolveTranslation(source, cache);
       if (translated && node.textContent !== translated) node.textContent = translated;
     });
 
@@ -127,7 +130,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       if (!sourceAttrs[attr] && source) {
         attrSourceMapRef.current.set(element, { ...sourceAttrs, [attr]: source });
       }
-      const translated = cache[source] ?? source;
+      const translated = resolveTranslation(source, cache);
       if (translated && element.getAttribute(attr) !== translated) {
         element.setAttribute(attr, translated);
       }
@@ -166,7 +169,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       if (!isSkippableText(source)) uniqueTexts.add(source);
     });
 
-    const pending = Array.from(uniqueTexts).filter((text) => !cacheRef.current[text]);
+    const pending = Array.from(uniqueTexts).filter((text) => !cacheRef.current[text] && !getManualTranslation(text) && !text.toLowerCase().includes("snkrfeature"));
     if (!pending.length) {
       applyTranslations(cacheRef.current);
       return;
@@ -263,7 +266,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const contextValue = useMemo<LocaleContextValue>(() => ({
     locale,
     requestLocaleChange,
-    translate: (text: string) => (locale === "en" ? text : translationCache[text] ?? text),
+    translate: (text: string) => (locale === "en" ? text : resolveTranslation(text, translationCache)),
     isTranslating,
   }), [isTranslating, locale, requestLocaleChange, translationCache]);
 
@@ -272,7 +275,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       {children}
       <Modal open={warningOpen} onClose={() => undefined} title="" dismissible={false}>
         <div className="space-y-4">
-          <p className="text-sm">机器翻译可能出现一些问题，敬请谅解</p>
+          <p className="text-sm">机器翻译有问题敬请谅解</p>
           <button
             type="button"
             onClick={confirmWarning}
@@ -297,4 +300,4 @@ export function useLocale() {
   return context;
 }
 
-export { NON_TRANSLATABLE_FIELDS };
+export { MANUAL_TRANSLATIONS };
