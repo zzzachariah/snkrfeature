@@ -96,14 +96,18 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
           "Upper tech": { value: shoe.spec.upper_tech, field: "upper_tech" }
         }).map(([k, data]) => (
           <Card key={k} className="p-4">
-            <p className="text-xs uppercase tracking-wide soft-text">{translate(k)}</p>
+            <p className="text-xs uppercase tracking-wide soft-text">{data.noTranslate ? k : translate(k)}</p>
             {data.value ? (
-              <DynamicTranslatedText
-                as="p"
-                className="mt-2 font-medium"
-                text={data.value}
-                contentType="technology"
-              />
+              data.noTranslate ? (
+                <p className="mt-2 font-medium">{data.value}</p>
+              ) : (
+                <DynamicTranslatedText
+                  as="p"
+                  className="mt-2 font-medium"
+                  text={data.value}
+                  contentType="technology"
+                />
+              )
             ) : (
               <p data-field-key={data.field} className="mt-2 font-medium">{translate("Not yet added")}</p>
             )}
