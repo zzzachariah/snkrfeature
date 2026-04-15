@@ -115,21 +115,40 @@ function collectAttributeCandidates(root: ParentNode) {
 }
 
 async function translateText(text: string, target = "zh-CN") {
-  if (isSkippableText(text)) return text;
+  if (isSkippableText(text)) return { value: text, failed: false };
 
   const manual = getManualTranslation(text);
-  if (manual) return manual;
-  if (normalizeTranslationKey(text) === "snkrfeature") return "snkrfeature";
+  if (manual) return { value: manual, failed: false };
+  if (normalizeTranslationKey(text) === "snkrfeature") return { value: "snkrfeature", failed: false };
 
-  const response = await fetch(
-    `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${target}&dt=t&q=${encodeURIComponent(text)}`
-  );
-  const data = (await response.json()) as unknown;
-  const rows = Array.isArray(data) && Array.isArray(data[0]) ? data[0] : [];
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TRANSLATION_REQUEST_TIMEOUT_MS);
 
-  return rows
-    .map((segment) => (Array.isArray(segment) && typeof segment[0] === "string" ? segment[0] : ""))
-    .join("") || text;
+  try {
+    const response = await fetch(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${target}&dt=t&q=${encodeURIComponent(text)}`,
+      { signal: controller.signal }
+    );
+
+    if (!response.ok) {
+      console.error("[i18n] translation request failed", { status: response.status, text });
+      return { value: text, failed: true };
+    }
+
+    const data = (await response.json()) as unknown;
+    const rows = Array.isArray(data) && Array.isArray(data[0]) ? data[0] : [];
+
+    const value = rows
+      .map((segment) => (Array.isArray(segment) && typeof segment[0] === "string" ? segment[0] : ""))
+      .join("") || text;
+
+    return { value, failed: false };
+  } catch (error) {
+    console.error("[i18n] translation request error", { text, error });
+    return { value: text, failed: true };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
@@ -138,35 +157,41 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [warningOpen, setWarningOpen] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationCache, setTranslationCache] = useState<Record<string, string>>({});
+  const [translationError, setTranslationError] = useState<string | null>(null);
   const cacheRef = useRef<Record<string, string>>({});
   const isApplyingRef = useRef(false);
+  const isTranslationRunningRef = useRef(false);
   const textSourceMapRef = useRef(new WeakMap<Text, string>());
   const attrSourceMapRef = useRef(new WeakMap<HTMLElement, Partial<Record<TranslatableAttr, string>>>());
 
   const applyTranslations = useCallback((cache: Record<string, string>) => {
     isApplyingRef.current = true;
-    const textNodes = collectTextNodes(document.body);
-    const attrCandidates = collectAttributeCandidates(document.body);
 
-    textNodes.forEach((node) => {
-      const source = textSourceMapRef.current.get(node) ?? (node.textContent ?? "").trim();
-      if (!textSourceMapRef.current.get(node) && source) textSourceMapRef.current.set(node, source);
-      const translated = resolveTranslation(source, cache);
-      if (translated && node.textContent !== translated) node.textContent = translated;
-    });
+    try {
+      const textNodes = collectTextNodes(document.body);
+      const attrCandidates = collectAttributeCandidates(document.body);
 
-    attrCandidates.forEach(({ element, attr }) => {
-      const sourceAttrs = attrSourceMapRef.current.get(element) ?? {};
-      const source = sourceAttrs[attr] ?? (element.getAttribute(attr) ?? "").trim();
-      if (!sourceAttrs[attr] && source) {
-        attrSourceMapRef.current.set(element, { ...sourceAttrs, [attr]: source });
-      }
-      const translated = resolveTranslation(source, cache);
-      if (translated && element.getAttribute(attr) !== translated) {
-        element.setAttribute(attr, translated);
-      }
-    });
-    isApplyingRef.current = false;
+      textNodes.forEach((node) => {
+        const source = textSourceMapRef.current.get(node) ?? (node.textContent ?? "").trim();
+        if (!textSourceMapRef.current.get(node) && source) textSourceMapRef.current.set(node, source);
+        const translated = resolveTranslation(source, cache);
+        if (translated && node.textContent !== translated) node.textContent = translated;
+      });
+
+      attrCandidates.forEach(({ element, attr }) => {
+        const sourceAttrs = attrSourceMapRef.current.get(element) ?? {};
+        const source = sourceAttrs[attr] ?? (element.getAttribute(attr) ?? "").trim();
+        if (!sourceAttrs[attr] && source) {
+          attrSourceMapRef.current.set(element, { ...sourceAttrs, [attr]: source });
+        }
+        const translated = resolveTranslation(source, cache);
+        if (translated && element.getAttribute(attr) !== translated) {
+          element.setAttribute(attr, translated);
+        }
+      });
+    } finally {
+      isApplyingRef.current = false;
+    }
   }, []);
 
   const restoreOriginalContent = useCallback(() => {
@@ -182,48 +207,68 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const runTranslation = useCallback(async () => {
-    const textNodes = collectTextNodes(document.body);
-    const attrCandidates = collectAttributeCandidates(document.body);
-    const uniqueTexts = new Set<string>();
+    if (isTranslationRunningRef.current) return;
+    isTranslationRunningRef.current = true;
+    console.info("[i18n] runTranslation start");
 
-    textNodes.forEach((node) => {
-      const source = textSourceMapRef.current.get(node) ?? (node.textContent ?? "").trim();
-      if (!textSourceMapRef.current.get(node) && source) textSourceMapRef.current.set(node, source);
-      if (!isSkippableText(source)) uniqueTexts.add(source);
-    });
+    try {
+      const textNodes = collectTextNodes(document.body);
+      const attrCandidates = collectAttributeCandidates(document.body);
+      const uniqueTexts = new Set<string>();
 
-    attrCandidates.forEach(({ element, attr }) => {
-      const sourceAttrs = attrSourceMapRef.current.get(element) ?? {};
-      const source = sourceAttrs[attr] ?? (element.getAttribute(attr) ?? "").trim();
-      if (!sourceAttrs[attr] && source) {
-        attrSourceMapRef.current.set(element, { ...sourceAttrs, [attr]: source });
-      }
-      if (!isSkippableText(source)) uniqueTexts.add(source);
-    });
-
-    const pending = Array.from(uniqueTexts).filter((text) => !cacheRef.current[text] && !getManualTranslation(text) && normalizeTranslationKey(text) !== "snkrfeature");
-    if (!pending.length) {
-      applyTranslations(cacheRef.current);
-      return;
-    }
-
-    const updates: Record<string, string> = {};
-    const batchSize = 20;
-
-    for (let i = 0; i < pending.length; i += batchSize) {
-      const chunk = pending.slice(i, i + batchSize);
-      const translatedChunk = await Promise.all(chunk.map((text) => translateText(text)));
-      chunk.forEach((source, idx) => {
-        updates[source] = translatedChunk[idx] ?? source;
+      textNodes.forEach((node) => {
+        const source = textSourceMapRef.current.get(node) ?? (node.textContent ?? "").trim();
+        if (!textSourceMapRef.current.get(node) && source) textSourceMapRef.current.set(node, source);
+        if (!isSkippableText(source)) uniqueTexts.add(source);
       });
-    }
 
-    setTranslationCache((prev) => {
-      const merged = { ...prev, ...updates };
-      cacheRef.current = merged;
-      applyTranslations(merged);
-      return merged;
-    });
+      attrCandidates.forEach(({ element, attr }) => {
+        const sourceAttrs = attrSourceMapRef.current.get(element) ?? {};
+        const source = sourceAttrs[attr] ?? (element.getAttribute(attr) ?? "").trim();
+        if (!sourceAttrs[attr] && source) {
+          attrSourceMapRef.current.set(element, { ...sourceAttrs, [attr]: source });
+        }
+        if (!isSkippableText(source)) uniqueTexts.add(source);
+      });
+
+      const pending = Array.from(uniqueTexts).filter((text) => !cacheRef.current[text] && !getManualTranslation(text) && normalizeTranslationKey(text) !== "snkrfeature");
+      if (!pending.length) {
+        applyTranslations(cacheRef.current);
+        console.info("[i18n] runTranslation skipped (no pending)");
+        return;
+      }
+
+      const updates: Record<string, string> = {};
+      const batchSize = 20;
+      let failedCount = 0;
+
+      for (let i = 0; i < pending.length; i += batchSize) {
+        const chunk = pending.slice(i, i + batchSize);
+        const translatedChunk = await Promise.all(chunk.map((text) => translateText(text)));
+        chunk.forEach((source, idx) => {
+          const result = translatedChunk[idx];
+          updates[source] = result?.value ?? source;
+          if (result?.failed) failedCount += 1;
+        });
+      }
+
+      setTranslationCache((prev) => {
+        const merged = { ...prev, ...updates };
+        cacheRef.current = merged;
+        applyTranslations(merged);
+        return merged;
+      });
+
+      if (failedCount > 0) {
+        setTranslationError(`部分内容翻译失败（${failedCount}）`);
+      } else {
+        setTranslationError(null);
+      }
+
+      console.info("[i18n] runTranslation end", { pending: pending.length, failedCount });
+    } finally {
+      isTranslationRunningRef.current = false;
+    }
   }, [applyTranslations]);
 
   useEffect(() => {
@@ -249,9 +294,17 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
     const run = async () => {
       try {
+        setTranslationError(null);
         await new Promise((resolve) => setTimeout(resolve, TRANSLATION_DELAY_MS));
-        await runTranslation();
+        await Promise.race([
+          runTranslation(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Translation run timeout")), TRANSLATION_RUN_TIMEOUT_MS)),
+        ]);
+      } catch (error) {
+        console.error("[i18n] translation flow failed", error);
+        setTranslationError("翻译失败，已回退原文");
       } finally {
+        isTranslationRunningRef.current = false;
         if (active) setIsTranslating(false);
       }
     };
@@ -323,6 +376,11 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
           <BrandLoader label="Translating..." />
         </div>
       )}
+      {translationError ? (
+        <div className="fixed bottom-4 left-1/2 z-[75] -translate-x-1/2 rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.7)] bg-[rgb(var(--bg-elev)/0.94)] px-3 py-2 text-xs text-[rgb(var(--text))] shadow-[0_8px_18px_rgb(var(--shadow)/0.25)]">
+          {translationError}
+        </div>
+      ) : null}
     </LocaleContext.Provider>
   );
 }
