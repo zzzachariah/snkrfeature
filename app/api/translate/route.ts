@@ -6,6 +6,7 @@ const LIBRETRANSLATE_URL = process.env.LIBRETRANSLATE_URL;
 const TRANSLATION_TIMEOUT_MS = 10000;
 const isI18nDebugEnabled = process.env.I18N_DEBUG === "1";
 const MYMEMORY_URL = "https://api.mymemory.translated.net/get";
+const SAFE_TRANSLATION_CHARS = 420;
 const OFFLINE_ZH_EXACT: Record<string, string> = {
   "full-length boom forefoot": "全掌 BOOM 前掌",
   "flight plate with zoom air forefoot": "前掌搭载 Zoom Air 的 Flight Plate",
@@ -32,10 +33,88 @@ function shouldSkip(text: string) {
 function translateOffline(text: string, target: string) {
   if (target !== "zh") return null;
 
-  const normalized = text.trim().toLowerCase();
-  if (OFFLINE_ZH_EXACT[normalized]) return OFFLINE_ZH_EXACT[normalized];
+  const trimmed = text.trim();
+  const punctMatch = trimmed.match(/[.?!]+$/);
+  const trailingPunctuation = punctMatch?.[0] ?? "";
+  const core = trailingPunctuation ? trimmed.slice(0, -trailingPunctuation.length).trim() : trimmed;
+  const normalized = core.toLowerCase();
+
+  if (OFFLINE_ZH_EXACT[normalized]) {
+    return `${OFFLINE_ZH_EXACT[normalized]}${trailingPunctuation}`;
+  }
 
   return null;
+}
+
+function includesBackendLimitError(text: string) {
+  return /query length limit exceeded|max allowed query/i.test(text);
+}
+
+function normalizeTranslatedOrFallback(original: string, translated: string | null | undefined) {
+  const cleaned = (translated ?? "").trim();
+  if (!cleaned) return original;
+  if (includesBackendLimitError(cleaned)) return original;
+  return cleaned;
+}
+
+function splitByPeriods(text: string) {
+  const parts = text.match(/[^.]+\.?|\.{1,}/g);
+  if (!parts) return [text];
+  return parts.map((part) => part.trim()).filter(Boolean);
+}
+
+function splitLongUnit(text: string, maxChars: number) {
+  const chunks: string[] = [];
+  let remaining = text.trim();
+
+  while (remaining.length > maxChars) {
+    let index = remaining.lastIndexOf(" ", maxChars);
+    if (index < Math.floor(maxChars * 0.5)) {
+      index = maxChars;
+    }
+    chunks.push(remaining.slice(0, index).trim());
+    remaining = remaining.slice(index).trim();
+  }
+
+  if (remaining) chunks.push(remaining);
+  return chunks.filter(Boolean);
+}
+
+function splitForTranslation(text: string, maxChars: number) {
+  const sentenceUnits = splitByPeriods(text);
+  const finalUnits: string[] = [];
+
+  for (const sentence of sentenceUnits) {
+    if (sentence.length <= maxChars) {
+      finalUnits.push(sentence);
+      continue;
+    }
+    finalUnits.push(...splitLongUnit(sentence, maxChars));
+  }
+
+  return finalUnits.filter(Boolean);
+}
+
+async function translateWithLibre(text: string, target: string) {
+  if (!LIBRETRANSLATE_URL) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TRANSLATION_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(LIBRETRANSLATE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ q: text, source: "auto", target, format: "text" }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) return null;
+    const data = (await response.json()) as { translatedText?: string };
+    return data.translatedText ?? null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function translateWithMyMemory(text: string, target: string) {
@@ -86,61 +165,63 @@ export async function POST(request: Request) {
       return NextResponse.json({ translatedText: cached, cached: true });
     }
 
-    if (!LIBRETRANSLATE_URL) {
-      if (isI18nDebugEnabled) {
-        console.log("[i18n/api] no LIBRETRANSLATE_URL; trying fallback provider", { text, target });
-      }
-      try {
-        const fallbackTranslated = await translateWithMyMemory(text, target);
-        if (fallbackTranslated) {
-          translationCache.set(cacheKey, fallbackTranslated);
-          if (isI18nDebugEnabled) {
-            console.log("[i18n/api] fallback translated", { cacheKey, translated: fallbackTranslated });
-          }
-          return NextResponse.json({ translatedText: fallbackTranslated, cached: false, provider: "mymemory_fallback" });
-        }
-      } catch (fallbackError) {
-        if (isI18nDebugEnabled) {
-          console.log("[i18n/api] fallback translation failed", { text, target, error: fallbackError });
-        }
-      }
-      const offlineTranslated = translateOffline(text, target);
-      if (offlineTranslated) {
-        translationCache.set(cacheKey, offlineTranslated);
-        if (isI18nDebugEnabled) {
-          console.log("[i18n/api] offline translated", { cacheKey, translated: offlineTranslated });
-        }
-        return NextResponse.json({ translatedText: offlineTranslated, cached: false, provider: "offline_fallback" });
-      }
-      return NextResponse.json({ translatedText: text, cached: false, reason: "missing_translation_engine" });
-    }
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), TRANSLATION_TIMEOUT_MS);
-
-    try {
-      const response = await fetch(LIBRETRANSLATE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ q: text, source: "auto", target, format: "text" }),
-        signal: controller.signal,
+    const shouldForceSplit = text.length > SAFE_TRANSLATION_CHARS;
+    const units = shouldForceSplit ? splitForTranslation(text, SAFE_TRANSLATION_CHARS) : [text];
+    if (isI18nDebugEnabled && shouldForceSplit) {
+      console.log("[i18n/api] force sentence split", {
+        originalLength: text.length,
+        units: units.length,
+        maxChars: SAFE_TRANSLATION_CHARS
       });
-
-      if (!response.ok) {
-        return NextResponse.json({ translatedText: text, cached: false, reason: "engine_error" });
-      }
-
-      const data = (await response.json()) as { translatedText?: string };
-      const translated = (data.translatedText ?? text).trim() || text;
-
-      translationCache.set(cacheKey, translated);
-      if (isI18nDebugEnabled) {
-        console.log("[i18n/api] translated", { cacheKey, translated });
-      }
-      return NextResponse.json({ translatedText: translated, cached: false });
-    } finally {
-      clearTimeout(timeout);
     }
+
+    const translatedUnits: string[] = [];
+    for (const unit of units) {
+      const unitCacheKey = makeCacheKey(unit, target);
+      const unitCached = translationCache.get(unitCacheKey);
+      if (unitCached) {
+        translatedUnits.push(unitCached);
+        continue;
+      }
+
+      let translatedUnit = unit;
+
+      if (LIBRETRANSLATE_URL) {
+        const libreTranslated = await translateWithLibre(unit, target);
+        translatedUnit = normalizeTranslatedOrFallback(unit, libreTranslated);
+      } else {
+        if (isI18nDebugEnabled) {
+          console.log("[i18n/api] no LIBRETRANSLATE_URL; trying fallback provider", { text: unit, target });
+        }
+        try {
+          const fallbackTranslated = await translateWithMyMemory(unit, target);
+          if (fallbackTranslated) {
+            translatedUnit = normalizeTranslatedOrFallback(unit, fallbackTranslated);
+          }
+        } catch (fallbackError) {
+          if (isI18nDebugEnabled) {
+            console.log("[i18n/api] fallback translation failed", { text: unit, target, error: fallbackError });
+          }
+        }
+
+        if (translatedUnit === unit) {
+          const offlineTranslated = translateOffline(unit, target);
+          if (offlineTranslated) translatedUnit = offlineTranslated;
+        }
+      }
+
+      translationCache.set(unitCacheKey, translatedUnit);
+      translatedUnits.push(translatedUnit);
+    }
+
+    const mergedTranslation = translatedUnits.join(" ").replace(/\s+([,.!?;:])/g, "$1").trim();
+    translationCache.set(cacheKey, mergedTranslation || text);
+    return NextResponse.json({
+      translatedText: mergedTranslation || text,
+      cached: false,
+      provider: LIBRETRANSLATE_URL ? "libretranslate" : "fallback_chain",
+      splitApplied: shouldForceSplit
+    });
   } catch {
     return NextResponse.json({ translatedText: "", reason: "invalid_request" }, { status: 400 });
   }
