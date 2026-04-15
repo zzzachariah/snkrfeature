@@ -47,6 +47,12 @@ export function PerformanceIndicator({ label, score, tier, rawText }: Performanc
           />
         </div>
 
+        <DynamicTranslatedText
+          as="span"
+          className="min-w-14 text-right text-xs soft-text"
+          text={resolvedTier}
+          contentType="descriptive"
+        />
         <span className="min-w-9 text-right text-sm font-semibold text-[rgb(var(--text)/0.94)]">{clampedScore}</span>
       </div>
     </div>
