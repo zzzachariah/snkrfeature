@@ -5,7 +5,11 @@ import { BrandLoader } from "@/components/ui/brand-loader";
 import { Modal } from "@/components/ui/modal";
 
 export type Locale = "en" | "zh";
+
 const TRANSLATION_REQUEST_TIMEOUT_MS = 8000;
+const TRANSLATION_RUN_TIMEOUT_MS = 15000;
+const LOCALE_STORAGE_KEY = "locale";
+const TRANSLATION_DELAY_MS = 700;
 
 const MANUAL_TRANSLATIONS: Record<string, string> = {
   "shoe indexed": "双鞋子",
@@ -31,10 +35,8 @@ const MANUAL_TRANSLATIONS: Record<string, string> = {
   "traction": "抓地力/止滑程度",
   "stability": "稳定性",
   "fit": "包裹",
-  "admin": "管理员"
+  "admin": "管理员",
 };
-const LOCALE_STORAGE_KEY = "locale";
-const TRANSLATION_DELAY_MS = 700;
 
 type LocaleContextValue = {
   locale: Locale;
@@ -73,22 +75,26 @@ function shouldTranslateNode(node: Node) {
   const parentTag = node.parentElement?.tagName.toLowerCase();
   if (!parentTag) return false;
   if (["script", "style", "noscript", "code", "pre"].includes(parentTag)) return false;
+
   const host = node.parentElement;
   if (host?.closest("[data-translation-lock='true']")) return false;
   if (host?.closest("[data-user-identity='true']")) return false;
   if (host?.closest("[data-field-key='shoe_name']")) return false;
   if (host?.closest("[data-field-key='brand']")) return false;
   if (host?.closest("[data-brand-option='true']")) return false;
+
   return !isSkippableText(node.textContent ?? "");
 }
 
 function collectTextNodes(root: ParentNode) {
   const nodes: Text[] = [];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+
   while (walker.nextNode()) {
     const node = walker.currentNode as Text;
     if (shouldTranslateNode(node)) nodes.push(node);
   }
+
   return nodes;
 }
 
@@ -106,8 +112,10 @@ function collectAttributeCandidates(root: ParentNode) {
       if (element.closest("[data-field-key='shoe_name']")) return;
       if (element.closest("[data-field-key='brand']")) return;
       if (element.closest("[data-brand-option='true']")) return;
+
       const raw = element.getAttribute(attr) ?? "";
       if (isSkippableText(raw)) return;
+
       candidates.push({ element, attr });
     });
   });
@@ -139,9 +147,10 @@ async function translateText(text: string, target = "zh-CN") {
     const data = (await response.json()) as unknown;
     const rows = Array.isArray(data) && Array.isArray(data[0]) ? data[0] : [];
 
-    const value = rows
-      .map((segment) => (Array.isArray(segment) && typeof segment[0] === "string" ? segment[0] : ""))
-      .join("") || text;
+    const value =
+      rows
+        .map((segment) => (Array.isArray(segment) && typeof segment[0] === "string" ? segment[0] : ""))
+        .join("") || text;
 
     return { value, failed: false };
   } catch (error) {
@@ -159,6 +168,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationCache, setTranslationCache] = useState<Record<string, string>>({});
   const [translationError, setTranslationError] = useState<string | null>(null);
+
   const cacheRef = useRef<Record<string, string>>({});
   const isApplyingRef = useRef(false);
   const isTranslationRunningRef = useRef(false);
@@ -174,17 +184,24 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
       textNodes.forEach((node) => {
         const source = textSourceMapRef.current.get(node) ?? (node.textContent ?? "").trim();
-        if (!textSourceMapRef.current.get(node) && source) textSourceMapRef.current.set(node, source);
+        if (!textSourceMapRef.current.get(node) && source) {
+          textSourceMapRef.current.set(node, source);
+        }
+
         const translated = resolveTranslation(source, cache);
-        if (translated && node.textContent !== translated) node.textContent = translated;
+        if (translated && node.textContent !== translated) {
+          node.textContent = translated;
+        }
       });
 
       attrCandidates.forEach(({ element, attr }) => {
         const sourceAttrs = attrSourceMapRef.current.get(element) ?? {};
         const source = sourceAttrs[attr] ?? (element.getAttribute(attr) ?? "").trim();
+
         if (!sourceAttrs[attr] && source) {
           attrSourceMapRef.current.set(element, { ...sourceAttrs, [attr]: source });
         }
+
         const translated = resolveTranslation(source, cache);
         if (translated && element.getAttribute(attr) !== translated) {
           element.setAttribute(attr, translated);
@@ -198,12 +215,16 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const restoreOriginalContent = useCallback(() => {
     collectTextNodes(document.body).forEach((node) => {
       const source = textSourceMapRef.current.get(node);
-      if (source && node.textContent !== source) node.textContent = source;
+      if (source && node.textContent !== source) {
+        node.textContent = source;
+      }
     });
 
     collectAttributeCandidates(document.body).forEach(({ element, attr }) => {
       const source = attrSourceMapRef.current.get(element)?.[attr];
-      if (source && element.getAttribute(attr) !== source) element.setAttribute(attr, source);
+      if (source && element.getAttribute(attr) !== source) {
+        element.setAttribute(attr, source);
+      }
     });
   }, []);
 
@@ -219,20 +240,30 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
       textNodes.forEach((node) => {
         const source = textSourceMapRef.current.get(node) ?? (node.textContent ?? "").trim();
-        if (!textSourceMapRef.current.get(node) && source) textSourceMapRef.current.set(node, source);
+        if (!textSourceMapRef.current.get(node) && source) {
+          textSourceMapRef.current.set(node, source);
+        }
         if (!isSkippableText(source)) uniqueTexts.add(source);
       });
 
       attrCandidates.forEach(({ element, attr }) => {
         const sourceAttrs = attrSourceMapRef.current.get(element) ?? {};
         const source = sourceAttrs[attr] ?? (element.getAttribute(attr) ?? "").trim();
+
         if (!sourceAttrs[attr] && source) {
           attrSourceMapRef.current.set(element, { ...sourceAttrs, [attr]: source });
         }
+
         if (!isSkippableText(source)) uniqueTexts.add(source);
       });
 
-      const pending = Array.from(uniqueTexts).filter((text) => !cacheRef.current[text] && !getManualTranslation(text) && normalizeTranslationKey(text) !== "snkrfeature");
+      const pending = Array.from(uniqueTexts).filter(
+        (text) =>
+          !cacheRef.current[text] &&
+          !getManualTranslation(text) &&
+          normalizeTranslationKey(text) !== "snkrfeature"
+      );
+
       if (!pending.length) {
         applyTranslations(cacheRef.current);
         console.info("[i18n] runTranslation skipped (no pending)");
@@ -246,6 +277,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       for (let i = 0; i < pending.length; i += batchSize) {
         const chunk = pending.slice(i, i + batchSize);
         const translatedChunk = await Promise.all(chunk.map((text) => translateText(text)));
+
         chunk.forEach((source, idx) => {
           const result = translatedChunk[idx];
           updates[source] = result?.value ?? source;
@@ -278,7 +310,9 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (stored === "zh" || stored === "en") setLocale(stored);
+    if (stored === "zh" || stored === "en") {
+      setLocale(stored);
+    }
   }, []);
 
   useEffect(() => {
@@ -296,10 +330,14 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     const run = async () => {
       try {
         setTranslationError(null);
+
         await new Promise((resolve) => setTimeout(resolve, TRANSLATION_DELAY_MS));
+
         await Promise.race([
           runTranslation(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Translation run timeout")), TRANSLATION_RUN_TIMEOUT_MS)),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Translation run timeout")), TRANSLATION_RUN_TIMEOUT_MS)
+          ),
         ]);
       } catch (error) {
         console.error("[i18n] translation flow failed", error);
@@ -330,18 +368,22 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     applyTranslations(translationCache);
   }, [applyTranslations, locale, translationCache]);
 
-  const requestLocaleChange = useCallback((next: Locale) => {
-    if (next === locale) return;
-    if (next === "zh") {
-      setPendingLocale(next);
-      setWarningOpen(true);
-      return;
-    }
+  const requestLocaleChange = useCallback(
+    (next: Locale) => {
+      if (next === locale) return;
 
-    setPendingLocale(null);
-    setWarningOpen(false);
-    setLocale("en");
-  }, [locale]);
+      if (next === "zh") {
+        setPendingLocale(next);
+        setWarningOpen(true);
+        return;
+      }
+
+      setPendingLocale(null);
+      setWarningOpen(false);
+      setLocale("en");
+    },
+    [locale]
+  );
 
   const confirmWarning = useCallback(() => {
     if (!pendingLocale) return;
@@ -350,16 +392,20 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     setPendingLocale(null);
   }, [pendingLocale]);
 
-  const contextValue = useMemo<LocaleContextValue>(() => ({
-    locale,
-    requestLocaleChange,
-    translate: (text: string) => (locale === "en" ? text : resolveTranslation(text, translationCache)),
-    isTranslating,
-  }), [isTranslating, locale, requestLocaleChange, translationCache]);
+  const contextValue = useMemo<LocaleContextValue>(
+    () => ({
+      locale,
+      requestLocaleChange,
+      translate: (text: string) => (locale === "en" ? text : resolveTranslation(text, translationCache)),
+      isTranslating,
+    }),
+    [isTranslating, locale, requestLocaleChange, translationCache]
+  );
 
   return (
     <LocaleContext.Provider value={contextValue}>
       {children}
+
       <Modal open={warningOpen} onClose={() => undefined} title="" dismissible={false}>
         <div className="space-y-4">
           <p className="text-sm">机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。</p>
@@ -372,11 +418,17 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </Modal>
+
       {isTranslating && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgb(var(--bg)/0.78)] backdrop-blur-sm" aria-live="polite" aria-busy="true">
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgb(var(--bg)/0.78)] backdrop-blur-sm"
+          aria-live="polite"
+          aria-busy="true"
+        >
           <BrandLoader label="Translating..." />
         </div>
       )}
+
       {translationError ? (
         <div className="fixed bottom-4 left-1/2 z-[75] -translate-x-1/2 rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.7)] bg-[rgb(var(--bg-elev)/0.94)] px-3 py-2 text-xs text-[rgb(var(--text))] shadow-[0_8px_18px_rgb(var(--shadow)/0.25)]">
           {translationError}
@@ -388,7 +440,9 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
 export function useLocale() {
   const context = useContext(LocaleContext);
-  if (!context) throw new Error("useLocale must be used inside LocaleProvider");
+  if (!context) {
+    throw new Error("useLocale must be used inside LocaleProvider");
+  }
   return context;
 }
 
