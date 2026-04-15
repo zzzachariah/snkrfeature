@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Route } from "next";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BrandLoader } from "@/components/ui/brand-loader";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next");
   const redirectTarget = normalizeRedirectTarget(nextPath);
@@ -105,12 +106,10 @@ export default function LoginPage() {
 
       setMessage("Login successful. Redirecting...");
       devLog("redirect start", { target: redirectTarget });
-      router.replace(redirectTarget);
+      if (pathname !== redirectTarget) {
+        router.replace(redirectTarget);
+      }
       devLog("redirect end");
-
-      devLog("router refresh start");
-      router.refresh();
-      devLog("router refresh end");
 
       const currentSession = supabase ? await supabase.auth.getSession() : null;
       devLog(

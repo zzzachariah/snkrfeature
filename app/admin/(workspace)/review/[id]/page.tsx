@@ -2,7 +2,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,7 @@ function pick(obj: Record<string, any>, key: string) {
 export default function AdminSubmissionDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const pathname = usePathname();
   const id = params.id;
 
   const [loading, setLoading] = useState(true);
@@ -187,8 +188,9 @@ export default function AdminSubmissionDetailPage() {
     if (res.ok && json.ok) {
       if (action === "reject") {
         setConfirmRejectOpen(false);
-        router.push("/admin/review?status=queue");
-        router.refresh();
+        if (pathname !== "/admin/review") {
+          router.push("/admin/review?status=queue");
+        }
         return;
       }
       await load();
