@@ -6,12 +6,14 @@ import { motion } from "framer-motion";
 import { ArrowUpDown, SearchX, X } from "lucide-react";
 import { Shoe } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { Input } from "@/components/ui/input";
 import { rankShoeMatch } from "@/lib/search/shoe-search";
 
 type SortKey = "shoe_name" | "brand" | "release_year";
 
 export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initialQuery?: string }) {
+  const { translate } = useLocale();
   const [searchDraft, setSearchDraft] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
   const [brand, setBrand] = useState("all");
@@ -72,7 +74,7 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
 
           <div className="relative min-w-0 flex-1">
             <Input
-              placeholder="Search by name, player, tags, technologies..."
+              placeholder={translate("player")}
               value={searchDraft}
               onChange={(e) => setSearchDraft(e.target.value)}
               className="h-11 rounded-none border-0 bg-transparent pr-10 focus:ring-0"

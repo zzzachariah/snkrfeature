@@ -12,22 +12,11 @@ const MANUAL_TRANSLATIONS: Record<string, string> = {
   "brand represented": "品牌",
   "brands represented": "品牌",
   "live": "实时",
-  "player,": "球员",
-  "technologies": "科技",
-
-  // navigation
-  "home": "主页",
-  "dashboard": "我的账号",
-
-  // loading states
+  "dashboard": "我的主页",
+  "player": "球员",
   "loading": "加载中…",
   "loading...": "加载中…",
   "preparing your feed": "加载中…",
-
-  // playstyle text
-  "no playstyle summary available yet.": "尚无可用的球员风格摘要。",
-
-  // tech fields (critical corrections)
   "forefoot_midsole_tech": "前掌中底科技",
   "heel_midsole_tech": "后掌中底科技",
   "upper_tech": "鞋面科技",
@@ -58,6 +47,7 @@ function isSkippableText(text: string) {
   if (!trimmed) return true;
   if (!Number.isNaN(Number(trimmed))) return true;
   if (/^(https?:\/\/|www\.)/i.test(trimmed)) return true;
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return true;
   if (/^[\d\s.,%:/#()\-+]+$/.test(trimmed)) return true;
   return false;
 }
@@ -82,6 +72,7 @@ function shouldTranslateNode(node: Node) {
   if (["script", "style", "noscript", "code", "pre"].includes(parentTag)) return false;
   const host = node.parentElement;
   if (host?.closest("[data-translation-lock='true']")) return false;
+  if (host?.closest("[data-user-identity='true']")) return false;
   if (host?.closest("[data-field-key='shoe_name']")) return false;
   if (host?.closest("[data-field-key='brand']")) return false;
   return !isSkippableText(node.textContent ?? "");
@@ -107,6 +98,7 @@ function collectAttributeCandidates(root: ParentNode) {
     root.querySelectorAll(`[${attr}]`).forEach((element) => {
       if (!(element instanceof HTMLElement)) return;
       if (element.closest("[data-translation-lock='true']")) return;
+      if (element.closest("[data-user-identity='true']")) return;
       if (element.closest("[data-field-key='shoe_name']")) return;
       if (element.closest("[data-field-key='brand']")) return;
       const raw = element.getAttribute(attr) ?? "";
