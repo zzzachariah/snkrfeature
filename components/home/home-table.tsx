@@ -74,7 +74,7 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
 
           <div className="relative min-w-0 flex-1">
             <Input
-              placeholder={translate("player")}
+              placeholder={translate("Search by name, player, tags, technologies...")}
               value={searchDraft}
               onChange={(e) => setSearchDraft(e.target.value)}
               className="h-11 rounded-none border-0 bg-transparent pr-10 focus:ring-0"
