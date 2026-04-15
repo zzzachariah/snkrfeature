@@ -7,7 +7,6 @@ import { Modal } from "@/components/ui/modal";
 export type Locale = "en" | "zh";
 
 const MANUAL_TRANSLATIONS: Record<string, string> = {
-  // homepage stats / labels
   "shoe indexed": "双鞋子",
   "shoes indexed": "双鞋子",
   "brand represented": "品牌",

@@ -158,14 +158,36 @@ export function Navbar() {
       <div className={`fixed right-0 top-16 z-40 h-[calc(100vh-4rem)] w-[min(84vw,340px)] border-l border-[rgb(var(--glass-stroke-soft)/0.72)] bg-[rgb(var(--bg-elev)/0.96)] p-4 text-[rgb(var(--text))] shadow-[0_24px_60px_rgb(var(--shadow)/0.3)] backdrop-blur-[20px] backdrop-saturate-[180%] transition-transform duration-200 md:hidden ${mobileOpen ? "translate-x-0" : "translate-x-full"}`}>
         <nav className="grid gap-2 text-sm">
           {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className="rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.6)] px-3 py-2 transition hover:border-[rgb(var(--accent)/0.72)] hover:bg-[rgb(var(--accent)/0.08)]"
-            >
-              {item.label}
-            </Link>
+            <div key={item.href} className="grid gap-2">
+              <Link
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.6)] px-3 py-2 transition hover:border-[rgb(var(--accent)/0.72)] hover:bg-[rgb(var(--accent)/0.08)]"
+              >
+                {item.label}
+              </Link>
+              {item.href === "/dashboard" ? (
+                <div className="rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.6)] p-2" data-translation-lock="true">
+                  <p className="px-1 pb-1 text-xs soft-text">Language</p>
+                  <div className="grid gap-1">
+                    <button
+                      type="button"
+                      onClick={() => requestLocaleChange("en")}
+                      className={`rounded-md px-2.5 py-2 text-left transition ${locale === "en" ? "bg-[rgb(var(--accent)/0.14)] text-[rgb(var(--text))]" : "hover:bg-[rgb(var(--accent)/0.08)]"}`}
+                    >
+                      English
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => requestLocaleChange("zh")}
+                      className={`rounded-md px-2.5 py-2 text-left transition ${locale === "zh" ? "bg-[rgb(var(--accent)/0.14)] text-[rgb(var(--text))]" : "hover:bg-[rgb(var(--accent)/0.08)]"}`}
+                    >
+                      中文
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           ))}
           <Link
             href="/search/advanced"
