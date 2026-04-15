@@ -59,30 +59,43 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
 
   return (
     <section className="space-y-4">
-      <form className="flex flex-col gap-3 md:flex-row" onSubmit={runSearch}>
-        <div className="relative w-full">
-          <Input
-            placeholder="Search by name, player, tags, technologies..."
-            value={searchDraft}
-            onChange={(e) => setSearchDraft(e.target.value)}
-            className={searchDraft ? "pr-10" : undefined}
-          />
-          {searchDraft.trim().length > 0 && (
-            <button
-              type="button"
-              onClick={clearSearch}
-              aria-label="Clear search"
-              className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-[rgb(var(--subtext))] transition hover:bg-[rgb(var(--muted)/0.32)] hover:text-[rgb(var(--text))]"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+      <form onSubmit={runSearch}>
+        <div className="flex w-full items-center overflow-hidden rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.58)] bg-[rgb(var(--glass-bg)/0.97)]">
+          <select
+            className="h-11 w-[9.25rem] border-r border-[rgb(var(--glass-stroke-soft)/0.58)] bg-transparent px-3 text-sm text-[rgb(var(--text))] outline-none transition hover:bg-[rgb(var(--accent)/0.05)] focus:bg-[rgb(var(--accent)/0.06)]"
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+          >
+            <option value="all">All brands</option>
+            {brands.map((b) => <option key={b}>{b}</option>)}
+          </select>
+
+          <div className="relative min-w-0 flex-1">
+            <Input
+              placeholder="Search by name, player, tags, technologies..."
+              value={searchDraft}
+              onChange={(e) => setSearchDraft(e.target.value)}
+              className="h-11 rounded-none border-0 bg-transparent pr-10 focus:ring-0"
+            />
+            {searchDraft.trim().length > 0 && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-[rgb(var(--subtext))] transition hover:bg-[rgb(var(--muted)/0.32)] hover:text-[rgb(var(--text))]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="inline-flex h-11 shrink-0 items-center justify-center border-l border-[rgb(var(--glass-stroke-soft)/0.58)] bg-[rgb(var(--accent)/0.12)] px-4 text-sm font-medium text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.5)]"
+          >
+            Search
+          </button>
         </div>
-        <select className="rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.58)] bg-[rgb(var(--glass-bg)/0.97)] px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--accent)/0.4)] focus:border-[rgb(var(--ring)/0.85)] focus:outline-none focus:ring-4 focus:ring-[rgb(var(--ring)/0.18)]" value={brand} onChange={(e) => setBrand(e.target.value)}>
-          <option value="all">All brands</option>
-          {brands.map((b) => <option key={b}>{b}</option>)}
-        </select>
-        <Button type="submit" variant="secondary" className="w-full md:w-auto">Search</Button>
       </form>
       <div className="surface-card liquid-interactive overflow-hidden rounded-3xl premium-border">
         <div className="max-h-[560px] overflow-auto">
