@@ -22,14 +22,6 @@ const CURRY_NAME_CORRECTIONS_ZH: Array<{ pattern: RegExp; replacement: string }>
   { pattern: /咖喱\s*12/g, replacement: "库里 12" },
   { pattern: /咖喱/g, replacement: "库里" }
 ];
-const PROTECTED_NO_TRANSLATE_KEYS = new Set([
-  "forefoot midsole tech",
-  "heel midsole tech",
-  "forefoot midsole",
-  "heel midsole",
-  "forefoot tech",
-  "heel tech"
-]);
 
 function makeCacheKey(text: string, target: string) {
   return `${target}::${text}`;
@@ -40,7 +32,6 @@ function shouldSkip(text: string) {
   const normalized = trimmed.toLowerCase();
   if (!trimmed) return true;
   if (normalized === "snkrfeature") return true;
-  if (PROTECTED_NO_TRANSLATE_KEYS.has(normalized)) return true;
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return true;
   if (/^(nike|adidas|jordan|anta|li-ning)$/i.test(trimmed)) return true;
   if (/^(boost|zoom|zoomx|cushlon|lightstrike|boom|boom foam|zoom air)$/i.test(trimmed)) return true;
