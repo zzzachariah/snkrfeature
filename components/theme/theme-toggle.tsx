@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun, Laptop } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 type Theme = "light" | "dark" | "system";
 
@@ -20,6 +21,7 @@ function applyTheme(theme: Theme) {
 const cycleOrder: Theme[] = ["system", "light", "dark"];
 
 export function ThemeToggle({ className }: { className?: string }) {
+  const { translate } = useLocale();
   const [theme, setTheme] = useState<Theme>("system");
 
   useEffect(() => {
@@ -37,6 +39,8 @@ export function ThemeToggle({ className }: { className?: string }) {
 
   const icon = theme === "dark" ? <Moon className="h-4 w-4" /> : theme === "light" ? <Sun className="h-4 w-4" /> : <Laptop className="h-4 w-4" />;
 
+  const translatedTheme = translate(theme);
+
   return (
     <button
       type="button"
@@ -45,11 +49,11 @@ export function ThemeToggle({ className }: { className?: string }) {
         "inline-flex h-10 items-center gap-2 rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--glass-bg)/0.62)] px-3 text-sm text-[rgb(var(--text))] shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.28)] transition hover:border-[rgb(var(--ring)/0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.45)]",
         className
       )}
-      aria-label={`Theme: ${theme}. Click to cycle theme.`}
-      title={`Theme: ${theme}`}
+      aria-label={`${translate("Theme")}: ${translatedTheme}. ${translate("Click to cycle theme.")}`}
+      title={`${translate("Theme")}: ${translatedTheme}`}
     >
       <span className="grid h-5 w-5 place-items-center">{icon}</span>
-      <span className="hidden min-w-[3.75rem] capitalize sm:inline">{theme}</span>
+      <span className="hidden min-w-[3.75rem] capitalize sm:inline">{translatedTheme}</span>
     </button>
   );
 }

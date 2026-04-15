@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 export function RequiredReadingGate({ onContinue }: { onContinue: () => void }) {
+  const { translate } = useLocale();
   const [completed, setCompleted] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -22,8 +24,8 @@ export function RequiredReadingGate({ onContinue }: { onContinue: () => void }) 
         <div className="flex min-h-full items-start justify-center p-4 pb-8 pt-24 md:pt-28">
           <div className="surface-card premium-border w-full max-w-2xl rounded-3xl p-5 shadow-[0_30px_72px_rgb(var(--glass-shadow)/0.42)] md:p-6">
             <div className="border-b border-[rgb(var(--muted)/0.35)] pb-4">
-              <h2 className="text-2xl font-semibold tracking-[0.015em] md:text-3xl">Welcome!</h2>
-              <p className="mt-1 text-sm soft-text">Story behind snkrfeature</p>
+              <h2 className="text-2xl font-semibold tracking-[0.015em] md:text-3xl">{translate("Welcome!")}</h2>
+              <p className="mt-1 text-sm soft-text">{translate("Story behind snkrfeature")}</p>
               <p className="mt-2 text-xs soft-text">By zzz</p>
             </div>
 
@@ -41,7 +43,7 @@ export function RequiredReadingGate({ onContinue }: { onContinue: () => void }) 
                 By the way, if this turned out to be liked by many, perhaps I will charge a one-time fee of a dollar per account in order to cover the fees of databases and domains, etc. I hate ads myself, so there will maybe be 1 or 2, but definitely not scattered around the page. I&apos;ll decide it later.
               </p>
               <p>
-                In the meantime, enjoy!
+                {translate("In the meantime, enjoy!")}
               </p>
             </div>
 
@@ -53,10 +55,10 @@ export function RequiredReadingGate({ onContinue }: { onContinue: () => void }) 
                   onChange={(e) => setCompleted(e.target.checked)}
                   className="h-4 w-4 accent-[rgb(var(--accent))]"
                 />
-                <span>Completed reading</span>
+                <span>{translate("Completed reading")}</span>
               </label>
               <Button className="mt-4 w-full sm:w-auto" disabled={!completed} onClick={onContinue}>
-                Continue to Sign Up
+                {translate("Continue to Sign Up")}
               </Button>
             </div>
           </div>

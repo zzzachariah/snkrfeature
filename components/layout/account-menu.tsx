@@ -6,9 +6,11 @@ import { ChevronDown, LogOut, LayoutDashboard, LogIn, Shield, UserPlus } from "l
 import { AnimatePresence, motion } from "framer-motion";
 import type { Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { cn } from "@/lib/utils";
 
 export function AccountMenu({ className }: { className?: string }) {
+  const { translate } = useLocale();
   const [open, setOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -135,7 +137,7 @@ export function AccountMenu({ className }: { className?: string }) {
           className
         )}
       >
-        <span className="truncate" data-user-identity="true">{label}</span>
+        <span className="truncate" data-user-identity="true">{signedIn ? label : translate("Account")}</span>
         <ChevronDown className="h-4 w-4 shrink-0" />
       </button>
 
@@ -158,7 +160,7 @@ export function AccountMenu({ className }: { className?: string }) {
                   className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.09)]"
                 >
                   <LogIn className="h-4 w-4" />
-                  Log in
+                  {translate("Log in")}
                 </Link>
                 <Link
                   href="/signup"
@@ -167,7 +169,7 @@ export function AccountMenu({ className }: { className?: string }) {
                   className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.09)]"
                 >
                   <UserPlus className="h-4 w-4" />
-                  Sign up
+                  {translate("Sign up")}
                 </Link>
               </>
             ) : (
@@ -179,7 +181,7 @@ export function AccountMenu({ className }: { className?: string }) {
                   className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.09)]"
                 >
                   <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
+                  {translate("Dashboard")}
                 </Link>
 
                 {isAdmin && (
@@ -190,7 +192,7 @@ export function AccountMenu({ className }: { className?: string }) {
                     className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.09)]"
                   >
                     <Shield className="h-4 w-4" />
-                    Admin
+                    {translate("Admin")}
                   </Link>
                 )}
 
@@ -201,7 +203,7 @@ export function AccountMenu({ className }: { className?: string }) {
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.09)]"
                 >
                   <LogOut className="h-4 w-4" />
-                  Log out
+                  {translate("Log out")}
                 </button>
               </>
             )}

@@ -10,6 +10,7 @@ import { Modal } from "@/components/ui/modal";
 import { BrandLoader } from "@/components/ui/brand-loader";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { createClient } from "@/lib/supabase/client";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 type TabKey = "Overview" | "Comments" | "Liked comments" | "Disliked comments" | "Submissions" | "Saved compares" | "Settings";
 const tabs: TabKey[] = ["Overview", "Comments", "Liked comments", "Disliked comments", "Submissions", "Saved compares", "Settings"];
@@ -39,6 +40,7 @@ type VoteRow = {
 };
 
 export default function DashboardPage() {
+  const { translate } = useLocale();
   const [loading, setLoading] = useState(true);
   const [signedIn, setSignedIn] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("Overview");
@@ -258,7 +260,7 @@ export default function DashboardPage() {
           {item.shoe_slug && (
             <>
               <span>•</span>
-              <Link className="underline" href={`/shoes/${item.shoe_slug}`}>View shoe</Link>
+              <Link className="underline" href={`/shoes/${item.shoe_slug}`}>{translate("View shoe")}</Link>
             </>
           )}
           <span>• 👍 {item.likes}</span>
@@ -270,29 +272,29 @@ export default function DashboardPage() {
 
   function renderTabContent() {
     if (!signedIn && !loading) {
-      return <Card className="p-5"><p className="text-sm soft-text">Please sign in to view your User Center.</p></Card>;
+      return <Card className="p-5"><p className="text-sm soft-text">{translate("Please sign in to view your User Center.")}</p></Card>;
     }
 
     switch (activeTab) {
       case "Overview":
         return (
           <Card className="p-5">
-            <h2 className="text-xl font-semibold">Overview</h2>
-            <p className="mt-2 soft-text">{loading ? "Loading account..." : `Welcome back, ${username || "user"} (${email})`}</p>
-            {!loading && role === "admin" && <p className="mt-1 text-xs font-medium text-emerald-400">Admin account</p>}
+            <h2 className="text-xl font-semibold">{translate("Overview")}</h2>
+            <p className="mt-2 soft-text">{loading ? translate("Loading account...") : `${translate("Welcome back")}, ${username || translate("user")} (${email})`}</p>
+            {!loading && role === "admin" && <p className="mt-1 text-xs font-medium text-emerald-400">{translate("Admin account")}</p>}
             <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3"><p className="text-xs soft-text">My comments</p><p className="mt-1 text-xl font-semibold">{summary.comments}</p></div>
-              <div className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3"><p className="text-xs soft-text">Liked comments</p><p className="mt-1 text-xl font-semibold">{summary.likedComments}</p></div>
-              <div className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3"><p className="text-xs soft-text">Disliked comments</p><p className="mt-1 text-xl font-semibold">{summary.dislikedComments}</p></div>
+              <div className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3"><p className="text-xs soft-text">{translate("My comments")}</p><p className="mt-1 text-xl font-semibold">{summary.comments}</p></div>
+              <div className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3"><p className="text-xs soft-text">{translate("Liked comments")}</p><p className="mt-1 text-xl font-semibold">{summary.likedComments}</p></div>
+              <div className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3"><p className="text-xs soft-text">{translate("Disliked comments")}</p><p className="mt-1 text-xl font-semibold">{summary.dislikedComments}</p></div>
             </div>
           </Card>
         );
       case "Comments":
         return (
           <Card className="p-5">
-            <h2 className="text-xl font-semibold">My comments</h2>
+            <h2 className="text-xl font-semibold">{translate("My comments")}</h2>
             <div className="mt-3 space-y-2">
-              {comments.length === 0 && <p className="text-sm soft-text">No comments yet.</p>}
+              {comments.length === 0 && <p className="text-sm soft-text">{translate("No comments yet.")}</p>}
               {comments.map(renderCommentCard)}
             </div>
           </Card>
@@ -300,9 +302,9 @@ export default function DashboardPage() {
       case "Liked comments":
         return (
           <Card className="p-5">
-            <h2 className="text-xl font-semibold">Comments you liked</h2>
+            <h2 className="text-xl font-semibold">{translate("Comments you liked")}</h2>
             <div className="mt-3 space-y-2">
-              {likedComments.length === 0 && <p className="text-sm soft-text">You have not liked any comments yet.</p>}
+              {likedComments.length === 0 && <p className="text-sm soft-text">{translate("You have not liked any comments yet.")}</p>}
               {likedComments.map(renderCommentCard)}
             </div>
           </Card>
@@ -310,9 +312,9 @@ export default function DashboardPage() {
       case "Disliked comments":
         return (
           <Card className="p-5">
-            <h2 className="text-xl font-semibold">Comments you disliked</h2>
+            <h2 className="text-xl font-semibold">{translate("Comments you disliked")}</h2>
             <div className="mt-3 space-y-2">
-              {dislikedComments.length === 0 && <p className="text-sm soft-text">You have not disliked any comments yet.</p>}
+              {dislikedComments.length === 0 && <p className="text-sm soft-text">{translate("You have not disliked any comments yet.")}</p>}
               {dislikedComments.map(renderCommentCard)}
             </div>
           </Card>
@@ -320,19 +322,19 @@ export default function DashboardPage() {
       case "Submissions":
         return (
           <Card className="p-5">
-            <h2 className="text-xl font-semibold">Submissions</h2>
+            <h2 className="text-xl font-semibold">{translate("Submissions")}</h2>
             <div className="mt-3 space-y-2">
-              {submissions.length === 0 && <p className="text-sm soft-text">No submissions yet.</p>}
-              {submissions.map((item) => <div key={item.id} className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.5)] p-3 text-sm"><p>Status: {item.status}</p><p className="mt-1 text-xs soft-text">{new Date(item.created_at).toLocaleString()}</p></div>)}
+              {submissions.length === 0 && <p className="text-sm soft-text">{translate("No submissions yet.")}</p>}
+              {submissions.map((item) => <div key={item.id} className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.5)] p-3 text-sm"><p>{translate("Status")}: {translate(item.status)}</p><p className="mt-1 text-xs soft-text">{new Date(item.created_at).toLocaleString()}</p></div>)}
             </div>
           </Card>
         );
       case "Saved compares":
         return (
           <Card className="p-5">
-            <h2 className="text-xl font-semibold">Saved compares</h2>
+            <h2 className="text-xl font-semibold">{translate("Saved compares")}</h2>
             <div className="mt-3 space-y-2">
-              {savedCompares.length === 0 && <p className="text-sm soft-text">No saved comparisons yet.</p>}
+              {savedCompares.length === 0 && <p className="text-sm soft-text">{translate("No saved comparisons yet.")}</p>}
               {savedCompares.map((item) => <div key={item.id} className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.5)] p-3 text-sm"><p>{item.title}</p><p className="mt-1 text-xs soft-text">{new Date(item.created_at).toLocaleString()}</p></div>)}
             </div>
           </Card>
@@ -340,45 +342,45 @@ export default function DashboardPage() {
       case "Settings":
         return (
           <Card className="p-5">
-            <h2 className="text-xl font-semibold">Settings</h2>
+            <h2 className="text-xl font-semibold">{translate("Settings")}</h2>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs soft-text">Username</label>
+                <label className="mb-1 block text-xs soft-text">{translate("Username")}</label>
                 <Input value={username} onChange={(e) => setUsername(e.target.value)} />
               </div>
               <div>
-                <label className="mb-1 block text-xs soft-text">Email (read-only)</label>
+                <label className="mb-1 block text-xs soft-text">{translate("Email (read-only)")}</label>
                 <Input value={email} disabled />
               </div>
               <div>
-                <label className="mb-1 block text-xs soft-text">Current password</label>
+                <label className="mb-1 block text-xs soft-text">{translate("Current password")}</label>
                 <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-                  <Input value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} type={showCurrentPassword ? "text" : "password"} placeholder="Enter current password" />
+                  <Input value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} type={showCurrentPassword ? "text" : "password"} placeholder={translate("Enter current password")} />
                   <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setShowCurrentPassword((v) => !v)}>{showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
                 </div>
               </div>
               <div className="flex items-end">
-                <Button type="button" onClick={() => setChangePasswordOpen(true)}>Change password</Button>
+                <Button type="button" onClick={() => setChangePasswordOpen(true)}>{translate("Change password")}</Button>
               </div>
             </div>
             <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-              <Button type="button" className="w-full sm:w-auto" onClick={saveSettings}>Save profile</Button>
+              <Button type="button" className="w-full sm:w-auto" onClick={saveSettings}>{translate("Save profile")}</Button>
               {settingsMessage && <FeedbackMessage message={settingsMessage} isError={settingsError} />}
             </div>
 
             <Modal open={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} title="Change password">
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1 block text-xs soft-text">New password</label>
-                  <Input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="password" placeholder="At least 8 characters" />
+                  <label className="mb-1 block text-xs soft-text">{translate("New password")}</label>
+                  <Input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="password" placeholder={translate("At least 8 characters")} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs soft-text">Confirm new password</label>
-                  <Input value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} type="password" placeholder="Re-enter new password" />
+                  <label className="mb-1 block text-xs soft-text">{translate("Confirm new password")}</label>
+                  <Input value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} type="password" placeholder={translate("Re-enter new password")} />
                 </div>
                 <div className="flex items-center justify-end gap-2">
-                  <Button type="button" variant="secondary" onClick={() => setChangePasswordOpen(false)}>Cancel</Button>
-                  <Button type="button" onClick={changePassword}>Update password</Button>
+                  <Button type="button" variant="secondary" onClick={() => setChangePasswordOpen(false)}>{translate("Cancel")}</Button>
+                  <Button type="button" onClick={changePassword}>{translate("Update password")}</Button>
                 </div>
               </div>
             </Modal>
@@ -391,8 +393,8 @@ export default function DashboardPage() {
     <main className="container-shell py-8">
       <div className="grid gap-4 lg:grid-cols-[240px,1fr]">
         <aside className="surface-card premium-border rounded-3xl p-4">
-          <h2 className="font-semibold tracking-[0.01em]">User center</h2>
-          {role === "admin" && <p className="mt-1 text-xs font-medium text-emerald-400">Admin</p>}
+          <h2 className="font-semibold tracking-[0.01em]">{translate("User center")}</h2>
+          {role === "admin" && <p className="mt-1 text-xs font-medium text-emerald-400">{translate("Admin")}</p>}
           <ul className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 lg:grid-cols-1">
             {tabs.map((tab) => (
               <li key={tab}>
@@ -401,7 +403,7 @@ export default function DashboardPage() {
                   onClick={() => setActiveTab(tab)}
                   className={`w-full rounded-lg border px-2 py-1.5 text-left transition ${activeTab === tab ? "border-[rgb(var(--accent)/0.55)] bg-[rgb(var(--accent)/0.15)] text-[rgb(var(--text))]" : "border-transparent soft-text hover:border-[rgb(var(--muted)/0.5)] hover:bg-[rgb(var(--bg-elev)/0.6)]"}`}
                 >
-                  {tab}
+                  {translate(tab)}
                 </button>
               </li>
             ))}
