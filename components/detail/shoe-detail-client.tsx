@@ -73,11 +73,27 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="p-4">
+          <p className="text-xs uppercase tracking-wide soft-text">{translate("Forefoot tech")}</p>
+          {shoe.spec.forefoot_midsole_tech ? (
+            <p data-field-key="forefoot_midsole_tech" className="mt-2 font-medium">{shoe.spec.forefoot_midsole_tech}</p>
+          ) : (
+            <p data-field-key="forefoot_midsole_tech" className="mt-2 font-medium">{translate("Not yet added")}</p>
+          )}
+        </Card>
+
+        <Card className="p-4">
+          <p className="text-xs uppercase tracking-wide soft-text">{translate("Heel tech")}</p>
+          {shoe.spec.heel_midsole_tech ? (
+            <p data-field-key="heel_midsole_tech" className="mt-2 font-medium">{shoe.spec.heel_midsole_tech}</p>
+          ) : (
+            <p data-field-key="heel_midsole_tech" className="mt-2 font-medium">{translate("Not yet added")}</p>
+          )}
+        </Card>
+
         {Object.entries({
-          "Forefoot tech": { value: shoe.spec.forefoot_midsole_tech, field: "forefoot_midsole_tech", noTranslate: true },
-          "Heel tech": { value: shoe.spec.heel_midsole_tech, field: "heel_midsole_tech", noTranslate: true },
-          "Outsole tech": { value: shoe.spec.outsole_tech, field: "outsole_tech", noTranslate: false },
-          "Upper tech": { value: shoe.spec.upper_tech, field: "upper_tech", noTranslate: false }
+          "Outsole tech": { value: shoe.spec.outsole_tech, field: "outsole_tech" },
+          "Upper tech": { value: shoe.spec.upper_tech, field: "upper_tech" }
         }).map(([k, data]) => (
           <Card key={k} className="p-4">
             <p className="text-xs uppercase tracking-wide soft-text">{data.noTranslate ? k : translate(k)}</p>
