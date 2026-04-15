@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Shoe } from "@/lib/types";
 import { useLocale } from "@/components/i18n/locale-provider";
+import { DynamicTranslatedText } from "@/components/i18n/dynamic-translated-text";
 
 type Props = {
   selected: Shoe[];
@@ -104,11 +105,23 @@ export function ComparePageClient({
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {searchResults.slice(0, 18).map((shoe) => (
                 <Card key={shoe.id} className="p-4">
-                  <p className="text-xs soft-text">{shoe.brand}{shoe.category ? ` • ${shoe.category}` : ""}</p>
+                  <p className="text-xs soft-text">
+                    {shoe.brand}
+                    {shoe.category ? (
+                      <>
+                        {" • "}
+                        <DynamicTranslatedText as="span" text={shoe.category} contentType="descriptive" />
+                      </>
+                    ) : null}
+                  </p>
                   <p className="mt-1 font-semibold">{shoe.shoe_name}</p>
                   <p className="mt-1 text-xs soft-text">{shoe.player ?? translate("No player tag")}</p>
                   <div className="mt-3 flex flex-wrap gap-1.5">
-                    {(shoe.spec.tags ?? []).slice(0, 2).map((tag) => <Badge key={tag}>{tag}</Badge>)}
+                    {(shoe.spec.tags ?? []).slice(0, 2).map((tag) => (
+                      <Badge key={tag}>
+                        <DynamicTranslatedText as="span" text={tag} contentType="descriptive" />
+                      </Badge>
+                    ))}
                   </div>
                   <div className="mt-4">
                     <a

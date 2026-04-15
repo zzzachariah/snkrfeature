@@ -78,6 +78,7 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
                     : f.key === "forefoot" || f.key === "heel" || f.key === "outsole" || f.key === "upper"
                     ? "technology"
                     : "descriptive";
+                  const shouldKeepRaw = f.key === "forefoot" || f.key === "heel";
                   return (
                   <td
                     key={`${f.key}-${s.id}`}
@@ -87,10 +88,12 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
                         : ""
                     }`}
                   >
-                    <DynamicTranslatedText
-                      text={value}
-                      contentType={contentType}
-                    />
+                    {shouldKeepRaw ? value : (
+                      <DynamicTranslatedText
+                        text={value}
+                        contentType={contentType}
+                      />
+                    )}
                   </td>
                   );
                 })}
