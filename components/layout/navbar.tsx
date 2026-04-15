@@ -99,9 +99,9 @@ export function Navbar() {
               className="inline-flex h-10 w-[5.25rem] items-center justify-between rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.62)] bg-[rgb(var(--surface)/0.78)] px-2.5 text-sm font-medium text-[rgb(var(--text))] transition hover:border-[rgb(var(--accent)/0.62)]"
               aria-haspopup="menu"
               aria-expanded={langOpen}
-              aria-label="Language switcher"
+              aria-label="Language switcher" data-translation-lock="true"
             >
-              <span>{locale === "en" ? "Eng" : "简"}</span>
+              <span data-translation-lock="true">{locale === "en" ? "Eng" : "简"}</span>
               <ChevronDown className="h-4 w-4" />
             </button>
             {langOpen && (

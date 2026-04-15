@@ -14,9 +14,16 @@ const MANUAL_TRANSLATIONS: Record<string, string> = {
   "live": "实时",
   "loading": "加载中…",
   "loading...": "加载中…",
-  "preparing your feed": "加载中…"
+  "preparing your feed": "加载中…",
+  "forefoot_midsole_tech": "前掌中底科技",
+  "heel_midsole_tech": "后掌中底科技",
+  "upper_tech": "鞋面科技",
+  "forefoot tech": "前掌中底科技",
+  "heel tech": "后掌中底科技",
+  "upper tech": "鞋面科技"
 };
 const LOCALE_STORAGE_KEY = "locale";
+const TRANSLATION_DELAY_MS = 700;
 
 type LocaleContextValue = {
   locale: Locale;
@@ -46,7 +53,7 @@ function getManualTranslation(text: string) {
 }
 
 function resolveTranslation(text: string, cache: Record<string, string>) {
-  if (text.toLowerCase().includes("snkrfeature")) return "snkrfeature";
+  if (normalizeTranslationKey(text) === "snkrfeature") return "snkrfeature";
   return getManualTranslation(text) ?? cache[text] ?? text;
 }
 
@@ -54,6 +61,9 @@ function shouldTranslateNode(node: Node) {
   const parentTag = node.parentElement?.tagName.toLowerCase();
   if (!parentTag) return false;
   if (["script", "style", "noscript", "code", "pre"].includes(parentTag)) return false;
+  const host = node.parentElement;
+  if (host?.closest("[data-translation-lock='true']")) return false;
+  if (host?.closest("[data-field-key='shoe_name']")) return false;
   return !isSkippableText(node.textContent ?? "");
 }
 
@@ -76,6 +86,8 @@ function collectAttributeCandidates(root: ParentNode) {
   TRANSLATABLE_ATTRS.forEach((attr) => {
     root.querySelectorAll(`[${attr}]`).forEach((element) => {
       if (!(element instanceof HTMLElement)) return;
+      if (element.closest("[data-translation-lock='true']")) return;
+      if (element.closest("[data-field-key='shoe_name']")) return;
       const raw = element.getAttribute(attr) ?? "";
       if (isSkippableText(raw)) return;
       candidates.push({ element, attr });
@@ -90,7 +102,7 @@ async function translateText(text: string, target = "zh-CN") {
 
   const manual = getManualTranslation(text);
   if (manual) return manual;
-  if (text.toLowerCase().includes("snkrfeature")) return "snkrfeature";
+  if (normalizeTranslationKey(text) === "snkrfeature") return "snkrfeature";
 
   const response = await fetch(
     `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${target}&dt=t&q=${encodeURIComponent(text)}`
@@ -110,10 +122,12 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationCache, setTranslationCache] = useState<Record<string, string>>({});
   const cacheRef = useRef<Record<string, string>>({});
+  const isApplyingRef = useRef(false);
   const textSourceMapRef = useRef(new WeakMap<Text, string>());
   const attrSourceMapRef = useRef(new WeakMap<HTMLElement, Partial<Record<TranslatableAttr, string>>>());
 
   const applyTranslations = useCallback((cache: Record<string, string>) => {
+    isApplyingRef.current = true;
     const textNodes = collectTextNodes(document.body);
     const attrCandidates = collectAttributeCandidates(document.body);
 
@@ -135,6 +149,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
         element.setAttribute(attr, translated);
       }
     });
+    isApplyingRef.current = false;
   }, []);
 
   const restoreOriginalContent = useCallback(() => {
@@ -169,7 +184,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       if (!isSkippableText(source)) uniqueTexts.add(source);
     });
 
-    const pending = Array.from(uniqueTexts).filter((text) => !cacheRef.current[text] && !getManualTranslation(text) && !text.toLowerCase().includes("snkrfeature"));
+    const pending = Array.from(uniqueTexts).filter((text) => !cacheRef.current[text] && !getManualTranslation(text) && normalizeTranslationKey(text) !== "snkrfeature");
     if (!pending.length) {
       applyTranslations(cacheRef.current);
       return;
@@ -217,6 +232,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
     const run = async () => {
       try {
+        await new Promise((resolve) => setTimeout(resolve, TRANSLATION_DELAY_MS));
         await runTranslation();
       } finally {
         if (active) setIsTranslating(false);
@@ -226,7 +242,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     void run();
 
     const observer = new MutationObserver(() => {
-      if (!active) return;
+      if (!active || isApplyingRef.current) return;
       void runTranslation();
     });
 
@@ -275,7 +291,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       {children}
       <Modal open={warningOpen} onClose={() => undefined} title="" dismissible={false}>
         <div className="space-y-4">
-          <p className="text-sm">机器翻译有问题敬请谅解</p>
+          <p className="text-sm">机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。</p>
           <button
             type="button"
             onClick={confirmWarning}
