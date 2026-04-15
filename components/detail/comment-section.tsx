@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { TurnstileWidget } from "@/components/ui/turnstile";
 import { createClient } from "@/lib/supabase/client";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 type CommentItem = {
   id: string;
@@ -20,6 +21,7 @@ type CommentItem = {
 };
 
 export function CommentSection({ shoeId }: { shoeId: string }) {
+  const { translate } = useLocale();
   const [content, setContent] = useState("");
   const [token, setToken] = useState("");
   const [message, setMessage] = useState("");
@@ -103,15 +105,15 @@ export function CommentSection({ shoeId }: { shoeId: string }) {
       <aside className="surface-card premium-border rounded-3xl p-5 md:p-6">
         <div className="flex items-center gap-2">
           <MessageSquareText className="h-4 w-4 text-[rgb(var(--accent))]" />
-          <h3 className="text-lg font-medium">Write a comment</h3>
+          <h3 className="text-lg font-medium">{translate("Write a comment")}</h3>
         </div>
-        <p className="mt-2 text-sm soft-text">Join the discussion with traction notes, fit tips, and durability observations.</p>
+        <p className="mt-2 text-sm soft-text">{translate("Join the discussion with traction notes, fit tips, and durability observations.")}</p>
 
         {!userId && (
           <div className="mt-4 rounded-2xl border border-[rgb(var(--muted)/0.65)] bg-[rgb(var(--bg-elev)/0.45)] p-4">
-            <p className="text-sm soft-text">You need to be logged in to post a comment.</p>
+            <p className="text-sm soft-text">{translate("You need to be logged in to post a comment.")}</p>
             <Link href="/login" className="mt-3 inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--muted)/0.5)] px-3 py-1.5 text-sm transition hover:border-[rgb(var(--ring)/0.45)]">
-              <LogIn className="h-4 w-4" /> Log in
+              <LogIn className="h-4 w-4" /> {translate("Log in")}
             </Link>
           </div>
         )}
@@ -119,15 +121,15 @@ export function CommentSection({ shoeId }: { shoeId: string }) {
         <div className="mt-4 space-y-3">
           <textarea
             className="min-h-40 w-full rounded-2xl border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.75)] p-3 text-sm text-[rgb(var(--text))] outline-none transition placeholder:text-[rgb(var(--subtext))] hover:border-[rgb(var(--ring)/0.4)] focus:border-[rgb(var(--ring)/0.9)] focus:ring-4 focus:ring-[rgb(var(--ring)/0.2)]"
-            placeholder={userId ? "Write your performance feedback..." : "Log in to start writing..."}
+            placeholder={userId ? translate("Write your performance feedback...") : translate("Log in to start writing...")}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             disabled={!userId}
           />
           {userId && <TurnstileWidget onToken={setToken} />}
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={submitComment} disabled={!canSubmit || posting}>{posting ? "Posting..." : "Post comment"}</Button>
-            <p className="text-xs soft-text">Keep it constructive and specific to on-court experience.</p>
+            <Button onClick={submitComment} disabled={!canSubmit || posting}>{posting ? translate("Posting...") : translate("Post comment")}</Button>
+            <p className="text-xs soft-text">{translate("Keep it constructive and specific to on-court experience.")}</p>
           </div>
           {message && <FeedbackMessage message={message} isError={isError} />}
         </div>
@@ -135,8 +137,8 @@ export function CommentSection({ shoeId }: { shoeId: string }) {
 
       <aside className="surface-card premium-border rounded-3xl p-5 md:p-6">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-lg font-medium">View discussion</h3>
-          <p className="text-xs soft-text">{comments.length} comment{comments.length === 1 ? "" : "s"}</p>
+          <h3 className="text-lg font-medium">{translate("View discussion")}</h3>
+          <p className="text-xs soft-text">{comments.length} {translate(comments.length === 1 ? "comment" : "comments")}</p>
         </div>
 
         <div className="mt-4 space-y-3 md:max-h-[560px] md:overflow-auto md:pr-1">
@@ -149,8 +151,8 @@ export function CommentSection({ shoeId }: { shoeId: string }) {
           )}
           {!loading && comments.length === 0 && (
             <div className="rounded-2xl border border-dashed border-[rgb(var(--muted)/0.7)] bg-[rgb(var(--bg-elev)/0.35)] p-5 text-center">
-              <p className="text-sm font-medium">No discussion yet</p>
-              <p className="mt-1 text-xs soft-text">Be the first to share how this shoe performs on court.</p>
+              <p className="text-sm font-medium">{translate("No discussion yet")}</p>
+              <p className="mt-1 text-xs soft-text">{translate("Be the first to share how this shoe performs on court.")}</p>
             </div>
           )}
 
@@ -164,8 +166,8 @@ export function CommentSection({ shoeId }: { shoeId: string }) {
                     <p className="text-xs soft-text">{new Date(comment.createdAt).toLocaleString()}</p>
                   </div>
                   {isOwn && (
-                    <button type="button" className="inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--muted)/0.5)] px-2 py-1 text-xs soft-text transition hover:border-red-300" onClick={() => deleteComment(comment.id)} aria-label="Delete my comment">
-                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                    <button type="button" className="inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--muted)/0.5)] px-2 py-1 text-xs soft-text transition hover:border-red-300" onClick={() => deleteComment(comment.id)} aria-label={translate("Delete my comment")}>
+                      <Trash2 className="h-3.5 w-3.5" /> {translate("Delete")}
                     </button>
                   )}
                 </div>

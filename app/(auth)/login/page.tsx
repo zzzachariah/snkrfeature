@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TurnstileWidget } from "@/components/ui/turnstile";
 import { createClient } from "@/lib/supabase/client";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 const CLIENT_TIMEOUT_MS = 12000;
 const SESSION_SYNC_TIMEOUT_MS = 5000;
@@ -38,6 +39,7 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = CLIE
 }
 
 export default function LoginPage() {
+  const { translate } = useLocale();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
@@ -132,25 +134,25 @@ export default function LoginPage() {
         onSubmit={onSubmit}
         className="surface-card premium-border mx-auto max-w-md space-y-4 rounded-3xl p-7"
       >
-        <h1 className="text-2xl font-semibold tracking-[0.02em]">Login</h1>
-        <p className="text-sm soft-text">Sign in with email or username.</p>
+        <h1 className="text-2xl font-semibold tracking-[0.02em]">{translate("Login")}</h1>
+        <p className="text-sm soft-text">{translate("Sign in with email or username.")}</p>
 
         <div>
-          <label className="mb-1 block text-xs soft-text">Email or username</label>
+          <label className="mb-1 block text-xs soft-text">{translate("Email or username")}</label>
           <Input
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="kobe24 or mail@domain.com"
+            placeholder={translate("kobe24 or mail@domain.com")}
             required
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs soft-text">Password</label>
+          <label className="mb-1 block text-xs soft-text">{translate("Password")}</label>
           <Input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+            placeholder={translate("••••••••")}
             type="password"
             required
           />
@@ -159,16 +161,16 @@ export default function LoginPage() {
         <TurnstileWidget onToken={setTurnstileToken} />
 
         <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? "Signing in..." : "Sign in"}
+          {submitting ? translate("Signing in...") : translate("Sign in")}
         </Button>
 
         {submitting && <BrandLoader compact label="Authenticating" />}
         {message && <FeedbackMessage message={message} isError={error} />}
 
         <p className="text-xs soft-text">
-          Need an account?{" "}
+          {translate("Need an account?")}{" "}
           <Link href="/signup" className="text-[rgb(var(--accent))] hover:underline">
-            Sign up
+            {translate("Sign up")}
           </Link>
         </p>
       </form>

@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { Shoe } from "@/lib/types";
+import { useLocale } from "@/components/i18n/locale-provider";
+import { DynamicTranslatedText } from "@/components/i18n/dynamic-translated-text";
 
 const fields: Array<{ key: string; label: string; get: (s: Shoe) => string }> = [
   { key: "name", label: "Name", get: (s) => s.shoe_name },
@@ -20,6 +22,7 @@ const fields: Array<{ key: string; label: string; get: (s: Shoe) => string }> = 
 ];
 
 export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
+  const { translate } = useLocale();
   const [highlightDiffs, setHighlightDiffs] = useState(false);
   const [shoes, setShoes] = useState(initialShoes);
 
@@ -31,7 +34,7 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
     return fields.map((field) => ({ ...field, differs: fieldDiffMap.get(field.key) ?? false }));
   }, [fieldDiffMap]);
 
-  if (!shoes.length) return <p className="rounded-2xl border border-dashed border-[rgb(var(--muted)/0.7)] p-8 soft-text">No shoes selected. Add IDs via the URL query string.</p>;
+  if (!shoes.length) return <p className="rounded-2xl border border-dashed border-[rgb(var(--muted)/0.7)] p-8 soft-text">{translate("No shoes selected. Add IDs via the URL query string.")}</p>;
 
   return (
     <section className="space-y-3">
@@ -45,13 +48,13 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
         }`}
       >
         <span className={`h-2 w-2 rounded-full transition ${highlightDiffs ? "bg-[rgb(var(--accent))]" : "bg-[rgb(var(--muted))]"}`} />
-        Highlight differences
+        {translate("Highlight differences")}
       </button>
       <div className="overflow-auto rounded-3xl border border-[rgb(var(--muted)/0.5)] bg-[rgb(var(--bg-elev)/0.72)]">
         <table className="w-full min-w-[1040px] text-sm">
           <thead>
             <tr>
-              <th className="sticky left-0 top-0 z-30 w-64 bg-[rgb(var(--bg-elev)/0.98)] px-4 py-3 text-left">Field</th>
+              <th className="sticky left-0 top-0 z-30 w-64 bg-[rgb(var(--bg-elev)/0.98)] px-4 py-3 text-left">{translate("Field")}</th>
               {shoes.map((s) => (
                 <th key={s.id} data-field-key="shoe_name" className="sticky top-0 z-20 bg-[rgb(var(--bg-elev)/0.98)] px-4 py-3 text-left align-top">
                   <div className="flex items-start justify-between gap-2">
@@ -65,8 +68,17 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
           <tbody>
             {shownFields.map((f, i) => (
               <tr key={f.key} data-field-key={f.key === "name" ? "shoe_name" : f.key === "forefoot" ? "forefoot_midsole_tech" : f.key === "heel" ? "heel_midsole_tech" : f.key === "outsole" ? "outsole_tech" : f.key} className={`group border-t border-[rgb(var(--muted)/0.45)] transition hover:bg-[rgb(var(--accent)/0.05)] ${i % 2 === 0 ? "bg-[rgb(var(--bg-elev)/0.18)]" : ""}`}>
-                <td className={`sticky left-0 bg-[rgb(var(--surface)/0.96)] px-4 py-3 font-medium ${highlightDiffs && f.differs ? "text-[rgb(var(--text))]" : ""}`}>{f.label}</td>
-                {shoes.map((s) => (
+                <td className={`sticky left-0 bg-[rgb(var(--surface)/0.96)] px-4 py-3 font-medium ${highlightDiffs && f.differs ? "text-[rgb(var(--text))]" : ""}`}>{translate(f.label)}</td>
+                {shoes.map((s) => {
+                  const value = f.get(s);
+                  const contentType = f.key === "brand"
+                    ? "brand"
+                    : f.key === "name"
+                    ? "shoe_name"
+                    : f.key === "forefoot" || f.key === "heel" || f.key === "outsole" || f.key === "upper"
+                    ? "technology"
+                    : "descriptive";
+                  return (
                   <td
                     key={`${f.key}-${s.id}`}
                     className={`px-4 py-3 soft-text transition ${
@@ -75,9 +87,13 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
                         : ""
                     }`}
                   >
-                    {f.get(s)}
+                    <DynamicTranslatedText
+                      text={value}
+                      contentType={contentType}
+                    />
                   </td>
-                ))}
+                  );
+                })}
               </tr>
             ))}
           </tbody>

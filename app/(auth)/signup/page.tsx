@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { TurnstileWidget } from "@/components/ui/turnstile";
 import { RequiredReadingGate } from "@/components/auth/required-reading-gate";
 import { createClient } from "@/lib/supabase/client";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 const CLIENT_TIMEOUT_MS = 12000;
 
@@ -38,6 +39,7 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = CLIE
 }
 
 export default function SignupPage() {
+  const { translate } = useLocale();
   const [form, setForm] = useState({ username: "", email: "", password: "" });
   const [turnstileToken, setTurnstileToken] = useState("");
   const [message, setMessage] = useState("");
@@ -137,13 +139,13 @@ export default function SignupPage() {
     <main className="container-shell py-10">
       {gateOpen && <RequiredReadingGate onContinue={() => setGateOpen(false)} />}
       <form onSubmit={onSubmit} className={`surface-card premium-border mx-auto max-w-md space-y-4 rounded-3xl p-7 ${gateOpen ? "pointer-events-none select-none" : ""}`}>
-        <h1 className="text-2xl font-semibold tracking-[0.02em]">Sign up</h1>
+        <h1 className="text-2xl font-semibold tracking-[0.02em]">{translate("Sign up")}</h1>
         <p className="text-sm soft-text">
-          Create your account to submit sneaker data and join discussions.
+          {translate("Create your account to submit sneaker data and join discussions.")}
         </p>
 
         <div>
-          <label className="mb-1 block text-xs soft-text">Username</label>
+          <label className="mb-1 block text-xs soft-text">{translate("Username")}</label>
           <Input
             value={form.username}
             onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
@@ -152,7 +154,7 @@ export default function SignupPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs soft-text">Email</label>
+          <label className="mb-1 block text-xs soft-text">{translate("Email")}</label>
           <Input
             value={form.email}
             onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
@@ -162,7 +164,7 @@ export default function SignupPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs soft-text">Password</label>
+          <label className="mb-1 block text-xs soft-text">{translate("Password")}</label>
           <Input
             value={form.password}
             onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
@@ -174,16 +176,16 @@ export default function SignupPage() {
         <TurnstileWidget onToken={setTurnstileToken} />
 
         <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? "Creating account..." : "Create account"}
+          {submitting ? translate("Creating account...") : translate("Create account")}
         </Button>
 
         {submitting && <BrandLoader compact label="Creating your account" />}
         {message && <FeedbackMessage message={message} isError={error} />}
 
         <p className="text-xs soft-text">
-          Already have an account?{" "}
+          {translate("Already have an account?")}{" "}
           <Link href="/login" className="text-[rgb(var(--accent))] hover:underline">
-            Log in
+            {translate("Log in")}
           </Link>
         </p>
       </form>
