@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 export function Modal({
   open,
@@ -15,6 +16,8 @@ export function Modal({
   children: React.ReactNode;
   dismissible?: boolean;
 }) {
+  const { translate } = useLocale();
+
   return (
     <AnimatePresence>
       {open && (
@@ -35,7 +38,7 @@ export function Modal({
             transition={{ duration: 0.22, ease: "easeOut" }}
             onClick={(e) => e.stopPropagation()}
           >
-            {title ? <h2 className="text-lg font-semibold tracking-[0.01em]">{title}</h2> : null}
+            {title ? <h2 className="text-lg font-semibold tracking-[0.01em]">{translate(title)}</h2> : null}
             <div className={title ? "mt-4" : undefined}>{children}</div>
           </motion.div>
         </motion.div>

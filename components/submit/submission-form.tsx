@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TurnstileWidget } from "@/components/ui/turnstile";
 import { Modal } from "@/components/ui/modal";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 const fields = [
   ["shoe_name", "Shoe name", true],
@@ -40,6 +41,7 @@ export function SubmissionForm({
   targetShoeLabel?: string;
   originalSnapshot?: Record<string, unknown>;
 }) {
+  const { translate } = useLocale();
   const formRef = useRef<HTMLFormElement>(null);
   const [token, setToken] = useState("");
   const [message, setMessage] = useState("");
@@ -125,21 +127,21 @@ export function SubmissionForm({
 
         <div className="md:col-span-2 space-y-2">
           <h1 className="text-2xl font-semibold tracking-[0.015em]">
-            {mode === "correction" ? "Submit correction" : "Submit sneaker information"}
+            {mode === "correction" ? translate("Submit correction") : translate("Submit sneaker information")}
           </h1>
           <p className="text-sm soft-text">
             {mode === "correction"
-              ? `You're submitting a correction for ${targetShoeLabel ?? "an existing published shoe"}. This goes to the same review queue and approval will update the existing record.`
-              : "Submissions are stored as raw payload, normalized server-side, and routed to admin review before publication."}
+              ? `${translate("You're submitting a correction for")} ${targetShoeLabel ?? translate("an existing published shoe")}. ${translate("This goes to the same review queue and approval will update the existing record.")}`
+              : translate("Submissions are stored as raw payload, normalized server-side, and routed to admin review before publication.")}
           </p>
         </div>
 
         {fields.map(([name, label, required]) => (
           <div key={name}>
-            <label className="mb-1 block text-xs soft-text">{label}</label>
+            <label className="mb-1 block text-xs soft-text">{translate(label)}</label>
             <Input
               name={name}
-              placeholder={label}
+              placeholder={translate(label)}
               required={required}
               type={name === "release_year" ? "number" : "text"}
               defaultValue={initialValues[name] == null ? "" : String(initialValues[name])}
@@ -148,22 +150,22 @@ export function SubmissionForm({
         ))}
 
         <div className="md:col-span-2">
-          <label className="mb-1 block text-xs soft-text">Story / background notes</label>
+          <label className="mb-1 block text-xs soft-text">{translate("Story / background notes")}</label>
           <textarea
             name="story_notes"
             defaultValue={initialValues.story_notes == null ? "" : String(initialValues.story_notes)}
             className="min-h-24 w-full rounded-xl border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.78)] p-3 text-sm text-[rgb(var(--text))] outline-none transition focus:border-[rgb(var(--ring)/0.8)] focus:ring-4 focus:ring-[rgb(var(--ring)/0.16)]"
-            placeholder="Release context, design intent, notable versions, community notes."
+            placeholder={translate("Release context, design intent, notable versions, community notes.")}
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-1 block text-xs soft-text">Raw notes (required)</label>
+          <label className="mb-1 block text-xs soft-text">{translate("Raw notes (required)")}</label>
           <textarea
             name="raw_text"
             defaultValue={initialValues.raw_text == null ? "" : String(initialValues.raw_text)}
             className="min-h-40 w-full rounded-xl border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.78)] p-3 text-sm text-[rgb(var(--text))] outline-none transition focus:border-[rgb(var(--ring)/0.8)] focus:ring-4 focus:ring-[rgb(var(--ring)/0.16)]"
-            placeholder="Paste your full performance observations and source snippets..."
+            placeholder={translate("Paste your full performance observations and source snippets...")}
             required
           />
         </div>
@@ -174,7 +176,7 @@ export function SubmissionForm({
 
         <div className="md:col-span-2 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
           <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit for review"}
+            {isSubmitting ? translate("Submitting...") : translate("Submit for review")}
           </Button>
           {message && isError && <p className="text-xs text-red-400">{message}</p>}
         </div>
@@ -184,7 +186,7 @@ export function SubmissionForm({
         <p className="text-sm soft-text">{message}</p>
         <div className="mt-4 flex justify-end">
           <Button type="button" onClick={handleModalConfirm}>
-            Back to submit
+            {translate("Back to submit")}
           </Button>
         </div>
       </Modal>

@@ -14,6 +14,142 @@ const UI_TRANSLATIONS_ZH: Record<string, string> = {
   "translating...": "翻译中…",
   "machine translation may contain some inaccuracies. thank you for your understanding. loading may also take a little time.":
     "机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。",
+  "integrated basketball sneaker feature platform": "综合篮球鞋性能平台",
+  "compare, discuss, and choose your ideal basketball sneaker on snkrfeature": "在 SNKRFEATURE 比较、讨论并选择你理想的篮球鞋",
+  "if you want to contribute to our community, please submit corrections, upload a new shoe, and discuss!":
+    "如果你想为社区做贡献，欢迎提交更正、上传新鞋并参与讨论！",
+  "submit new shoe info": "提交新鞋信息",
+  "open compare": "打开对比",
+  "submission review pipeline": "投稿审核流程",
+  "all brands": "全部品牌",
+  "search": "搜索",
+  "clear search": "清空搜索",
+  "name": "名称",
+  "brand": "品牌",
+  "release": "发售时间",
+  "no sneakers match this search.": "没有符合当前搜索条件的球鞋。",
+  "clear filters": "清除筛选",
+  "shoes selected for compare": "双鞋已加入对比",
+  "compare now": "立即对比",
+  "advanced search": "高级搜索",
+  "language": "语言",
+  "toggle mobile menu": "切换移动端菜单",
+  "close mobile navigation": "关闭移动端导航",
+  "contact": "联系",
+  "about": "关于",
+  "email address copied to clipboard.": "邮箱地址已复制到剪贴板。",
+  "unable to copy automatically. please try again.": "无法自动复制，请重试。",
+  "information is collected from ai models such as chatgpt and from users, and is verified by humans.":
+    "信息来自 ChatGPT 等 AI 模型与用户提交，并由人工审核。",
+  "this website was created by zzz.": "本网站由 zzz 创建。",
+  "close information modal": "关闭信息弹窗",
+  "hi!": "你好！",
+  "some words": "一些想说的话",
+  "in the meantime, enjoy!": "在此期间，祝你浏览愉快！",
+  "account": "账号",
+  "log in": "登录",
+  "sign up": "注册",
+  "log out": "登出",
+  "compare": "对比",
+  "submit": "提交",
+  "loading comparison matrix": "正在加载对比矩阵",
+  "loading dashboard": "正在加载仪表盘",
+  "loading dashboard data": "正在加载仪表盘数据",
+  "loading advanced search": "正在加载高级搜索",
+  "loading shoe detail": "正在加载球鞋详情",
+  "authenticating": "认证中",
+  "register": "注册",
+  "login": "登录",
+  "sign in": "登录",
+  "signing in...": "登录中…",
+  "create account": "创建账号",
+  "creating account...": "正在创建账号…",
+  "creating your account": "正在创建你的账号",
+  "setting up your profile": "正在设置你的资料",
+  "username": "用户名",
+  "email": "邮箱",
+  "password": "密码",
+  "need an account?": "还没有账号？",
+  "already have an account?": "已有账号？",
+  "email or username": "邮箱或用户名",
+  "sign in with email or username.": "使用邮箱或用户名登录。",
+  "view shoe": "查看球鞋",
+  "overview": "概览",
+  "loading account...": "正在加载账号…",
+  "welcome back": "欢迎回来",
+  "user": "用户",
+  "admin account": "管理员账号",
+  "my comments": "我的评论",
+  "liked comments": "点赞评论",
+  "disliked comments": "点踩评论",
+  "comments you liked": "你点赞过的评论",
+  "comments you disliked": "你点踩过的评论",
+  "no comments yet.": "还没有评论。",
+  "you have not liked any comments yet.": "你还没有点赞任何评论。",
+  "you have not disliked any comments yet.": "你还没有点踩任何评论。",
+  "submissions": "投稿",
+  "no submissions yet.": "还没有投稿。",
+  "status": "状态",
+  "saved compares": "已保存对比",
+  "no saved comparisons yet.": "还没有保存的对比。",
+  "settings": "设置",
+  "email (read-only)": "邮箱（只读）",
+  "current password": "当前密码",
+  "enter current password": "输入当前密码",
+  "change password": "修改密码",
+  "save profile": "保存资料",
+  "new password": "新密码",
+  "at least 8 characters": "至少 8 个字符",
+  "confirm new password": "确认新密码",
+  "re-enter new password": "再次输入新密码",
+  "cancel": "取消",
+  "update password": "更新密码",
+  "user center": "用户中心",
+  "please sign in to view your user center.": "请先登录以查看用户中心。",
+  "complete turnstile verification first.": "请先完成 Turnstile 验证。",
+  "submit correction": "提交更正",
+  "submit sneaker information": "提交球鞋信息",
+  "you're submitting a correction for": "你正在提交更正，目标为",
+  "an existing published shoe": "一双已发布球鞋",
+  "this goes to the same review queue and approval will update the existing record.": "该请求会进入同一审核队列，审核通过后将更新现有记录。",
+  "submissions are stored as raw payload, normalized server-side, and routed to admin review before publication.": "投稿会先以原始数据保存，在服务端标准化后提交管理员审核，再发布。",
+  "story / background notes": "背景故事/补充说明",
+  "release context, design intent, notable versions, community notes.": "发售背景、设计意图、重要版本、社区补充说明。",
+  "raw notes (required)": "原始备注（必填）",
+  "paste your full performance observations and source snippets...": "粘贴完整实战观察和来源片段……",
+  "submit for review": "提交审核",
+  "submission received": "已收到投稿",
+  "back to submit": "返回提交页",
+  "write a comment": "写评论",
+  "join the discussion with traction notes, fit tips, and durability observations.": "欢迎分享抓地、包裹和耐久方面的实战体验。",
+  "you need to be logged in to post a comment.": "你需要登录后才能发表评论。",
+  "write your performance feedback...": "写下你的实战反馈……",
+  "log in to start writing...": "登录后开始撰写……",
+  "posting...": "发布中…",
+  "post comment": "发布评论",
+  "keep it constructive and specific to on-court experience.": "请保持建设性，并聚焦实战体验。",
+  "view discussion": "查看讨论",
+  "comment": "评论",
+  "comments": "评论",
+  "no discussion yet": "还没有讨论",
+  "be the first to share how this shoe performs on court.": "来当第一个分享这双鞋实战表现的人吧。",
+  "delete my comment": "删除我的评论",
+  "delete": "删除",
+  "highlight differences": "高亮差异",
+  "field": "字段",
+  "release year": "发售年份",
+  "category": "类别",
+  "forefoot midsole": "前掌中底",
+  "heel midsole": "后掌中底",
+  "outsole": "外底",
+  "not yet added": "尚未添加",
+  "no shoes selected. add ids via the url query string.": "未选择球鞋。请通过 URL 查询参数添加 ID。",
+  "welcome!": "欢迎！",
+  "story behind snkrfeature": "snkrfeature 背后的故事",
+  "completed reading": "我已阅读完毕",
+  "continue to sign up": "继续注册",
+  "turnstile is not configured. demo verification mode is active.": "Turnstile 未配置，当前为演示验证模式。",
+  "use demo token": "使用演示令牌",
 };
 
 export const MANUAL_TRANSLATIONS: Record<string, string> = {
@@ -178,22 +314,20 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       <Modal open={warningOpen} onClose={() => undefined} title="" dismissible={false}>
         <div className="space-y-4">
           <p className="text-sm">
-            {locale === "zh"
-              ? "机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。"
-              : "Machine translation may contain some inaccuracies. Thank you for your understanding. Loading may also take a little time."}
+            {translate("Machine translation may contain some inaccuracies. Thank you for your understanding. Loading may also take a little time.")}
           </p>
           <button
             type="button"
             onClick={confirmWarning}
             className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-[rgb(var(--accent)/0.55)] bg-[rgb(var(--accent)/0.12)] text-sm font-medium text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.18)]"
           >
-            继续
+            {translate("Continue")}
           </button>
         </div>
       </Modal>
       {isTranslating ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgb(var(--bg)/0.78)] backdrop-blur-sm" aria-live="polite" aria-busy="true">
-          <BrandLoader label="Translating..." />
+          <BrandLoader label={translate("Translating...")} />
         </div>
       ) : null}
     </LocaleContext.Provider>

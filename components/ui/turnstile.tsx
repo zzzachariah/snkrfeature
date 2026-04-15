@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef } from "react";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 declare global {
   interface Window {
@@ -14,6 +15,7 @@ declare global {
 type Props = { onToken: (token: string) => void };
 
 export function TurnstileWidget({ onToken }: Props) {
+  const { translate } = useLocale();
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const id = useId().replace(/:/g, "");
   const widgetId = useRef<string | null>(null);
@@ -56,8 +58,8 @@ export function TurnstileWidget({ onToken }: Props) {
   if (!siteKey) {
     return (
       <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-        Turnstile is not configured. Demo verification mode is active.
-        <button type="button" className="ml-2 underline" onClick={() => onToken("demo-token")}>Use demo token</button>
+        {translate("Turnstile is not configured. Demo verification mode is active.")}
+        <button type="button" className="ml-2 underline" onClick={() => onToken("demo-token")}>{translate("Use demo token")}</button>
       </div>
     );
   }
