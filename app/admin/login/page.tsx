@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { TurnstileWidget } from "@/components/ui/turnstile";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,8 +46,9 @@ export default function AdminLoginPage() {
 
       setError(false);
       setMessage("Admin access granted. Redirecting...");
-      router.push("/admin");
-      router.refresh();
+      if (pathname !== "/admin") {
+        router.push("/admin");
+      }
     } catch {
       setError(true);
       setMessage("Admin login request failed. Please try again.");
