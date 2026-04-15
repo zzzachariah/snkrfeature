@@ -116,8 +116,8 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
                   className="border-t border-[rgb(var(--glass-stroke-soft)/0.35)] odd:bg-[rgb(var(--glass-bg-strong)/0.5)] transition hover:bg-[rgb(var(--accent)/0.08)]"
                 >
                   <td className="px-4 py-3 align-middle"><input className="h-4 w-4 accent-[rgb(var(--accent))]" type="checkbox" checked={selected.includes(shoe.id)} onChange={(e) => setSelected((p) => e.target.checked ? [...p, shoe.id] : p.filter((id) => id !== shoe.id))} /></td>
-                  <td className="px-4 py-3"><Link href={`/shoes/${shoe.slug}`} className="font-medium transition">{shoe.shoe_name}</Link></td>
-                  <td className="px-4 py-3">{shoe.brand}</td>
+                  <td data-field-key="shoe_name" className="px-4 py-3"><Link href={`/shoes/${shoe.slug}`} className="font-medium transition">{shoe.shoe_name}</Link></td>
+                  <td data-field-key="brand" className="px-4 py-3">{shoe.brand}</td>
                   <td className="px-4 py-3">{shoe.release_year ?? "—"}</td>
                 </motion.tr>
               ))}
