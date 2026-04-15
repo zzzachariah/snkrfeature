@@ -12,7 +12,7 @@ const MANUAL_TRANSLATIONS: Record<string, string> = {
   "brand represented": "品牌",
   "brands represented": "品牌",
   "live": "实时",
-  "player": "球员",
+  "player,": "球员",
   "technologies": "科技",
 
   // navigation
