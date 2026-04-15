@@ -11,6 +11,7 @@ type UseTranslatedTextOptions = {
 
 const resolvedDynamicCache = new Map<string, string>();
 const pendingDynamicCache = new Map<string, Promise<string>>();
+const isDebugEnabled = process.env.NEXT_PUBLIC_I18N_DEBUG === "1";
 
 function isLikelyIsolatedTechTerm(text: string) {
   const trimmed = text.trim();
@@ -30,6 +31,7 @@ export function useTranslatedText(
   options: UseTranslatedTextOptions = {}
 ) {
   const { locale, translate, translateDynamic } = useLocale();
+  const contentType = options.contentType ?? "descriptive";
   const source = text ?? "";
   const normalized = source.trim();
 
@@ -48,6 +50,16 @@ export function useTranslatedText(
     const immediate = translate(source);
     setResolved(immediate);
 
+    if (isDebugEnabled) {
+      console.debug("[i18n/useTranslatedText] run", {
+        source,
+        locale,
+        contentType,
+        shouldSkipDynamic,
+        usedManualOrStatic: immediate !== source
+      });
+    }
+
     if (locale !== "zh" || shouldSkipDynamic) return;
     if (!normalized) return;
     if (immediate !== source) return;
@@ -56,6 +68,9 @@ export function useTranslatedText(
     const cacheKey = `${locale}::${source}`;
     const cachedValue = resolvedDynamicCache.get(cacheKey);
     if (cachedValue) {
+      if (isDebugEnabled) {
+        console.debug("[i18n/useTranslatedText] resolved cache hit", { cacheKey, value: cachedValue });
+      }
       setResolved(cachedValue);
       return;
     }
@@ -63,11 +78,19 @@ export function useTranslatedText(
     const pending = pendingDynamicCache.get(cacheKey) ?? translateDynamic(source);
     if (!pendingDynamicCache.has(cacheKey)) {
       pendingDynamicCache.set(cacheKey, pending);
+      if (isDebugEnabled) {
+        console.debug("[i18n/useTranslatedText] calling translateDynamic", { cacheKey, source });
+      }
+    } else if (isDebugEnabled) {
+      console.debug("[i18n/useTranslatedText] pending cache hit", { cacheKey });
     }
 
     pending
       .then((value) => {
         resolvedDynamicCache.set(cacheKey, value);
+        if (isDebugEnabled) {
+          console.debug("[i18n/useTranslatedText] dynamic resolved", { cacheKey, value });
+        }
         if (!cancelled) setResolved(value);
       })
       .finally(() => {
@@ -77,7 +100,7 @@ export function useTranslatedText(
     return () => {
       cancelled = true;
     };
-  }, [locale, normalized, shouldSkipDynamic, source, translate, translateDynamic]);
+  }, [contentType, locale, normalized, shouldSkipDynamic, source, translate, translateDynamic]);
 
   return resolved;
 }

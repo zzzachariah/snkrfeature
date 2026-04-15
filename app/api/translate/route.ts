@@ -4,6 +4,7 @@ const translationCache = new Map<string, string>();
 const DEFAULT_LOCALE = "zh";
 const LIBRETRANSLATE_URL = process.env.LIBRETRANSLATE_URL;
 const TRANSLATION_TIMEOUT_MS = 10000;
+const isI18nDebugEnabled = process.env.I18N_DEBUG === "1";
 
 function makeCacheKey(text: string, target: string) {
   return `${target}::${text}`;
@@ -15,7 +16,7 @@ function shouldSkip(text: string) {
   if (trimmed.toLowerCase() === "snkrfeature") return true;
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return true;
   if (/^(nike|adidas|jordan|anta|li-ning)$/i.test(trimmed)) return true;
-  if (/\b(boost|zoom|zoomx|cushlon|lightstrike)\b/i.test(trimmed)) return true;
+  if (/^(boost|zoom|zoomx|cushlon|lightstrike|boom|boom foam|zoom air)$/i.test(trimmed)) return true;
   return false;
 }
 
@@ -25,14 +26,31 @@ export async function POST(request: Request) {
     const text = String(body.text ?? "").trim();
     const target = String(body.target ?? DEFAULT_LOCALE);
 
+    if (isI18nDebugEnabled) {
+      console.log("[i18n/api] request", { text, target });
+    }
+
     if (!text) return NextResponse.json({ translatedText: "" });
-    if (shouldSkip(text)) return NextResponse.json({ translatedText: text, cached: true });
+    if (shouldSkip(text)) {
+      if (isI18nDebugEnabled) {
+        console.log("[i18n/api] skipped", { text, reason: "shouldSkip" });
+      }
+      return NextResponse.json({ translatedText: text, cached: true });
+    }
 
     const cacheKey = makeCacheKey(text, target);
     const cached = translationCache.get(cacheKey);
-    if (cached) return NextResponse.json({ translatedText: cached, cached: true });
+    if (cached) {
+      if (isI18nDebugEnabled) {
+        console.log("[i18n/api] cache hit", { cacheKey, value: cached });
+      }
+      return NextResponse.json({ translatedText: cached, cached: true });
+    }
 
     if (!LIBRETRANSLATE_URL) {
+      if (isI18nDebugEnabled) {
+        console.log("[i18n/api] missing translation engine", { text, target });
+      }
       return NextResponse.json({ translatedText: text, cached: false, reason: "missing_translation_engine" });
     }
 
@@ -55,6 +73,9 @@ export async function POST(request: Request) {
       const translated = (data.translatedText ?? text).trim() || text;
 
       translationCache.set(cacheKey, translated);
+      if (isI18nDebugEnabled) {
+        console.log("[i18n/api] translated", { cacheKey, translated });
+      }
       return NextResponse.json({ translatedText: translated, cached: false });
     } finally {
       clearTimeout(timeout);
