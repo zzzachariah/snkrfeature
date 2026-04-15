@@ -8,6 +8,7 @@ export type Locale = "en" | "zh";
 
 const LOCALE_STORAGE_KEY = "locale";
 const SWITCH_OVERLAY_MS = 900;
+const isI18nDebugEnabled = process.env.NEXT_PUBLIC_I18N_DEBUG === "1";
 
 const UI_TRANSLATIONS_ZH: Record<string, string> = {
   "continue": "继续",
@@ -274,14 +275,31 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
   const translateDynamic = useCallback(
     async (text: string) => {
-      if (locale === "en" || shouldSkipDynamicTranslation(text)) return text;
+      if (locale === "en" || shouldSkipDynamicTranslation(text)) {
+        if (isI18nDebugEnabled) {
+          console.debug("[i18n/locale-provider] translateDynamic skipped", {
+            text,
+            locale,
+            reason: locale === "en" ? "locale_en" : "protected_or_invalid"
+          });
+        }
+        return text;
+      }
 
       const normalized = normalizeKey(text);
 
       if (MANUAL_TRANSLATIONS[normalized]) return MANUAL_TRANSLATIONS[normalized];
-      if (translationCache[text]) return translationCache[text];
+      if (translationCache[text]) {
+        if (isI18nDebugEnabled) {
+          console.debug("[i18n/locale-provider] translateDynamic cache hit", { text, value: translationCache[text] });
+        }
+        return translationCache[text];
+      }
 
       try {
+        if (isI18nDebugEnabled) {
+          console.debug("[i18n/locale-provider] translateDynamic request", { text, target: "zh" });
+        }
         const response = await fetch("/api/translate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -292,6 +310,10 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
         const payload = (await response.json()) as { translatedText?: string };
         const value = payload.translatedText?.trim() || text;
+
+        if (isI18nDebugEnabled) {
+          console.debug("[i18n/locale-provider] translateDynamic response", { text, value });
+        }
 
         setTranslationCache((prev) => ({ ...prev, [text]: value }));
         return value;
