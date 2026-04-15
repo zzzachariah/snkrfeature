@@ -15,6 +15,13 @@ const OFFLINE_ZH_EXACT: Record<string, string> = {
   "very good": "很好",
   "slightly narrow but very secure": "略窄，但包裹非常稳固"
 };
+const CURRY_NAME_CORRECTIONS_ZH: Array<{ pattern: RegExp; replacement: string }> = [
+  { pattern: /史蒂芬[\s·.-]*咖喱/g, replacement: "斯蒂芬·库里" },
+  { pattern: /斯蒂芬[\s·.-]*咖喱/g, replacement: "斯蒂芬·库里" },
+  { pattern: /咖喱\s*13/g, replacement: "库里 13" },
+  { pattern: /咖喱\s*12/g, replacement: "库里 12" },
+  { pattern: /咖喱/g, replacement: "库里" }
+];
 
 function makeCacheKey(text: string, target: string) {
   return `${target}::${text}`;
@@ -55,6 +62,26 @@ function normalizeTranslatedOrFallback(original: string, translated: string | nu
   if (!cleaned) return original;
   if (includesBackendLimitError(cleaned)) return original;
   return cleaned;
+}
+
+function applyProperNounOverridesForZh(original: string, translated: string) {
+  if (!/\bcurry\b/i.test(original)) return translated;
+
+  let corrected = translated;
+  for (const { pattern, replacement } of CURRY_NAME_CORRECTIONS_ZH) {
+    corrected = corrected.replace(pattern, replacement);
+  }
+
+  if (/\bstephen\s+curry\b/i.test(original)) {
+    corrected = corrected.replace(/斯蒂芬[\s·.-]*库里/g, "斯蒂芬·库里");
+  }
+
+  return corrected;
+}
+
+function applyProperNounOverrides(original: string, translated: string, target: string) {
+  if (target !== "zh") return translated;
+  return applyProperNounOverridesForZh(original, translated);
 }
 
 function splitByPeriods(text: string) {
@@ -209,6 +236,8 @@ export async function POST(request: Request) {
           if (offlineTranslated) translatedUnit = offlineTranslated;
         }
       }
+
+      translatedUnit = applyProperNounOverrides(unit, translatedUnit, target);
 
       translationCache.set(unitCacheKey, translatedUnit);
       translatedUnits.push(translatedUnit);
