@@ -20,6 +20,15 @@ export function DynamicTranslatedText({
   contentType = "descriptive"
 }: DynamicTranslatedTextProps) {
   const value = useTranslatedText(text, { skipDynamic, protectTechTerms, contentType });
+  if (process.env.NEXT_PUBLIC_I18N_DEBUG === "1") {
+    console.debug("[i18n/DynamicTranslatedText] render", {
+      source: text ?? "",
+      resolved: value,
+      contentType,
+      skipDynamic,
+      protectTechTerms
+    });
+  }
   const Component = as;
   return <Component className={className}>{value}</Component>;
 }
