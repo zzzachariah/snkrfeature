@@ -7,14 +7,25 @@ import { Modal } from "@/components/ui/modal";
 export type Locale = "en" | "zh";
 
 const MANUAL_TRANSLATIONS: Record<string, string> = {
+  // homepage stats / labels
   "shoe indexed": "双鞋子",
   "shoes indexed": "双鞋子",
   "brand represented": "品牌",
   "brands represented": "品牌",
   "live": "实时",
+
+  // navigation
+  "home": "主页",
+
+  // loading states
   "loading": "加载中…",
   "loading...": "加载中…",
   "preparing your feed": "加载中…",
+
+  // playstyle text
+  "no playstyle summary available yet.": "尚无可用的球员风格摘要。",
+
+  // tech fields (critical corrections)
   "forefoot_midsole_tech": "前掌中底科技",
   "heel_midsole_tech": "后掌中底科技",
   "upper_tech": "鞋面科技",
