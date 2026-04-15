@@ -57,7 +57,13 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
             ) : (
               <p className="mt-3 text-sm leading-6 soft-text md:text-base">{translate("No playstyle summary available yet.")}</p>
             )}
-            <div className="mt-4 flex flex-wrap gap-2">{(shoe.spec.tags ?? []).map((tag) => <Badge key={tag}>{tag}</Badge>)}</div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(shoe.spec.tags ?? []).map((tag) => (
+                <Badge key={tag}>
+                  <DynamicTranslatedText as="span" text={tag} contentType="descriptive" />
+                </Badge>
+              ))}
+            </div>
           </div>
           <div className="flex gap-2">
             <Link href={`/compare?ids=${shoe.id}`}><Button>{translate("Add to compare")}</Button></Link>
@@ -67,16 +73,25 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {Object.entries({ "Forefoot tech": { value: shoe.spec.forefoot_midsole_tech, field: "forefoot_midsole_tech" }, "Heel tech": { value: shoe.spec.heel_midsole_tech, field: "heel_midsole_tech" }, "Outsole tech": { value: shoe.spec.outsole_tech, field: "outsole_tech" }, "Upper tech": { value: shoe.spec.upper_tech, field: "upper_tech" } }).map(([k, data]) => (
+        {Object.entries({
+          "Forefoot tech": { value: shoe.spec.forefoot_midsole_tech, field: "forefoot_midsole_tech", noTranslate: true },
+          "Heel tech": { value: shoe.spec.heel_midsole_tech, field: "heel_midsole_tech", noTranslate: true },
+          "Outsole tech": { value: shoe.spec.outsole_tech, field: "outsole_tech", noTranslate: false },
+          "Upper tech": { value: shoe.spec.upper_tech, field: "upper_tech", noTranslate: false }
+        }).map(([k, data]) => (
           <Card key={k} className="p-4">
-            <p className="text-xs uppercase tracking-wide soft-text">{translate(k)}</p>
+            <p className="text-xs uppercase tracking-wide soft-text">{data.noTranslate ? k : translate(k)}</p>
             {data.value ? (
-              <DynamicTranslatedText
-                as="p"
-                className="mt-2 font-medium"
-                text={data.value}
-                contentType="technology"
-              />
+              data.noTranslate ? (
+                <p className="mt-2 font-medium">{data.value}</p>
+              ) : (
+                <DynamicTranslatedText
+                  as="p"
+                  className="mt-2 font-medium"
+                  text={data.value}
+                  contentType="technology"
+                />
+              )
             ) : (
               <p data-field-key={data.field} className="mt-2 font-medium">{translate("Not yet added")}</p>
             )}
@@ -101,7 +116,11 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
           <h2 className="text-lg font-semibold">{translate("Story & provenance")}</h2>
           {hasStory ? (
             <div className="mt-2 space-y-2">
-              <p data-field-key="shoe_name" className="text-sm font-medium">{storyTitle ?? `${shoe.brand} ${shoe.shoe_name}`}</p>
+              {storyTitle ? (
+                <DynamicTranslatedText as="p" className="text-sm font-medium" text={storyTitle} />
+              ) : (
+                <p data-field-key="shoe_name" className="text-sm font-medium">{`${shoe.brand} ${shoe.shoe_name}`}</p>
+              )}
               {storyContent ? (
                 <DynamicTranslatedText as="p" className="text-sm soft-text" text={storyContent} />
               ) : (

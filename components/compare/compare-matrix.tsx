@@ -68,7 +68,9 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
           <tbody>
             {shownFields.map((f, i) => (
               <tr key={f.key} data-field-key={f.key === "name" ? "shoe_name" : f.key === "forefoot" ? "forefoot_midsole_tech" : f.key === "heel" ? "heel_midsole_tech" : f.key === "outsole" ? "outsole_tech" : f.key} className={`group border-t border-[rgb(var(--muted)/0.45)] transition hover:bg-[rgb(var(--accent)/0.05)] ${i % 2 === 0 ? "bg-[rgb(var(--bg-elev)/0.18)]" : ""}`}>
-                <td className={`sticky left-0 bg-[rgb(var(--surface)/0.96)] px-4 py-3 font-medium ${highlightDiffs && f.differs ? "text-[rgb(var(--text))]" : ""}`}>{translate(f.label)}</td>
+                <td className={`sticky left-0 bg-[rgb(var(--surface)/0.96)] px-4 py-3 font-medium ${highlightDiffs && f.differs ? "text-[rgb(var(--text))]" : ""}`}>
+                  {f.key === "forefoot" || f.key === "heel" ? f.label : translate(f.label)}
+                </td>
                 {shoes.map((s) => {
                   const value = f.get(s);
                   const contentType = f.key === "brand"
@@ -78,6 +80,7 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
                     : f.key === "forefoot" || f.key === "heel" || f.key === "outsole" || f.key === "upper"
                     ? "technology"
                     : "descriptive";
+                  const shouldKeepRaw = f.key === "forefoot" || f.key === "heel";
                   return (
                   <td
                     key={`${f.key}-${s.id}`}
@@ -87,10 +90,12 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
                         : ""
                     }`}
                   >
-                    <DynamicTranslatedText
-                      text={value}
-                      contentType={contentType}
-                    />
+                    {shouldKeepRaw ? value : (
+                      <DynamicTranslatedText
+                        text={value}
+                        contentType={contentType}
+                      />
+                    )}
                   </td>
                   );
                 })}
