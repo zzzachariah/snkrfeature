@@ -5,6 +5,7 @@ import { BrandLoader } from "@/components/ui/brand-loader";
 import { Modal } from "@/components/ui/modal";
 
 export type Locale = "en" | "zh";
+const TRANSLATION_REQUEST_TIMEOUT_MS = 8000;
 
 const MANUAL_TRANSLATIONS: Record<string, string> = {
   "shoe indexed": "双鞋子",
