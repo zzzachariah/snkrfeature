@@ -236,10 +236,20 @@ function normalizeKey(text: string) {
   return text.trim().toLowerCase();
 }
 
+const PROTECTED_NO_TRANSLATE_KEYS = new Set([
+  "forefoot midsole tech",
+  "heel midsole tech",
+  "forefoot midsole",
+  "heel midsole",
+  "forefoot tech",
+  "heel tech"
+]);
+
 function shouldSkipDynamicTranslation(text: string) {
   const trimmed = text.trim();
   if (!trimmed) return true;
   if (normalizeKey(trimmed) === "snkrfeature") return true;
+  if (PROTECTED_NO_TRANSLATE_KEYS.has(normalizeKey(trimmed))) return true;
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return true;
   return false;
 }
@@ -262,6 +272,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       const normalized = normalizeKey(text);
 
       if (normalizeKey(text) === "snkrfeature") return "snkrfeature";
+      if (PROTECTED_NO_TRANSLATE_KEYS.has(normalized)) return text;
 
       if (MANUAL_TRANSLATIONS[normalized]) return MANUAL_TRANSLATIONS[normalized];
 

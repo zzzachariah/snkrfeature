@@ -73,16 +73,25 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {Object.entries({ "Forefoot tech": { value: shoe.spec.forefoot_midsole_tech, field: "forefoot_midsole_tech" }, "Heel tech": { value: shoe.spec.heel_midsole_tech, field: "heel_midsole_tech" }, "Outsole tech": { value: shoe.spec.outsole_tech, field: "outsole_tech" }, "Upper tech": { value: shoe.spec.upper_tech, field: "upper_tech" } }).map(([k, data]) => (
+        {Object.entries({
+          "Forefoot tech": { value: shoe.spec.forefoot_midsole_tech, field: "forefoot_midsole_tech", noTranslate: true },
+          "Heel tech": { value: shoe.spec.heel_midsole_tech, field: "heel_midsole_tech", noTranslate: true },
+          "Outsole tech": { value: shoe.spec.outsole_tech, field: "outsole_tech", noTranslate: false },
+          "Upper tech": { value: shoe.spec.upper_tech, field: "upper_tech", noTranslate: false }
+        }).map(([k, data]) => (
           <Card key={k} className="p-4">
-            <p className="text-xs uppercase tracking-wide soft-text">{translate(k)}</p>
+            <p className="text-xs uppercase tracking-wide soft-text">{data.noTranslate ? k : translate(k)}</p>
             {data.value ? (
-              <DynamicTranslatedText
-                as="p"
-                className="mt-2 font-medium"
-                text={data.value}
-                contentType="technology"
-              />
+              data.noTranslate ? (
+                <p className="mt-2 font-medium">{data.value}</p>
+              ) : (
+                <DynamicTranslatedText
+                  as="p"
+                  className="mt-2 font-medium"
+                  text={data.value}
+                  contentType="technology"
+                />
+              )
             ) : (
               <p data-field-key={data.field} className="mt-2 font-medium">{translate("Not yet added")}</p>
             )}
