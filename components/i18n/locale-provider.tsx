@@ -6,13 +6,24 @@ import { Modal } from "@/components/ui/modal";
 
 export type Locale = "en" | "zh";
 
+const LOCALE_STORAGE_KEY = "locale";
+const SWITCH_OVERLAY_MS = 900;
+
+const UI_TRANSLATIONS_ZH: Record<string, string> = {
+  "continue": "继续",
+  "translating...": "翻译中…",
+  "machine translation may contain some inaccuracies. thank you for your understanding. loading may also take a little time.":
+    "机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。",
+};
+
 export const MANUAL_TRANSLATIONS: Record<string, string> = {
   "shoe indexed": "双鞋子",
   "shoes indexed": "双鞋子",
   "brand represented": "品牌",
   "brands represented": "品牌",
   "live": "实时",
-  "dashboard": "我的主页",
+  "dashboard": "我的账号",
+  "home": "主页",
   "player": "球员",
   "search by name, player, tags, technologies...": "按名称、球员、标签、技术搜索……",
   "loading": "加载中…",
@@ -23,40 +34,14 @@ export const MANUAL_TRANSLATIONS: Record<string, string> = {
   "upper_tech": "鞋面科技",
   "forefoot tech": "前掌中底科技",
   "heel tech": "后掌中底科技",
-  "upper tech": "鞋面科技"
+  "upper tech": "鞋面科技",
+  "upper": "鞋面科技",
+  "cushioning": "泡棉舒适度",
+  "traction": "抓地力/止滑程度",
+  "stability": "稳定性",
+  "fit": "包裹",
+  "admin": "管理员",
 };
-
-const UI_TRANSLATIONS_ZH: Record<string, string> = {
-  english: "英文",
-  chinese: "中文",
-  language: "语言",
-  home: "首页",
-  compare: "对比",
-  submit: "提交",
-  dashboard: "我的主页",
-  "advanced search": "高级搜索",
-  search: "搜索",
-  "all brands": "所有品牌",
-  "integrated basketball sneaker feature platform": "综合篮球球鞋功能平台",
-  "compare, discuss, and choose your ideal basketball sneaker on snkrfeature": "在 SNKRFEATURE 对比、讨论并选择你的理想篮球鞋",
-  "if you want to contribute to our community, please submit corrections, upload a new shoe, and discuss!": "如果你想为社区做贡献，欢迎提交修正、上传新球鞋并参与讨论！",
-  "submit new shoe info": "提交新球鞋信息",
-  "open compare": "打开对比",
-  "submission review pipeline": "提交流程审核管线",
-  "name": "名称",
-  "brand": "品牌",
-  "release": "发售",
-  "no sneakers match this search.": "没有符合此搜索条件的球鞋。",
-  "clear filters": "清除筛选",
-  "shoes selected for compare": "双球鞋已选用于对比",
-  "compare now": "立即对比",
-  "translating...": "翻译中…",
-  "machine translation notice": "机器翻译有问题敬请谅解",
-  continue: "继续"
-};
-
-const LOCALE_STORAGE_KEY = "locale";
-const SWITCH_OVERLAY_MS = 800;
 
 type LocaleContextValue = {
   locale: Locale;
@@ -189,9 +174,14 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   return (
     <LocaleContext.Provider value={contextValue}>
       {children}
+
       <Modal open={warningOpen} onClose={() => undefined} title="" dismissible={false}>
         <div className="space-y-4">
-          <p className="text-sm">机器翻译有问题敬请谅解</p>
+          <p className="text-sm">
+            {locale === "zh"
+              ? "机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。"
+              : "Machine translation may contain some inaccuracies. Thank you for your understanding. Loading may also take a little time."}
+          </p>
           <button
             type="button"
             onClick={confirmWarning}
