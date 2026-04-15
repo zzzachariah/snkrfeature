@@ -44,10 +44,10 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
   return (
     <main className="container-shell space-y-6 py-8">
       <section className="surface-card premium-border rounded-3xl p-6 md:p-8">
-        <p className="text-xs uppercase tracking-[0.2em] soft-text">{shoe.brand} • {shoe.release_year ?? "TBD"}</p>
+        <p className="text-xs uppercase tracking-[0.2em] soft-text"><span data-field-key="brand">{shoe.brand}</span> • {shoe.release_year ?? "TBD"}</p>
         <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
-            <h1 className="text-3xl font-semibold tracking-[0.015em] text-[rgb(var(--text))] md:text-4xl">{shoe.shoe_name}</h1>
+            <h1 data-field-key="shoe_name" className="text-3xl font-semibold tracking-[0.015em] text-[rgb(var(--text))] md:text-4xl">{shoe.shoe_name}</h1>
             <p className="mt-3 text-sm leading-6 soft-text md:text-base">{shoe.spec.playstyle_summary ?? "No playstyle summary available yet."}</p>
             <div className="mt-4 flex flex-wrap gap-2">{(shoe.spec.tags ?? []).map((tag) => <Badge key={tag}>{tag}</Badge>)}</div>
           </div>
@@ -56,8 +56,8 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {Object.entries({ "Forefoot tech": shoe.spec.forefoot_midsole_tech, "Heel tech": shoe.spec.heel_midsole_tech, "Outsole tech": shoe.spec.outsole_tech, "Upper tech": shoe.spec.upper_tech }).map(([k, v]) => (
-          <Card key={k} className="p-4"><p className="text-xs uppercase tracking-wide soft-text">{k}</p><p className="mt-2 font-medium">{v ?? "Not yet added"}</p></Card>
+        {Object.entries({ "Forefoot tech": { value: shoe.spec.forefoot_midsole_tech, field: "forefoot_midsole_tech" }, "Heel tech": { value: shoe.spec.heel_midsole_tech, field: "heel_midsole_tech" }, "Outsole tech": { value: shoe.spec.outsole_tech, field: "outsole_tech" }, "Upper tech": { value: shoe.spec.upper_tech, field: "upper_tech" } }).map(([k, data]) => (
+          <Card key={k} className="p-4"><p className="text-xs uppercase tracking-wide soft-text">{k}</p><p data-field-key={data.field} className="mt-2 font-medium">{data.value ?? "Not yet added"}</p></Card>
         ))}
       </section>
 
@@ -108,7 +108,7 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
           <h2 className="text-lg font-semibold">Story & provenance</h2>
           {hasStory ? (
             <div className="mt-2 space-y-2">
-              <p className="text-sm font-medium">{storyTitle ?? `${shoe.brand} ${shoe.shoe_name}`}</p>
+              <p data-field-key="shoe_name" className="text-sm font-medium">{storyTitle ?? `${shoe.brand} ${shoe.shoe_name}`}</p>
               <p className="text-sm soft-text">{storyContent ?? "No editorial story content yet."}</p>
             </div>
           ) : (
@@ -124,7 +124,7 @@ export default async function ShoeDetailPage({ params }: { params: Promise<{ slu
 
       <Card className="p-5">
         <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Related shoes</h2><Link href="/" className="inline-flex items-center gap-1 text-sm soft-text">Back to database <ArrowRight className="h-3 w-3" /></Link></div>
-        <div className="mt-3 grid gap-2 md:grid-cols-3">{related.map((item) => <Link key={item.id} href={`/shoes/${item.slug}`} className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3 hover:bg-[rgb(var(--accent)/0.08)]">{item.shoe_name}</Link>)}</div>
+        <div className="mt-3 grid gap-2 md:grid-cols-3">{related.map((item) => <Link key={item.id} href={`/shoes/${item.slug}`} data-field-key="shoe_name" className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3 hover:bg-[rgb(var(--accent)/0.08)]">{item.shoe_name}</Link>)}</div>
       </Card>
     </main>
   );
