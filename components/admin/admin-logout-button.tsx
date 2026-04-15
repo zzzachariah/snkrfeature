@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 
 export function AdminLogoutButton() {
   const router = useRouter();
+  const pathname = usePathname();
   const [loading, setLoading] = useState(false);
 
   async function onLogout() {
     setLoading(true);
     try {
       await fetch("/api/admin/logout", { method: "POST" });
-      router.push("/dashboard");
-      router.refresh();
+      if (pathname !== "/dashboard") {
+        router.push("/dashboard");
+      }
     } finally {
       setLoading(false);
     }
