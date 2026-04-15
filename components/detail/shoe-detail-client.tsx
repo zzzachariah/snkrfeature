@@ -57,7 +57,13 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
             ) : (
               <p className="mt-3 text-sm leading-6 soft-text md:text-base">{translate("No playstyle summary available yet.")}</p>
             )}
-            <div className="mt-4 flex flex-wrap gap-2">{(shoe.spec.tags ?? []).map((tag) => <Badge key={tag}>{tag}</Badge>)}</div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(shoe.spec.tags ?? []).map((tag) => (
+                <Badge key={tag}>
+                  <DynamicTranslatedText as="span" text={tag} contentType="descriptive" />
+                </Badge>
+              ))}
+            </div>
           </div>
           <div className="flex gap-2">
             <Link href={`/compare?ids=${shoe.id}`}><Button>{translate("Add to compare")}</Button></Link>
@@ -101,7 +107,11 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
           <h2 className="text-lg font-semibold">{translate("Story & provenance")}</h2>
           {hasStory ? (
             <div className="mt-2 space-y-2">
-              <p data-field-key="shoe_name" className="text-sm font-medium">{storyTitle ?? `${shoe.brand} ${shoe.shoe_name}`}</p>
+              {storyTitle ? (
+                <DynamicTranslatedText as="p" className="text-sm font-medium" text={storyTitle} />
+              ) : (
+                <p data-field-key="shoe_name" className="text-sm font-medium">{`${shoe.brand} ${shoe.shoe_name}`}</p>
+              )}
               {storyContent ? (
                 <DynamicTranslatedText as="p" className="text-sm soft-text" text={storyContent} />
               ) : (

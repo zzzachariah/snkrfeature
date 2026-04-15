@@ -15,7 +15,7 @@ function shouldSkip(text: string) {
   if (trimmed.toLowerCase() === "snkrfeature") return true;
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return true;
   if (/^(nike|adidas|jordan|anta|li-ning)$/i.test(trimmed)) return true;
-  if (/\b(boost|zoom|zoomx|cushlon|lightstrike)\b/i.test(trimmed)) return true;
+  if (/^(boost|zoom|zoomx|cushlon|lightstrike|boom|boom foam|zoom air)$/i.test(trimmed)) return true;
   return false;
 }
 
