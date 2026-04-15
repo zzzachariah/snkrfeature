@@ -135,7 +135,7 @@ export function AccountMenu({ className }: { className?: string }) {
           className
         )}
       >
-        <span className="truncate">{label}</span>
+        <span className="truncate" data-user-identity="true">{label}</span>
         <ChevronDown className="h-4 w-4 shrink-0" />
       </button>
 
