@@ -83,7 +83,7 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
               <button
                 type="button"
                 onClick={clearSearch}
-                aria-label="Clear search"
+                aria-label={translate("Clear search")}
                 className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-[rgb(var(--subtext))] transition hover:bg-[rgb(var(--muted)/0.32)] hover:text-[rgb(var(--text))]"
               >
                 <X className="h-4 w-4" />
@@ -105,9 +105,9 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
             <thead className="sticky top-0 z-10 bg-[rgb(var(--glass-bg-strong)/0.98)] text-[rgb(var(--subtext))]">
               <tr>
                 <th className="px-4 py-3">{translate("Compare")}</th>
-                <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("shoe_name")}>{translate("Name")}<ArrowUpDown className="h-3 w-3" /></button></th>
-                <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("brand")}>{translate("Brand")}<ArrowUpDown className="h-3 w-3" /></button></th>
-                <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("release_year")}>{translate("Release")}<ArrowUpDown className="h-3 w-3" /></button></th>
+                <th className="px-4 py-3"><button type="button" className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("shoe_name")}>{translate("Name")}<ArrowUpDown className="h-3 w-3" /></button></th>
+                <th className="px-4 py-3"><button type="button" className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("brand")}>{translate("Brand")}<ArrowUpDown className="h-3 w-3" /></button></th>
+                <th className="px-4 py-3"><button type="button" className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("release_year")}>{translate("Release")}<ArrowUpDown className="h-3 w-3" /></button></th>
               </tr>
             </thead>
             <tbody>

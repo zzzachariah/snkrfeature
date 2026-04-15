@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 const CONTACT_EMAIL = "zzzachariah9828@gmail.com";
 
 export function SiteFooter() {
   const pathname = usePathname();
+  const { translate } = useLocale();
   const [feedback, setFeedback] = useState("");
   const [infoOpen, setInfoOpen] = useState(false);
 
@@ -20,9 +22,9 @@ export function SiteFooter() {
   async function copyContact() {
     try {
       await navigator.clipboard.writeText(CONTACT_EMAIL);
-      setFeedback("Email address copied to clipboard.");
+      setFeedback(translate("Email address copied to clipboard."));
     } catch {
-      setFeedback("Unable to copy automatically. Please try again.");
+      setFeedback(translate("Unable to copy automatically. Please try again."));
     }
 
     window.setTimeout(() => setFeedback(""), 2200);
@@ -38,19 +40,19 @@ export function SiteFooter() {
             onClick={copyContact}
             className="inline-flex items-center justify-center rounded-md border border-[rgb(var(--glass-stroke-soft)/0.5)] px-3 py-1.5 text-xs tracking-[0.02em] transition hover:border-[rgb(var(--accent)/0.4)] hover:text-[rgb(var(--text))]"
           >
-            Contact
+            {translate("Contact")}
           </button>
           <button
             type="button"
             onClick={() => setInfoOpen(true)}
             className="inline-flex items-center justify-center rounded-md border border-[rgb(var(--glass-stroke-soft)/0.5)] px-3 py-1.5 text-xs tracking-[0.02em] transition hover:border-[rgb(var(--accent)/0.4)] hover:text-[rgb(var(--text))]"
           >
-            About
+            {translate("About")}
           </button>
         </div>
         {feedback && <p aria-live="polite" className="text-[11px]">{feedback}</p>}
-        <p>Information is collected from AI models such as ChatGPT and from users, and is verified by humans.</p>
-        <p>This website was created by zzz.</p>
+        <p>{translate("Information is collected from AI models such as ChatGPT and from users, and is verified by humans.")}</p>
+        <p>{translate("This website was created by zzz.")}</p>
       </div>
       </footer>
 
@@ -62,15 +64,15 @@ export function SiteFooter() {
           >
             <button
               type="button"
-              aria-label="Close information modal"
+              aria-label={translate("Close information modal")}
               className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-md text-[rgb(var(--subtext))] transition hover:bg-[rgb(var(--muted)/0.28)] hover:text-[rgb(var(--text))]"
               onClick={() => setInfoOpen(false)}
             >
               <X className="h-4 w-4" />
             </button>
             <div className="pr-10">
-              <h3 className="text-2xl font-semibold tracking-[0.015em]">Hi!</h3>
-              <p className="mt-1 text-sm soft-text">Some words</p>
+              <h3 className="text-2xl font-semibold tracking-[0.015em]">{translate("Hi!")}</h3>
+              <p className="mt-1 text-sm soft-text">{translate("Some words")}</p>
             </div>
             <div className="mt-4 max-h-[55vh] space-y-3 overflow-y-auto pr-1 text-sm leading-relaxed soft-text">
               <p>
@@ -86,7 +88,7 @@ export function SiteFooter() {
                 By the way, if this turned out to be liked by many, perhaps I will charge a one-time fee of a dollar per account in order to cover the fees of databases and domains, etc. I hate ads myself, so there will maybe be 1 or 2, but definitely not scattered around the page. I&apos;ll decide it later.
               </p>
               <p>
-                In the meantime, enjoy!
+                {translate("In the meantime, enjoy!")}
               </p>
             </div>
           </div>

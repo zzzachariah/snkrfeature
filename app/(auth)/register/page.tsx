@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TurnstileWidget } from "@/components/ui/turnstile";
 import { RequiredReadingGate } from "@/components/auth/required-reading-gate";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 export default function RegisterPage() {
+  const { translate } = useLocale();
   const [form, setForm] = useState({ username: "", email: "", password: "" });
   const [turnstileToken, setTurnstileToken] = useState("");
   const [message, setMessage] = useState("");
@@ -47,16 +49,16 @@ export default function RegisterPage() {
     <main className="container-shell py-10">
       {gateOpen && <RequiredReadingGate onContinue={() => setGateOpen(false)} />}
       <form onSubmit={onSubmit} className={`surface-card premium-border mx-auto max-w-md space-y-4 rounded-3xl p-7 ${gateOpen ? "pointer-events-none select-none" : ""}`}>
-        <h1 className="text-2xl font-semibold tracking-[0.02em]">Register</h1>
-        <p className="text-sm soft-text">Create your snkrfeature account. Public identity is username-based.</p>
-        <div><label className="mb-1 block text-xs soft-text">Username</label><Input value={form.username} onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))} placeholder="snkrfan23" required /></div>
-        <div><label className="mb-1 block text-xs soft-text">Email</label><Input value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} placeholder="you@domain.com" type="email" required /></div>
-        <div><label className="mb-1 block text-xs soft-text">Password</label><Input value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} placeholder="At least 8 characters" type="password" required /></div>
+        <h1 className="text-2xl font-semibold tracking-[0.02em]">{translate("Register")}</h1>
+        <p className="text-sm soft-text">{translate("Create your snkrfeature account. Public identity is username-based.")}</p>
+        <div><label className="mb-1 block text-xs soft-text">{translate("Username")}</label><Input value={form.username} onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))} placeholder={translate("snkrfan23")} required /></div>
+        <div><label className="mb-1 block text-xs soft-text">{translate("Email")}</label><Input value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} placeholder={translate("you@domain.com")} type="email" required /></div>
+        <div><label className="mb-1 block text-xs soft-text">{translate("Password")}</label><Input value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} placeholder={translate("At least 8 characters")} type="password" required /></div>
         <TurnstileWidget onToken={setTurnstileToken} />
-        <Button type="submit" className="w-full" disabled={submitting}>{submitting ? "Creating account..." : "Create account"}</Button>
+        <Button type="submit" className="w-full" disabled={submitting}>{submitting ? translate("Creating account...") : translate("Create account")}</Button>
         {submitting && <BrandLoader compact label="Setting up your profile" />}
         {message && <FeedbackMessage message={message} isError={error} />}
-        <p className="text-xs soft-text">Already have an account? <Link href="/login" className="text-[rgb(var(--accent))] hover:underline">Log in</Link></p>
+        <p className="text-xs soft-text">{translate("Already have an account?")} <Link href="/login" className="text-[rgb(var(--accent))] hover:underline">{translate("Log in")}</Link></p>
       </form>
     </main>
   );
