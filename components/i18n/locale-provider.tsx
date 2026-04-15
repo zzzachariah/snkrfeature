@@ -32,7 +32,13 @@ const MANUAL_TRANSLATIONS: Record<string, string> = {
   "upper_tech": "鞋面科技",
   "forefoot tech": "前掌中底科技",
   "heel tech": "后掌中底科技",
-  "upper tech": "鞋面科技"
+  "upper tech": "鞋面科技",
+  "upper": "鞋面科技",
+  "cushioning": "泡棉舒适度",
+  "traction": "抓地力/止滑程度",
+  "stability": "稳定性",
+  "fit": "包裹",
+  "admin": "管理员"
 };
 const LOCALE_STORAGE_KEY = "locale";
 const TRANSLATION_DELAY_MS = 700;
