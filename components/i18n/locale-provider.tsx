@@ -14,6 +14,42 @@ const UI_TRANSLATIONS_ZH: Record<string, string> = {
   "translating...": "翻译中…",
   "machine translation may contain some inaccuracies. thank you for your understanding. loading may also take a little time.":
     "机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。",
+  "integrated basketball sneaker feature platform": "综合篮球鞋性能平台",
+  "compare, discuss, and choose your ideal basketball sneaker on snkrfeature": "在 SNKRFEATURE 比较、讨论并选择你理想的篮球鞋",
+  "if you want to contribute to our community, please submit corrections, upload a new shoe, and discuss!":
+    "如果你想为社区做贡献，欢迎提交更正、上传新鞋并参与讨论！",
+  "submit new shoe info": "提交新鞋信息",
+  "open compare": "打开对比",
+  "submission review pipeline": "投稿审核流程",
+  "all brands": "全部品牌",
+  "search": "搜索",
+  "clear search": "清空搜索",
+  "name": "名称",
+  "brand": "品牌",
+  "release": "发售时间",
+  "no sneakers match this search.": "没有符合当前搜索条件的球鞋。",
+  "clear filters": "清除筛选",
+  "shoes selected for compare": "双鞋已加入对比",
+  "compare now": "立即对比",
+  "advanced search": "高级搜索",
+  "language": "语言",
+  "toggle mobile menu": "切换移动端菜单",
+  "close mobile navigation": "关闭移动端导航",
+  "contact": "联系",
+  "about": "关于",
+  "email address copied to clipboard.": "邮箱地址已复制到剪贴板。",
+  "unable to copy automatically. please try again.": "无法自动复制，请重试。",
+  "information is collected from ai models such as chatgpt and from users, and is verified by humans.":
+    "信息来自 ChatGPT 等 AI 模型与用户提交，并由人工审核。",
+  "this website was created by zzz.": "本网站由 zzz 创建。",
+  "close information modal": "关闭信息弹窗",
+  "hi!": "你好！",
+  "some words": "一些想说的话",
+  "in the meantime, enjoy!": "在此期间，祝你浏览愉快！",
+  "account": "账号",
+  "log in": "登录",
+  "sign up": "注册",
+  "log out": "登出",
 };
 
 export const MANUAL_TRANSLATIONS: Record<string, string> = {
@@ -178,22 +214,20 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       <Modal open={warningOpen} onClose={() => undefined} title="" dismissible={false}>
         <div className="space-y-4">
           <p className="text-sm">
-            {locale === "zh"
-              ? "机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。"
-              : "Machine translation may contain some inaccuracies. Thank you for your understanding. Loading may also take a little time."}
+            {translate("Machine translation may contain some inaccuracies. Thank you for your understanding. Loading may also take a little time.")}
           </p>
           <button
             type="button"
             onClick={confirmWarning}
             className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-[rgb(var(--accent)/0.55)] bg-[rgb(var(--accent)/0.12)] text-sm font-medium text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.18)]"
           >
-            继续
+            {translate("Continue")}
           </button>
         </div>
       </Modal>
       {isTranslating ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgb(var(--bg)/0.78)] backdrop-blur-sm" aria-live="polite" aria-busy="true">
-          <BrandLoader label="Translating..." />
+          <BrandLoader label={translate("Translating...")} />
         </div>
       ) : null}
     </LocaleContext.Provider>

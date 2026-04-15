@@ -99,7 +99,7 @@ export function Navbar() {
               className="inline-flex h-10 w-[5.25rem] items-center justify-between rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.62)] bg-[rgb(var(--surface)/0.78)] px-2.5 text-sm font-medium text-[rgb(var(--text))] transition hover:border-[rgb(var(--accent)/0.62)]"
               aria-haspopup="menu"
               aria-expanded={langOpen}
-              aria-label="Language switcher" data-translation-lock="true"
+              aria-label={translate("Language")} data-translation-lock="true"
             >
               <span data-translation-lock="true">{locale === "en" ? "Eng" : "简"}</span>
               <ChevronDown className="h-4 w-4" />
@@ -146,14 +146,14 @@ export function Navbar() {
             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.62)] bg-[rgb(var(--surface)/0.78)] text-[rgb(var(--text))] transition hover:border-[rgb(var(--accent)/0.62)] md:hidden"
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Toggle mobile menu"
+            aria-label={translate("Toggle mobile menu")}
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
-      {mobileOpen && <button aria-label="Close mobile navigation" className="fixed inset-0 z-30 bg-black/45 md:hidden" onClick={() => setMobileOpen(false)} />}
+      {mobileOpen && <button aria-label={translate("Close mobile navigation")} className="fixed inset-0 z-30 bg-black/45 md:hidden" onClick={() => setMobileOpen(false)} />}
 
       <div className={`fixed right-0 top-16 z-40 h-[calc(100vh-4rem)] w-[min(84vw,340px)] border-l border-[rgb(var(--glass-stroke-soft)/0.72)] bg-[rgb(var(--bg-elev)/0.96)] p-4 text-[rgb(var(--text))] shadow-[0_24px_60px_rgb(var(--shadow)/0.3)] backdrop-blur-[20px] backdrop-saturate-[180%] transition-transform duration-200 md:hidden ${mobileOpen ? "translate-x-0" : "translate-x-full"}`}>
         <nav className="grid gap-2 text-sm">
