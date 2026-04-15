@@ -14,7 +14,7 @@ const MANUAL_TRANSLATIONS: Record<string, string> = {
   "live": "实时",
   "dashboard": "我的主页",
   "player": "球员",
-  "search by name, player, tags, technologies...": "根据球鞋名, 球员, 标签, 配置进行搜索...",
+  "search by name, player, tags, technologies...": "按名称、球员、标签、技术搜索……",
   "loading": "加载中…",
   "loading...": "加载中…",
   "preparing your feed": "加载中…",
