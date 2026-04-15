@@ -12,7 +12,8 @@ export const MANUAL_TRANSLATIONS: Record<string, string> = {
   "brand represented": "品牌",
   "brands represented": "品牌",
   "live": "实时",
-  "dashboard": "我的主页",
+  "dashboard": "我的账号",
+  "home": "主页",
   "player": "球员",
   "search by name, player, tags, technologies...": "按名称、球员、标签、技术搜索……",
   "loading": "加载中…",
@@ -23,27 +24,14 @@ export const MANUAL_TRANSLATIONS: Record<string, string> = {
   "upper_tech": "鞋面科技",
   "forefoot tech": "前掌中底科技",
   "heel tech": "后掌中底科技",
-  "upper tech": "鞋面科技"
+  "upper tech": "鞋面科技",
+  "upper": "鞋面科技",
+  "cushioning": "泡棉舒适度",
+  "traction": "抓地力/止滑程度",
+  "stability": "稳定性",
+  "fit": "包裹",
+  "admin": "管理员",
 };
-
-const UI_TRANSLATIONS_ZH: Record<string, string> = {
-  english: "英文",
-  chinese: "中文",
-  language: "语言",
-  home: "首页",
-  compare: "对比",
-  submit: "提交",
-  dashboard: "我的主页",
-  "advanced search": "高级搜索",
-  search: "搜索",
-  "all brands": "所有品牌",
-  "translating...": "翻译中…",
-  "machine translation notice": "机器翻译有问题敬请谅解",
-  continue: "继续"
-};
-
-const LOCALE_STORAGE_KEY = "locale";
-const SWITCH_OVERLAY_MS = 800;
 
 type LocaleContextValue = {
   locale: Locale;
@@ -176,9 +164,10 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   return (
     <LocaleContext.Provider value={contextValue}>
       {children}
+
       <Modal open={warningOpen} onClose={() => undefined} title="" dismissible={false}>
         <div className="space-y-4">
-          <p className="text-sm">机器翻译有问题敬请谅解</p>
+          <p className="text-sm">机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。</p>
           <button
             type="button"
             onClick={confirmWarning}
