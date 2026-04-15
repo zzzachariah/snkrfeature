@@ -12,7 +12,8 @@ const MANUAL_TRANSLATIONS: Record<string, string> = {
   "brand represented": "品牌",
   "brands represented": "品牌",
   "live": "实时",
-  "dashboard": "我的主页",
+  "dashboard": "我的账号",
+  "home": "主页",
   "player": "球员",
   "search by name, player, tags, technologies...": "按名称、球员、标签、技术搜索……",
   "loading": "加载中…",
@@ -23,12 +24,16 @@ const MANUAL_TRANSLATIONS: Record<string, string> = {
   "upper_tech": "鞋面科技",
   "forefoot tech": "前掌中底科技",
   "heel tech": "后掌中底科技",
-  "upper tech": "鞋面科技"
+  "upper tech": "鞋面科技",
+  "upper": "鞋面科技",
+  "cushioning": "泡棉舒适度",
+  "traction": "抓地力/止滑程度",
+  "stability": "稳定性",
+  "fit": "包裹",
+  "admin": "管理员"
 };
 const LOCALE_STORAGE_KEY = "locale";
 const TRANSLATION_DELAY_MS = 700;
-const TRANSLATION_REQUEST_TIMEOUT_MS = 9000;
-const TRANSLATION_RUN_TIMEOUT_MS = 15000;
 
 type LocaleContextValue = {
   locale: Locale;
@@ -356,7 +361,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       {children}
       <Modal open={warningOpen} onClose={() => undefined} title="" dismissible={false}>
         <div className="space-y-4">
-          <p className="text-sm">机器翻译有问题敬请谅解</p>
+          <p className="text-sm">机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。</p>
           <button
             type="button"
             onClick={confirmWarning}
