@@ -291,7 +291,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       {children}
       <Modal open={warningOpen} onClose={() => undefined} title="" dismissible={false}>
         <div className="space-y-4">
-          <p className="text-sm">机器翻译有问题敬请谅解</p>
+          <p className="text-sm">机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。</p>
           <button
             type="button"
             onClick={confirmWarning}
