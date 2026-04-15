@@ -76,6 +76,7 @@ function shouldTranslateNode(node: Node) {
   if (host?.closest("[data-user-identity='true']")) return false;
   if (host?.closest("[data-field-key='shoe_name']")) return false;
   if (host?.closest("[data-field-key='brand']")) return false;
+  if (host?.closest("[data-brand-option='true']")) return false;
   return !isSkippableText(node.textContent ?? "");
 }
 
@@ -102,6 +103,7 @@ function collectAttributeCandidates(root: ParentNode) {
       if (element.closest("[data-user-identity='true']")) return;
       if (element.closest("[data-field-key='shoe_name']")) return;
       if (element.closest("[data-field-key='brand']")) return;
+      if (element.closest("[data-brand-option='true']")) return;
       const raw = element.getAttribute(attr) ?? "";
       if (isSkippableText(raw)) return;
       candidates.push({ element, attr });

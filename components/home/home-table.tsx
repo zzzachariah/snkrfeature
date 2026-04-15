@@ -69,7 +69,7 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
             onChange={(e) => setBrand(e.target.value)}
           >
             <option value="all">All brands</option>
-            {brands.map((b) => <option key={b}>{b}</option>)}
+            {brands.map((b) => <option key={b} data-brand-option="true">{b}</option>)}
           </select>
 
           <div className="relative min-w-0 flex-1">
