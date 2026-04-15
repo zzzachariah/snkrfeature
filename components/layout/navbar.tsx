@@ -3,18 +3,21 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, Search, X } from "lucide-react";
+import { Check, ChevronDown, Menu, Search, X } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { AccountMenu } from "@/components/layout/account-menu";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { createClient } from "@/lib/supabase/client";
 
 type NavHref = "/" | "/compare" | "/submit" | "/dashboard" | "/admin" | "/search/advanced";
 
 export function Navbar() {
   const pathname = usePathname();
+  const { locale, requestLocaleChange } = useLocale();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -49,6 +52,13 @@ export function Navbar() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!langOpen) return;
+    const onClick = () => setLangOpen(false);
+    window.addEventListener("click", onClick);
+    return () => window.removeEventListener("click", onClick);
+  }, [langOpen]);
+
   const navItems = useMemo(() => {
     const base: Array<{ href: NavHref; label: string }> = [
       { href: "/", label: "Home" },
@@ -62,7 +72,7 @@ export function Navbar() {
   }, [isAdmin]);
 
   return (
-    <header className="sticky top-3 z-40 px-2 md:px-4">
+    <header className="sticky top-3 z-40 px-2 md:px-4" data-no-translate="true">
       <div className="container-shell relative flex h-16 items-center gap-2 rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.68)] bg-[rgb(var(--bg-elev)/0.82)] text-[rgb(var(--text))] shadow-[0_16px_32px_rgb(var(--shadow)/0.16)] backdrop-blur-[20px] backdrop-saturate-[180%] md:gap-4">
         <Link href="/" className="max-w-[7.6rem] truncate text-base font-semibold tracking-[0.02em] sm:max-w-[9.5rem] md:max-w-none md:text-lg">snkrfeature</Link>
         <nav className="ml-1 hidden items-center gap-1 rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.48)] bg-[rgb(var(--surface)/0.72)] p-1 text-sm md:flex">
@@ -81,7 +91,47 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="ml-auto hidden items-center md:flex">
+        <div className="ml-auto hidden items-center gap-2 md:flex">
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setLangOpen((prev) => !prev)}
+              className="inline-flex h-10 w-[5.25rem] items-center justify-between rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.62)] bg-[rgb(var(--surface)/0.78)] px-2.5 text-sm font-medium text-[rgb(var(--text))] transition hover:border-[rgb(var(--accent)/0.62)]"
+              aria-haspopup="menu"
+              aria-expanded={langOpen}
+              aria-label="Language switcher" data-translation-lock="true"
+            >
+              <span data-translation-lock="true">{locale === "en" ? "Eng" : "简"}</span>
+              <ChevronDown className="h-4 w-4" />
+            </button>
+            {langOpen && (
+              <div className="absolute right-0 top-[calc(100%+0.45rem)] z-50 w-[9rem] rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.62)] bg-[rgb(var(--surface)/0.98)] p-1 shadow-[0_12px_28px_rgb(var(--glass-shadow)/0.2)]">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[rgb(var(--accent)/0.08)]"
+                  onClick={() => {
+                    requestLocaleChange("en");
+                    setLangOpen(false);
+                  }}
+                >
+                  English
+                  {locale === "en" ? <Check className="h-4 w-4" /> : null}
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition hover:bg-[rgb(var(--accent)/0.08)]"
+                  onClick={() => {
+                    requestLocaleChange("zh");
+                    setLangOpen(false);
+                  }}
+                >
+                  中文
+                  {locale === "zh" ? <Check className="h-4 w-4" /> : null}
+                </button>
+              </div>
+            )}
+          </div>
+
           <Link href="/search/advanced">
             <Button variant="secondary" className="inline-flex h-10 items-center gap-1.5 px-3.5">
               <Search className="h-4 w-4" /> Advanced Search

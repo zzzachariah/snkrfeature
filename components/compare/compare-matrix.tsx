@@ -53,9 +53,9 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
             <tr>
               <th className="sticky left-0 top-0 z-30 w-64 bg-[rgb(var(--bg-elev)/0.98)] px-4 py-3 text-left">Field</th>
               {shoes.map((s) => (
-                <th key={s.id} className="sticky top-0 z-20 bg-[rgb(var(--bg-elev)/0.98)] px-4 py-3 text-left align-top">
+                <th key={s.id} data-field-key="shoe_name" className="sticky top-0 z-20 bg-[rgb(var(--bg-elev)/0.98)] px-4 py-3 text-left align-top">
                   <div className="flex items-start justify-between gap-2">
-                    <div><p className="font-medium text-[rgb(var(--text))]">{s.shoe_name}</p><p className="text-xs soft-text">{s.brand}</p></div>
+                    <div><p data-field-key="shoe_name" className="font-medium text-[rgb(var(--text))]">{s.shoe_name}</p><p data-field-key="brand" className="text-xs soft-text">{s.brand}</p></div>
                     <button onClick={() => setShoes((prev) => prev.filter((p) => p.id !== s.id))} className="rounded-md border border-[rgb(var(--muted)/0.6)] p-1 soft-text transition hover:border-[rgb(var(--ring)/0.45)]"><X className="h-3 w-3" /></button>
                   </div>
                 </th>
@@ -64,7 +64,7 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
           </thead>
           <tbody>
             {shownFields.map((f, i) => (
-              <tr key={f.key} className={`group border-t border-[rgb(var(--muted)/0.45)] transition hover:bg-[rgb(var(--accent)/0.05)] ${i % 2 === 0 ? "bg-[rgb(var(--bg-elev)/0.18)]" : ""}`}>
+              <tr key={f.key} data-field-key={f.key === "name" ? "shoe_name" : f.key === "forefoot" ? "forefoot_midsole_tech" : f.key === "heel" ? "heel_midsole_tech" : f.key === "outsole" ? "outsole_tech" : f.key} className={`group border-t border-[rgb(var(--muted)/0.45)] transition hover:bg-[rgb(var(--accent)/0.05)] ${i % 2 === 0 ? "bg-[rgb(var(--bg-elev)/0.18)]" : ""}`}>
                 <td className={`sticky left-0 bg-[rgb(var(--surface)/0.96)] px-4 py-3 font-medium ${highlightDiffs && f.differs ? "text-[rgb(var(--text))]" : ""}`}>{f.label}</td>
                 {shoes.map((s) => (
                   <td
