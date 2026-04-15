@@ -15,7 +15,7 @@ type NavHref = "/" | "/compare" | "/submit" | "/dashboard" | "/admin" | "/search
 
 export function Navbar() {
   const pathname = usePathname();
-  const { locale, requestLocaleChange } = useLocale();
+  const { locale, requestLocaleChange, translate } = useLocale();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -86,7 +86,7 @@ export function Navbar() {
                   : "soft-text hover:bg-[rgb(var(--accent)/0.1)] hover:text-[rgb(var(--text))]"
               }`}
             >
-              {item.label}
+              {translate(item.label)}
             </Link>
           ))}
         </nav>
@@ -134,7 +134,7 @@ export function Navbar() {
 
           <Link href="/search/advanced">
             <Button variant="secondary" className="inline-flex h-10 items-center gap-1.5 px-3.5">
-              <Search className="h-4 w-4" /> Advanced Search
+              <Search className="h-4 w-4" /> {translate("Advanced Search")}
             </Button>
           </Link>
         </div>
@@ -164,11 +164,11 @@ export function Navbar() {
                 onClick={() => setMobileOpen(false)}
                 className="rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.6)] px-3 py-2 transition hover:border-[rgb(var(--accent)/0.72)] hover:bg-[rgb(var(--accent)/0.08)]"
               >
-                {item.label}
+                {translate(item.label)}
               </Link>
               {item.href === "/dashboard" ? (
                 <div className="rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.6)] p-2" data-translation-lock="true">
-                  <p className="px-1 pb-1 text-xs soft-text">Language</p>
+                  <p className="px-1 pb-1 text-xs soft-text">{translate("Language")}</p>
                   <div className="grid gap-1">
                     <button
                       type="button"
@@ -194,7 +194,7 @@ export function Navbar() {
             onClick={() => setMobileOpen(false)}
             className="inline-flex items-center gap-2 rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.6)] px-3 py-2 transition hover:border-[rgb(var(--accent)/0.72)] hover:bg-[rgb(var(--accent)/0.08)]"
           >
-            <Search className="h-4 w-4" /> Advanced Search
+            <Search className="h-4 w-4" /> {translate("Advanced Search")}
           </Link>
         </nav>
       </div>

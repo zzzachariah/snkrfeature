@@ -68,7 +68,7 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
           >
-            <option value="all">All brands</option>
+            <option value="all">{translate("All brands")}</option>
             {brands.map((b) => <option key={b} data-brand-option="true">{b}</option>)}
           </select>
 
@@ -95,7 +95,7 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
             type="submit"
             className="inline-flex h-11 shrink-0 items-center justify-center border-l border-[rgb(var(--glass-stroke-soft)/0.58)] bg-[rgb(var(--accent)/0.12)] px-4 text-sm font-medium text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.5)]"
           >
-            Search
+            {translate("Search")}
           </button>
         </div>
       </form>
@@ -104,10 +104,10 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
           <table className="w-full text-left text-sm">
             <thead className="sticky top-0 z-10 bg-[rgb(var(--glass-bg-strong)/0.98)] text-[rgb(var(--subtext))]">
               <tr>
-                <th className="px-4 py-3">Compare</th>
-                <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("shoe_name")}>Name<ArrowUpDown className="h-3 w-3" /></button></th>
-                <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("brand")}>Brand<ArrowUpDown className="h-3 w-3" /></button></th>
-                <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("release_year")}>Release<ArrowUpDown className="h-3 w-3" /></button></th>
+                <th className="px-4 py-3">{translate("Compare")}</th>
+                <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("shoe_name")}>{translate("Name")}<ArrowUpDown className="h-3 w-3" /></button></th>
+                <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("brand")}>{translate("Brand")}<ArrowUpDown className="h-3 w-3" /></button></th>
+                <th className="px-4 py-3"><button className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("release_year")}>{translate("Release")}<ArrowUpDown className="h-3 w-3" /></button></th>
               </tr>
             </thead>
             <tbody>
@@ -116,8 +116,8 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
                   <td colSpan={4} className="px-4 py-16 text-center soft-text">
                     <div className="mx-auto flex max-w-md flex-col items-center gap-2">
                       <SearchX className="h-5 w-5" />
-                      <p>No sneakers match this search.</p>
-                      <button type="button" onClick={() => { setSearchDraft(""); setQuery(""); setBrand("all"); }} className="text-xs text-[rgb(var(--accent))]">Clear filters</button>
+                      <p>{translate("No sneakers match this search.")}</p>
+                      <button type="button" onClick={() => { setSearchDraft(""); setQuery(""); setBrand("all"); }} className="text-xs text-[rgb(var(--accent))]">{translate("Clear filters")}</button>
                     </div>
                   </td>
                 </tr>
@@ -142,8 +142,8 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
       </div>
       {selected.length > 1 && (
         <div className="sticky bottom-4 flex flex-col gap-2 rounded-2xl border border-[rgb(var(--accent)/0.38)] bg-[rgb(var(--accent)/0.12)] p-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm">{selected.length} shoes selected for compare</p>
-          <Link href={`/compare?ids=${selected.join(",")}`} className="w-full sm:w-auto"><Button className="w-full sm:w-auto">Compare now</Button></Link>
+          <p className="text-sm">{selected.length} {translate("shoes selected for compare")}</p>
+          <Link href={`/compare?ids=${selected.join(",")}`} className="w-full sm:w-auto"><Button className="w-full sm:w-auto">{translate("Compare now")}</Button></Link>
         </div>
       )}
     </section>
