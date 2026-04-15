@@ -219,6 +219,7 @@ export const MANUAL_TRANSLATIONS: Record<string, string> = {
   "stability": "稳定性",
   "fit": "包裹",
   "admin": "管理员",
+  "curry": "库里",
 };
 
 type LocaleContextValue = {
