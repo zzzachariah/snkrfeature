@@ -8,6 +8,7 @@ type DynamicTranslatedTextProps = {
   as?: "span" | "p" | "div";
   skipDynamic?: boolean;
   protectTechTerms?: boolean;
+  contentType?: "descriptive" | "brand" | "username" | "email" | "shoe_name" | "technology";
 };
 
 export function DynamicTranslatedText({
@@ -15,9 +16,10 @@ export function DynamicTranslatedText({
   className,
   as = "span",
   skipDynamic = false,
-  protectTechTerms = false
+  protectTechTerms = false,
+  contentType = "descriptive"
 }: DynamicTranslatedTextProps) {
-  const value = useTranslatedText(text, { skipDynamic, protectTechTerms });
+  const value = useTranslatedText(text, { skipDynamic, protectTechTerms, contentType });
   const Component = as;
   return <Component className={className}>{value}</Component>;
 }

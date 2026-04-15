@@ -6,6 +6,7 @@ import { useLocale } from "@/components/i18n/locale-provider";
 type UseTranslatedTextOptions = {
   skipDynamic?: boolean;
   protectTechTerms?: boolean;
+  contentType?: "descriptive" | "brand" | "username" | "email" | "shoe_name" | "technology";
 };
 
 const resolvedDynamicCache = new Map<string, string>();
@@ -35,9 +36,11 @@ export function useTranslatedText(
   const shouldSkipDynamic = useMemo(() => {
     if (!normalized) return true;
     if (options.skipDynamic) return true;
+    if (options.contentType === "brand" || options.contentType === "username" || options.contentType === "email" || options.contentType === "shoe_name") return true;
+    if (options.contentType === "technology" && isLikelyIsolatedTechTerm(normalized)) return true;
     if (options.protectTechTerms && isLikelyIsolatedTechTerm(normalized)) return true;
     return false;
-  }, [normalized, options.protectTechTerms, options.skipDynamic]);
+  }, [normalized, options.contentType, options.protectTechTerms, options.skipDynamic]);
 
   const [resolved, setResolved] = useState(() => translate(source));
 

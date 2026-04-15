@@ -71,8 +71,13 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
                 <td className={`sticky left-0 bg-[rgb(var(--surface)/0.96)] px-4 py-3 font-medium ${highlightDiffs && f.differs ? "text-[rgb(var(--text))]" : ""}`}>{translate(f.label)}</td>
                 {shoes.map((s) => {
                   const value = f.get(s);
-                  const skipDynamic = f.key === "brand" || f.key === "name";
-                  const protectTechTerms = f.key === "forefoot" || f.key === "heel" || f.key === "outsole" || f.key === "upper";
+                  const contentType = f.key === "brand"
+                    ? "brand"
+                    : f.key === "name"
+                    ? "shoe_name"
+                    : f.key === "forefoot" || f.key === "heel" || f.key === "outsole" || f.key === "upper"
+                    ? "technology"
+                    : "descriptive";
                   return (
                   <td
                     key={`${f.key}-${s.id}`}
@@ -84,8 +89,7 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
                   >
                     <DynamicTranslatedText
                       text={value}
-                      skipDynamic={skipDynamic}
-                      protectTechTerms={protectTechTerms}
+                      contentType={contentType}
                     />
                   </td>
                   );

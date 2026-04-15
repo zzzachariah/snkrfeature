@@ -32,7 +32,7 @@ export function PerformanceIndicator({ label, score, tier, rawText }: Performanc
             as="p"
             className="truncate text-right text-[rgb(var(--text)/0.9)]"
             text={rawText}
-            protectTechTerms={false}
+            contentType="descriptive"
           />
         ) : (
           <p className="truncate text-right text-[rgb(var(--text)/0.9)]">{translate("Not yet added")}</p>

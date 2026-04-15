@@ -75,7 +75,7 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
                 as="p"
                 className="mt-2 font-medium"
                 text={data.value}
-                protectTechTerms
+                contentType="technology"
               />
             ) : (
               <p data-field-key={data.field} className="mt-2 font-medium">{translate("Not yet added")}</p>
