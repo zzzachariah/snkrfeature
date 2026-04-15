@@ -15,6 +15,7 @@ const MANUAL_TRANSLATIONS: Record<string, string> = {
 
   // navigation
   "home": "主页",
+  "dashboard": "我的账号",
 
   // loading states
   "loading": "加载中…",
