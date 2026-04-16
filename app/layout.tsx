@@ -6,6 +6,7 @@ import { PageTransition } from "@/components/layout/page-transition";
 import { LiquidPointer } from "@/components/theme/liquid-pointer";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: {
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SiteFooter />
         </div>
         </LocaleProvider>
+        <Analytics />
       </body>
     </html>
   );
