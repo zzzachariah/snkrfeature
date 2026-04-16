@@ -124,6 +124,7 @@ export default function SignupPage() {
       devLog("navigation start", { target: redirectTarget });
       if (pathname !== redirectTarget) {
         router.push(redirectTarget);
+        router.refresh();
       }
     } catch {
       setError(true);

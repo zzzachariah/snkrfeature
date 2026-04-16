@@ -48,6 +48,7 @@ export default function AdminLoginPage() {
       setMessage("Admin access granted. Redirecting...");
       if (pathname !== "/admin") {
         router.push("/admin");
+        router.refresh();
       }
     } catch {
       setError(true);
