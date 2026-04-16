@@ -150,10 +150,12 @@ export function CompareCard({ shoe, fields, metricDiffMap, metricExtremaMap, hig
             const isLowest = (extrema?.min ?? metric.score) === metric.score;
 
             const diffTone = highlightDiffs && metric.differs ? "bg-[rgb(var(--accent)/0.12)]" : "";
-            const rankTone = isHighest && !isLowest
-              ? "border border-emerald-400/35 bg-emerald-400/10"
-              : isLowest && !isHighest
-              ? "border border-rose-400/35 bg-rose-400/10"
+            const rankTone = highlightDiffs
+              ? isHighest && !isLowest
+                ? "border border-emerald-400/35 bg-emerald-400/10"
+                : isLowest && !isHighest
+                ? "border border-rose-400/35 bg-rose-400/10"
+                : ""
               : "";
 
             return (
