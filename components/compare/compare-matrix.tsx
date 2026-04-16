@@ -120,6 +120,24 @@ export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
     [shoes]
   );
 
+  const metricRankMap = useMemo(
+    () =>
+      new Map(
+        metricFields.map((field) => {
+          const scored = shoes.map((shoe) => ({
+            shoeId: shoe.id,
+            score: Math.max(0, Math.min(100, Math.round(field.get(shoe))))
+          }));
+
+          const sortedUniqueScores = Array.from(new Set(scored.map((item) => item.score))).sort((a, b) => b - a);
+          const rankByScore = new Map(sortedUniqueScores.map((score, index) => [score, index + 1]));
+          const ranks = new Map(scored.map((item) => [item.shoeId, rankByScore.get(item.score) ?? sortedUniqueScores.length]));
+          return [field.key, ranks];
+        })
+      ),
+    [shoes]
+  );
+
   if (!shoes.length) {
     return (
       <section className="space-y-3">
@@ -181,8 +199,10 @@ export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
             <CompareCard
               key={shoe.id}
               shoe={shoe}
+              comparedCount={shoes.length}
               metricDiffMap={metricDiffMap}
               metricExtremaMap={metricExtremaMap}
+              metricRankMap={metricRankMap}
               highlightDiffs={highlightDiffs}
               onRemove={(id) => {
                 const nextIds = shoes.filter((item) => item.id !== id).map((item) => item.id);

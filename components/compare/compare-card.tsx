@@ -28,9 +28,11 @@ type CardField = {
 
 type CompareCardProps = {
   shoe: Shoe;
+  comparedCount: number;
   fields: CardField[];
   metricDiffMap: Map<string, boolean>;
   metricExtremaMap: Map<string, { min: number; max: number }>;
+  metricRankMap: Map<string, Map<string, number>>;
   highlightDiffs: boolean;
   onRemove: (id: string) => void;
 };
@@ -86,8 +88,17 @@ function metricTone(score: number) {
   return "bg-[rgb(var(--accent)/0.9)]";
 }
 
-export function CompareCard({ shoe, fields, metricDiffMap, metricExtremaMap, highlightDiffs, onRemove }: CompareCardProps) {
-  const { translate } = useLocale();
+export function CompareCard({
+  shoe,
+  comparedCount,
+  fields,
+  metricDiffMap,
+  metricExtremaMap,
+  metricRankMap,
+  highlightDiffs,
+  onRemove
+}: CompareCardProps) {
+  const { locale, translate, getRankLabel } = useLocale();
   const [showTechDetails, setShowTechDetails] = useState(false);
 
   const metrics = getMetricConfigs(shoe).map((metric) => ({
@@ -148,21 +159,34 @@ export function CompareCard({ shoe, fields, metricDiffMap, metricExtremaMap, hig
             const extrema = metricExtremaMap.get(metric.key);
             const isHighest = (extrema?.max ?? metric.score) === metric.score;
             const isLowest = (extrema?.min ?? metric.score) === metric.score;
+            const rank = metricRankMap.get(metric.key)?.get(shoe.id);
+            const showRanking = highlightDiffs && comparedCount > 2 && Boolean(rank);
+            const showTwoShoeHighlight = highlightDiffs && comparedCount === 2;
 
             const diffTone = highlightDiffs && metric.differs ? "bg-[rgb(var(--accent)/0.12)]" : "";
-            const rankTone = highlightDiffs
-              ? isHighest && !isLowest
-                ? "border border-emerald-400/35 bg-emerald-400/10"
-                : isLowest && !isHighest
-                ? "border border-rose-400/35 bg-rose-400/10"
-                : ""
-              : "";
+            const rankTone =
+              showTwoShoeHighlight || showRanking
+                ? isHighest && !isLowest
+                  ? "border border-emerald-400/35 bg-emerald-400/10"
+                  : isLowest && !isHighest
+                  ? "border border-rose-400/35 bg-rose-400/10"
+                  : showRanking
+                  ? "border border-[rgb(var(--muted)/0.34)] bg-[rgb(var(--bg-elev)/0.36)]"
+                  : ""
+                : "";
 
             return (
               <div key={`${shoe.id}-${metric.key}`} className={`rounded-md px-1.5 py-1 ${diffTone} ${rankTone}`}>
                 <div className="mb-1 flex items-center justify-between gap-2 text-[10px]">
                   <span className="soft-text">{translate(metric.label)}</span>
-                  <span className="text-[rgb(var(--text)/0.84)]">{metric.score}</span>
+                  <div className="flex items-center gap-1.5">
+                    {showRanking && rank ? (
+                      <span className="rounded-full border border-[rgb(var(--muted)/0.42)] bg-[rgb(var(--bg)/0.66)] px-1.5 py-0.5 text-[9px] tracking-[0.02em] text-[rgb(var(--text)/0.84)]">
+                        {getRankLabel(rank)}
+                      </span>
+                    ) : null}
+                    <span className={`text-[rgb(var(--text)/0.84)] ${locale === "zh" ? "font-medium" : ""}`}>{metric.score}</span>
+                  </div>
                 </div>
                 <div className={METRIC_BAR}>
                   <div className={`h-full rounded-full transition-all duration-300 ${metricTone(metric.score)}`} style={{ width: `${metric.score}%` }} />

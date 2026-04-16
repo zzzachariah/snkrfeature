@@ -235,6 +235,7 @@ type LocaleContextValue = {
   requestLocaleChange: (locale: Locale) => void;
   translate: (text: string) => string;
   translateDynamic: (text: string) => Promise<string>;
+  getRankLabel: (rank: number) => string;
   isTranslating: boolean;
 };
 
@@ -379,15 +380,25 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     }, SWITCH_OVERLAY_MS);
   }, [pendingLocale]);
 
+  const getRankLabel = useCallback(
+    (rank: number) => {
+      const safeRank = Number.isFinite(rank) && rank > 0 ? Math.floor(rank) : 1;
+      if (locale === "zh") return `第${safeRank}名`;
+      return `No.${safeRank}`;
+    },
+    [locale]
+  );
+
   const contextValue = useMemo<LocaleContextValue>(
     () => ({
       locale,
       requestLocaleChange,
       translate,
       translateDynamic,
+      getRankLabel,
       isTranslating
     }),
-    [isTranslating, locale, requestLocaleChange, translate, translateDynamic]
+    [getRankLabel, isTranslating, locale, requestLocaleChange, translate, translateDynamic]
   );
 
   return (
