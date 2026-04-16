@@ -15,6 +15,7 @@ export function AdminLogoutButton() {
       await fetch("/api/admin/logout", { method: "POST" });
       if (pathname !== "/dashboard") {
         router.push("/dashboard");
+        router.refresh();
       }
     } finally {
       setLoading(false);
