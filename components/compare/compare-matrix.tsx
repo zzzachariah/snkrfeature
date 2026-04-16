@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Shoe } from "@/lib/types";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { CompareCard } from "@/components/compare/compare-card";
@@ -62,10 +63,23 @@ const metricFields: Array<{ key: string; get: (shoe: Shoe) => number }> = [
   { key: "fit", get: (shoe) => getFitScore(shoe.spec.fit ?? "") }
 ];
 
-export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
+export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
   const { translate } = useLocale();
   const [highlightDiffs, setHighlightDiffs] = useState(false);
-  const [shoes, setShoes] = useState(initialShoes);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  function setCompareIds(nextIds: string[]) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextIds.length) {
+      params.set("ids", nextIds.join(","));
+    } else {
+      params.delete("ids");
+    }
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
 
   const techDiffMap = useMemo(
     () =>
@@ -89,11 +103,41 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
     [shoes]
   );
 
+  const metricExtremaMap = useMemo(
+    () =>
+      new Map(
+        metricFields.map((field) => {
+          const scores = shoes.map((shoe) => Math.max(0, Math.min(100, Math.round(field.get(shoe)))));
+          const min = scores.length ? Math.min(...scores) : 0;
+          const max = scores.length ? Math.max(...scores) : 0;
+          return [field.key, { min, max }];
+        })
+      ),
+    [shoes]
+  );
+
   if (!shoes.length) {
     return (
-      <p className="rounded-2xl border border-dashed border-[rgb(var(--muted)/0.7)] p-8 soft-text">
-        {translate("No shoes selected. Add IDs via the URL query string.")}
-      </p>
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setHighlightDiffs((prev) => !prev)}
+            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition ${
+              highlightDiffs
+                ? "border-[rgb(var(--ring)/0.55)] bg-[rgb(var(--accent)/0.12)] text-[rgb(var(--text))] shadow-[inset_0_0_0_1px_rgb(var(--accent)/0.18)]"
+                : "border-[rgb(var(--muted)/0.5)] bg-[rgb(var(--bg-elev)/0.55)] soft-text hover:border-[rgb(var(--ring)/0.35)]"
+            }`}
+          >
+            <span className={`h-2 w-2 rounded-full transition ${highlightDiffs ? "bg-[rgb(var(--accent))]" : "bg-[rgb(var(--muted))]"}`} />
+            {translate("Highlight differences")}
+          </button>
+        </div>
+        <div className="rounded-2xl border border-dashed border-[rgb(var(--muted)/0.7)] bg-[rgb(var(--bg-elev)/0.36)] p-7 text-center">
+          <p className="text-sm font-medium text-[rgb(var(--text))]">{translate("No shoes in compare yet.")}</p>
+          <p className="mt-1 text-xs soft-text">{translate("Use search and add controls to start building your comparison.")}</p>
+        </div>
+      </section>
     );
   }
 
@@ -112,9 +156,19 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
           <span className={`h-2 w-2 rounded-full transition ${highlightDiffs ? "bg-[rgb(var(--accent))]" : "bg-[rgb(var(--muted))]"}`} />
           {translate("Highlight differences")}
         </button>
-        <p className="text-xs soft-text">
-          {shoes.length} {translate("shoes selected for compare")}
-        </p>
+
+        <div className="flex items-center gap-2">
+          <p className="text-xs soft-text">
+            {shoes.length} {translate("shoes selected for compare")}
+          </p>
+          <button
+            type="button"
+            onClick={() => setCompareIds([])}
+            className="rounded-lg border border-[rgb(var(--muted)/0.5)] bg-[rgb(var(--bg-elev)/0.45)] px-2.5 py-1.5 text-xs soft-text transition hover:border-[rgb(var(--ring)/0.45)] hover:text-[rgb(var(--text))]"
+          >
+            {translate("Clear all shoes")}
+          </button>
+        </div>
       </div>
 
       <motion.div layout className="grid grid-cols-2 gap-2.5 md:gap-3 lg:grid-cols-3 xl:grid-cols-4">
@@ -124,8 +178,12 @@ export function CompareMatrix({ shoes: initialShoes }: { shoes: Shoe[] }) {
               key={shoe.id}
               shoe={shoe}
               metricDiffMap={metricDiffMap}
+              metricExtremaMap={metricExtremaMap}
               highlightDiffs={highlightDiffs}
-              onRemove={(id) => setShoes((prev) => prev.filter((item) => item.id !== id))}
+              onRemove={(id) => {
+                const nextIds = shoes.filter((item) => item.id !== id).map((item) => item.id);
+                setCompareIds(nextIds);
+              }}
               fields={techFields.map((field) => ({
                 key: field.key,
                 label: field.label,
