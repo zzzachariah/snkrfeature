@@ -9,8 +9,12 @@ export default async function ComparePage({
 }) {
   const { ids, q: rawQ, brand: rawBrand, category: rawCategory, player: rawPlayer, tech: rawTech, showAdd } = await searchParams;
   const shoes = await getShoes();
-  const selectedIds = ids?.split(",").filter(Boolean) ?? [];
-  const selected = selectedIds.length ? shoes.filter((s) => selectedIds.includes(s.id)) : shoes.slice(0, 2);
+
+  const selectedIds = Array.from(new Set(ids?.split(",").filter(Boolean) ?? []));
+  const shoesById = new Map(shoes.map((shoe) => [shoe.id, shoe]));
+  const selected = selectedIds
+    .map((id) => shoesById.get(id))
+    .filter((shoe): shoe is NonNullable<typeof shoe> => Boolean(shoe));
   const selectedSet = new Set(selected.map((shoe) => shoe.id));
 
   const q = rawQ ?? "";
@@ -39,7 +43,7 @@ export default async function ComparePage({
     .sort((a, b) => b.score - a.score)
     .map(({ shoe }) => shoe);
 
-  const shouldShowAddPanel = showAdd === "1" || Boolean(q || brand || category || player || tech);
+  const shouldShowAddPanel = showAdd === "1" || Boolean(q || brand || category || player || tech) || selected.length === 0;
 
   return (
     <ComparePageClient
