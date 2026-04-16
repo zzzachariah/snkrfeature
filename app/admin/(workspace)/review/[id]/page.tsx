@@ -190,6 +190,7 @@ export default function AdminSubmissionDetailPage() {
         setConfirmRejectOpen(false);
         if (pathname !== "/admin/review") {
           router.push("/admin/review?status=queue");
+          router.refresh();
         }
         return;
       }
