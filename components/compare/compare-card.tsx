@@ -101,6 +101,12 @@ export function CompareCard({
   const { locale, translate, getRankLabel } = useLocale();
   const [showTechDetails, setShowTechDetails] = useState(false);
 
+  function getTechLabel(field: CardField) {
+    if (field.key === "forefoot_midsole_tech") return "前掌中底科技";
+    if (field.key === "heel_midsole_tech") return "后掌中底科技";
+    return translate(field.label);
+  }
+
   const metrics = getMetricConfigs(shoe).map((metric) => ({
     ...metric,
     score: Math.max(0, Math.min(100, Math.round(metric.score))),
@@ -227,7 +233,7 @@ export function CompareCard({
                       : "border-[rgb(var(--muted)/0.34)] bg-[rgb(var(--bg-elev)/0.44)]"
                   }`}
                 >
-                  <p className="text-[10px] uppercase tracking-[0.14em] soft-text">{translate(field.label)}</p>
+                  <p className="text-[10px] uppercase tracking-[0.14em] soft-text">{getTechLabel(field)}</p>
                   {field.keepRaw ? (
                     <p className="mt-1 text-xs font-medium leading-5 text-[rgb(var(--text)/0.94)]">{field.value}</p>
                   ) : (

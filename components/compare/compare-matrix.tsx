@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Route } from "next";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -67,21 +67,25 @@ const metricFields: Array<{ key: string; get: (shoe: Shoe) => number }> = [
 export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
   const { translate } = useLocale();
   const [highlightDiffs, setHighlightDiffs] = useState(false);
+  const [localShoes, setLocalShoes] = useState(shoes);
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  function setCompareIds(nextIds: string[]) {
+  useEffect(() => {
+    setLocalShoes(shoes);
+  }, [shoes]);
+
+  function setCompareIds(nextIds: string[], nextShoes: Shoe[]) {
+    setLocalShoes(nextShoes);
     const params = new URLSearchParams(searchParams.toString());
     if (nextIds.length) {
       params.set("ids", nextIds.join(","));
     } else {
       params.delete("ids");
     }
-    const nextUrl = new URL(window.location.href);
-    nextUrl.pathname = pathname;
-    nextUrl.search = params.toString();
-    router.push(nextUrl.toString() as Route, { scroll: false });
+    const nextHref = (params.toString() ? `${pathname}?${params.toString()}` : pathname) as Route;
+    router.push(nextHref, { scroll: false });
     router.refresh();
   }
 
@@ -89,42 +93,42 @@ export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
     () =>
       new Map(
         techFields.map((field) => {
-          const values = new Set(shoes.map((shoe) => field.get(shoe)));
+          const values = new Set(localShoes.map((shoe) => field.get(shoe)));
           return [field.key, values.size > 1];
         })
       ),
-    [shoes]
+    [localShoes]
   );
 
   const metricDiffMap = useMemo(
     () =>
       new Map(
         metricFields.map((field) => {
-          const values = new Set(shoes.map((shoe) => Math.round(field.get(shoe))));
+          const values = new Set(localShoes.map((shoe) => Math.round(field.get(shoe))));
           return [field.key, values.size > 1];
         })
       ),
-    [shoes]
+    [localShoes]
   );
 
   const metricExtremaMap = useMemo(
     () =>
       new Map(
         metricFields.map((field) => {
-          const scores = shoes.map((shoe) => Math.max(0, Math.min(100, Math.round(field.get(shoe)))));
+          const scores = localShoes.map((shoe) => Math.max(0, Math.min(100, Math.round(field.get(shoe)))));
           const min = scores.length ? Math.min(...scores) : 0;
           const max = scores.length ? Math.max(...scores) : 0;
           return [field.key, { min, max }];
         })
       ),
-    [shoes]
+    [localShoes]
   );
 
   const metricRankMap = useMemo(
     () =>
       new Map(
         metricFields.map((field) => {
-          const scored = shoes.map((shoe) => ({
+          const scored = localShoes.map((shoe) => ({
             shoeId: shoe.id,
             score: Math.max(0, Math.min(100, Math.round(field.get(shoe))))
           }));
@@ -135,10 +139,10 @@ export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
           return [field.key, ranks];
         })
       ),
-    [shoes]
+    [localShoes]
   );
 
-  if (!shoes.length) {
+  if (!localShoes.length) {
     return (
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
@@ -181,11 +185,11 @@ export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
 
         <div className="flex items-center gap-2">
           <p className="text-xs soft-text">
-            {shoes.length} {translate("shoes selected for compare")}
+            {localShoes.length} {translate("shoes selected for compare")}
           </p>
           <button
             type="button"
-            onClick={() => setCompareIds([])}
+            onClick={() => setCompareIds([], [])}
             className="rounded-lg border border-[rgb(var(--muted)/0.5)] bg-[rgb(var(--bg-elev)/0.45)] px-2.5 py-1.5 text-xs soft-text transition hover:border-[rgb(var(--ring)/0.45)] hover:text-[rgb(var(--text))]"
           >
             {translate("Clear all shoes")}
@@ -195,18 +199,19 @@ export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
 
       <motion.div layout className="grid grid-cols-2 gap-2.5 md:gap-3 lg:grid-cols-3 xl:grid-cols-4">
         <AnimatePresence initial={false}>
-          {shoes.map((shoe) => (
+          {localShoes.map((shoe) => (
             <CompareCard
               key={shoe.id}
               shoe={shoe}
-              comparedCount={shoes.length}
+              comparedCount={localShoes.length}
               metricDiffMap={metricDiffMap}
               metricExtremaMap={metricExtremaMap}
               metricRankMap={metricRankMap}
               highlightDiffs={highlightDiffs}
               onRemove={(id) => {
-                const nextIds = shoes.filter((item) => item.id !== id).map((item) => item.id);
-                setCompareIds(nextIds);
+                const nextShoes = localShoes.filter((item) => item.id !== id);
+                const nextIds = nextShoes.map((item) => item.id);
+                setCompareIds(nextIds, nextShoes);
               }}
               fields={techFields.map((field) => ({
                 key: field.key,
