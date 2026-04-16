@@ -22,6 +22,7 @@ const finalSchema = z.object({
   traction: z.string().optional(),
   fit: z.string().optional(),
   playstyle_summary: z.string().optional(),
+  story_title: z.string().optional(),
   story_summary: z.string().optional(),
   tags: z.array(z.string()).optional(),
   source_links: z.array(z.string()).optional(),
@@ -247,7 +248,7 @@ export async function POST(
     if (specInsertError) return badRequest(specInsertError.message);
   }
 
-  const storyTitle = `${final.brand} ${final.shoe_name}`;
+  const storyTitle = final.story_title?.trim() || `${final.brand} ${final.shoe_name}`;
 
   const { data: updatedStories, error: storyUpdateError } = await supabase
     .from("shoe_stories")

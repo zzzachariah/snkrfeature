@@ -150,6 +150,16 @@ export function SubmissionForm({
         ))}
 
         <div className="md:col-span-2">
+          <label className="mb-1 block text-xs soft-text">{translate("Story title")}</label>
+          <Input
+            name="story_title"
+            defaultValue={initialValues.story_title == null ? "" : String(initialValues.story_title)}
+            className="w-full"
+            placeholder={translate("Short headline for the story.")}
+          />
+        </div>
+
+        <div className="md:col-span-2">
           <label className="mb-1 block text-xs soft-text">{translate("Story / background notes")}</label>
           <textarea
             name="story_notes"

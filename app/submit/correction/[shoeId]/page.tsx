@@ -24,6 +24,7 @@ export default async function SubmitCorrectionPage({ params }: { params: Promise
     fit: shoe.spec.fit ?? "",
     tags: (shoe.spec.tags ?? []).join(", "),
     source_links: shoe.story?.source_url ?? "",
+    story_title: shoe.story?.title ?? "",
     story_notes: shoe.story?.content ?? shoe.spec.story_summary ?? "",
     raw_text: ""
   };

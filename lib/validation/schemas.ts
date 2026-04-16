@@ -30,6 +30,7 @@ export const submissionSchema = z.object({
   traction: z.string().optional(),
   fit: z.string().optional(),
   tags: z.string().optional(),
+  story_title: z.string().optional(),
   story_notes: z.string().optional(),
   raw_text: z.string().min(20, "Please add detailed notes so normalization is reliable."),
   source_links: z.string().optional(),
