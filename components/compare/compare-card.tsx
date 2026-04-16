@@ -212,17 +212,17 @@ export function CompareCard({
             return (
               <div key={`${shoe.id}-${metric.key}`} className="rounded-md border border-[rgb(var(--muted)/0.32)] bg-[rgb(var(--bg-elev)/0.36)] px-1 py-1 sm:px-1.5">
                 <div className="mb-0.5">
-                  <span className="block min-w-0 truncate whitespace-nowrap text-[10px] font-semibold leading-4 text-[rgb(var(--text)/0.9)]">
+                  <span className="block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[10px] font-semibold leading-4 text-[rgb(var(--text)/0.9)]">
                     {getMetricLabel(metric.label)}
                   </span>
                 </div>
-                <div className="mb-0.5 flex h-5 items-center justify-center">
-                  {highlightDiffs && typeof metric.rank === "number" ? (
+                {highlightDiffs && typeof metric.rank === "number" ? (
+                  <div className="mb-0.5 flex h-5 items-center justify-center">
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[rgb(var(--muted)/0.5)] text-[10px] font-semibold text-[rgb(var(--text)/0.72)]">
                       {metric.rank}
                     </span>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
                 <div className="flex h-[52px] items-center justify-center gap-2">
                   <div className="relative flex h-12 w-12 items-center justify-center">
                     <svg
@@ -263,7 +263,7 @@ export function CompareCard({
                 <DynamicTranslatedText
                   as="p"
                   text={metric.descriptor}
-                  className="mt-0.5 truncate whitespace-nowrap text-center text-[10px] leading-4 text-[rgb(var(--text)/0.72)]"
+                  className="mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap text-center text-[10px] leading-4 text-[rgb(var(--text)/0.72)]"
                 />
               </div>
             );
