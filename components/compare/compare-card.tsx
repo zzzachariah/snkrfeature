@@ -31,6 +31,7 @@ type CompareCardProps = {
   fields: CardField[];
   metricDiffMap: Map<string, boolean>;
   metricExtremaMap: Map<string, { min: number; max: number }>;
+  metricRankMap: Map<string, Map<string, number>>;
   highlightDiffs: boolean;
   onRemove: (id: string) => void;
 };
@@ -39,7 +40,9 @@ type MetricConfig = {
   key: string;
   label: string;
   score: number;
+  descriptor: string;
   differs?: boolean;
+  rank?: number;
 };
 
 const METRIC_GAUGE_SIZE = 48;
@@ -54,32 +57,38 @@ function getMetricConfigs(shoe: Shoe): MetricConfig[] {
     {
       key: "cushioning_feel",
       label: "Cushioning Feel",
-      score: getCushioningFeelScore(shoe.spec.cushioning_feel ?? "")
+      score: getCushioningFeelScore(shoe.spec.cushioning_feel ?? ""),
+      descriptor: shoe.spec.cushioning_feel ?? ""
     },
     {
       key: "court_feel",
       label: "Court Feel",
-      score: getCourtFeelScore(shoe.spec.court_feel ?? "")
+      score: getCourtFeelScore(shoe.spec.court_feel ?? ""),
+      descriptor: shoe.spec.court_feel ?? ""
     },
     {
       key: "bounce",
       label: "Bounce",
-      score: getBounceScore(shoe.spec.bounce ?? "")
+      score: getBounceScore(shoe.spec.bounce ?? ""),
+      descriptor: shoe.spec.bounce ?? ""
     },
     {
       key: "stability",
       label: "Stability",
-      score: getStabilityScore(shoe.spec.stability ?? "")
+      score: getStabilityScore(shoe.spec.stability ?? ""),
+      descriptor: shoe.spec.stability ?? ""
     },
     {
       key: "traction",
       label: "Traction",
-      score: getTractionScore(shoe.spec.traction ?? "")
+      score: getTractionScore(shoe.spec.traction ?? ""),
+      descriptor: shoe.spec.traction ?? ""
     },
     {
       key: "fit",
       label: "Fit",
-      score: getFitScore(shoe.spec.fit ?? "")
+      score: getFitScore(shoe.spec.fit ?? ""),
+      descriptor: shoe.spec.fit ?? ""
     }
   ];
 }
@@ -119,6 +128,7 @@ export function CompareCard({
   fields,
   metricDiffMap,
   metricExtremaMap,
+  metricRankMap,
   highlightDiffs,
   onRemove
 }: CompareCardProps) {
@@ -139,7 +149,8 @@ export function CompareCard({
   const metrics = getMetricConfigs(shoe).map((metric) => ({
     ...metric,
     score: Math.max(0, Math.min(100, Math.round(metric.score))),
-    differs: metricDiffMap.get(metric.key) ?? false
+    differs: metricDiffMap.get(metric.key) ?? false,
+    rank: metricRankMap.get(metric.key)?.get(shoe.id)
   }));
 
   return (
@@ -187,9 +198,9 @@ export function CompareCard({
         ))}
       </div>
 
-      <div className="mt-3 rounded-xl border border-[rgb(var(--muted)/0.36)] bg-[rgb(var(--bg-elev)/0.44)] p-2.5">
+      <div className="mt-3 rounded-xl border border-[rgb(var(--muted)/0.36)] bg-[rgb(var(--bg-elev)/0.44)] px-2 py-2 sm:p-2.5">
         <p className="text-[10px] uppercase tracking-[0.16em] soft-text">{translate("Performance profile")}</p>
-        <div className="mt-1.5 grid grid-cols-2 gap-1">
+        <div className="mt-1.5 grid grid-cols-2 gap-0.5 sm:gap-1">
           {metrics.map((metric) => {
             const extrema = metricExtremaMap.get(metric.key);
             const isHighest = (extrema?.max ?? metric.score) === metric.score;
@@ -199,8 +210,18 @@ export function CompareCard({
             const isWorse = shouldCompareColors && isLowest && !isHighest;
 
             return (
-              <div key={`${shoe.id}-${metric.key}`} className="rounded-md border border-[rgb(var(--muted)/0.32)] bg-[rgb(var(--bg-elev)/0.36)] px-1.5 py-1">
-                <div className="flex h-[82px] items-center gap-2">
+              <div key={`${shoe.id}-${metric.key}`} className="rounded-md border border-[rgb(var(--muted)/0.32)] bg-[rgb(var(--bg-elev)/0.36)] px-1 py-1 sm:px-1.5">
+                <div className="mb-0.5 flex items-center justify-between gap-1">
+                  <span className="min-w-0 flex-1 break-all text-[10px] font-semibold leading-4 text-[rgb(var(--text)/0.9)] sm:break-normal">
+                    {getMetricLabel(metric.label)}
+                  </span>
+                  {highlightDiffs && typeof metric.rank === "number" ? (
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[rgb(var(--muted)/0.5)] text-[10px] font-semibold text-[rgb(var(--text)/0.72)]">
+                      {metric.rank}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex h-[52px] items-center justify-center gap-2">
                   <div className="relative flex h-12 w-12 items-center justify-center">
                     <svg
                       width={METRIC_GAUGE_SIZE}
@@ -236,8 +257,12 @@ export function CompareCard({
                       {metric.score}
                     </span>
                   </div>
-                  <span className="line-clamp-2 text-[11px] leading-4 soft-text">{getMetricLabel(metric.label)}</span>
                 </div>
+                <DynamicTranslatedText
+                  as="p"
+                  text={metric.descriptor}
+                  className="mt-0.5 line-clamp-1 text-center text-[10px] leading-4 text-[rgb(var(--text)/0.72)]"
+                />
               </div>
             );
           })}
