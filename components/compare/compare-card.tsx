@@ -28,7 +28,6 @@ type CardField = {
 
 type CompareCardProps = {
   shoe: Shoe;
-  comparedCount: number;
   fields: CardField[];
   metricDiffMap: Map<string, boolean>;
   metricExtremaMap: Map<string, { min: number; max: number }>;
@@ -85,38 +84,56 @@ function getMetricConfigs(shoe: Shoe): MetricConfig[] {
   ];
 }
 
-function getGaugeStrokeClass(score: number, highlightDiffs: boolean) {
-  if (!highlightDiffs) return "stroke-[rgb(var(--muted)/0.85)]";
-  if (score >= 80) return "stroke-emerald-400";
-  if (score >= 65) return "stroke-emerald-300";
-  if (score >= 50) return "stroke-[rgb(var(--ring)/0.85)]";
-  return "stroke-[rgb(var(--muted)/0.95)]";
+function getGaugeStrokeClass({
+  highlightDiffs,
+  isBetter,
+  isWorse
+}: {
+  highlightDiffs: boolean;
+  isBetter: boolean;
+  isWorse: boolean;
+}) {
+  if (!highlightDiffs) return "stroke-[rgb(var(--ring)/0.92)]";
+  if (isBetter) return "stroke-emerald-500";
+  if (isWorse) return "stroke-rose-500";
+  return "stroke-[rgb(var(--ring)/0.82)]";
 }
 
-function getGaugeTextClass(score: number, highlightDiffs: boolean) {
-  if (!highlightDiffs) return "text-[rgb(var(--text)/0.82)]";
-  if (score >= 80) return "text-emerald-300";
-  if (score >= 65) return "text-emerald-200";
-  if (score >= 50) return "text-[rgb(var(--text)/0.9)]";
-  return "text-[rgb(var(--text)/0.74)]";
+function getGaugeTextClass({
+  highlightDiffs,
+  isBetter,
+  isWorse
+}: {
+  highlightDiffs: boolean;
+  isBetter: boolean;
+  isWorse: boolean;
+}) {
+  if (!highlightDiffs) return "text-[rgb(var(--ring)/0.96)]";
+  if (isBetter) return "text-emerald-400";
+  if (isWorse) return "text-rose-400";
+  return "text-[rgb(var(--text)/0.82)]";
 }
 
 export function CompareCard({
   shoe,
-  comparedCount,
   fields,
   metricDiffMap,
   metricExtremaMap,
   highlightDiffs,
   onRemove
 }: CompareCardProps) {
-  const { translate } = useLocale();
+  const { locale, translate } = useLocale();
   const [showTechDetails, setShowTechDetails] = useState(false);
 
   function getTechLabel(field: CardField) {
     if (field.key === "forefoot_midsole_tech") return "前掌中底科技";
     if (field.key === "heel_midsole_tech") return "后掌中底科技";
     return translate(field.label);
+  }
+
+  function getMetricLabel(label: string) {
+    if (locale === "zh" && label === "Bounce") return "回弹";
+    return translate(label);
   }
 
   const metrics = getMetricConfigs(shoe).map((metric) => ({
@@ -172,29 +189,18 @@ export function CompareCard({
 
       <div className="mt-3 rounded-xl border border-[rgb(var(--muted)/0.36)] bg-[rgb(var(--bg-elev)/0.44)] p-2.5">
         <p className="text-[10px] uppercase tracking-[0.16em] soft-text">{translate("Performance profile")}</p>
-        <div className="mt-2 grid grid-cols-2 gap-1.5">
+        <div className="mt-1.5 grid grid-cols-2 gap-1">
           {metrics.map((metric) => {
             const extrema = metricExtremaMap.get(metric.key);
             const isHighest = (extrema?.max ?? metric.score) === metric.score;
             const isLowest = (extrema?.min ?? metric.score) === metric.score;
-            const showTwoShoeHighlight = highlightDiffs && comparedCount === 2;
-            const showMultiShoeHighlight = highlightDiffs && comparedCount > 2;
-
-            const diffTone = highlightDiffs && metric.differs ? "bg-[rgb(var(--accent)/0.12)]" : "";
-            const rankTone =
-              showTwoShoeHighlight || showMultiShoeHighlight
-                ? isHighest && !isLowest
-                  ? "border border-emerald-400/28 bg-emerald-400/8"
-                  : isLowest && !isHighest && showTwoShoeHighlight
-                  ? "border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.5)]"
-                  : showMultiShoeHighlight
-                  ? "border border-[rgb(var(--muted)/0.34)] bg-[rgb(var(--bg-elev)/0.36)]"
-                  : ""
-                : "";
+            const shouldCompareColors = highlightDiffs && metric.differs;
+            const isBetter = shouldCompareColors && isHighest && !isLowest;
+            const isWorse = shouldCompareColors && isLowest && !isHighest;
 
             return (
-              <div key={`${shoe.id}-${metric.key}`} className={`rounded-md px-1.5 py-1.5 ${diffTone} ${rankTone}`}>
-                <div className="flex h-[86px] items-center gap-2">
+              <div key={`${shoe.id}-${metric.key}`} className="rounded-md border border-[rgb(var(--muted)/0.32)] bg-[rgb(var(--bg-elev)/0.36)] px-1.5 py-1">
+                <div className="flex h-[82px] items-center gap-2">
                   <div className="relative flex h-12 w-12 items-center justify-center">
                     <svg
                       width={METRIC_GAUGE_SIZE}
@@ -218,7 +224,7 @@ export function CompareCard({
                         r={METRIC_GAUGE_RADIUS}
                         fill="none"
                         strokeWidth={METRIC_GAUGE_STROKE}
-                        className={getGaugeStrokeClass(metric.score, highlightDiffs)}
+                        className={`${getGaugeStrokeClass({ highlightDiffs, isBetter, isWorse })} transition-[stroke] duration-300 ease-out`}
                         strokeLinecap="round"
                         strokeDasharray={`${METRIC_GAUGE_ARC_LENGTH} ${METRIC_GAUGE_CIRCUMFERENCE}`}
                         initial={{ strokeDashoffset: METRIC_GAUGE_ARC_LENGTH }}
@@ -226,11 +232,11 @@ export function CompareCard({
                         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                       />
                     </svg>
-                    <span className={`absolute text-[11px] font-semibold ${getGaugeTextClass(metric.score, highlightDiffs)}`}>
+                    <span className={`absolute text-[11px] font-semibold transition-colors duration-300 ease-out ${getGaugeTextClass({ highlightDiffs, isBetter, isWorse })}`}>
                       {metric.score}
                     </span>
                   </div>
-                  <span className="line-clamp-2 text-[11px] leading-4 soft-text">{translate(metric.label)}</span>
+                  <span className="line-clamp-2 text-[11px] leading-4 soft-text">{getMetricLabel(metric.label)}</span>
                 </div>
               </div>
             );

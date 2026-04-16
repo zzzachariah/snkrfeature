@@ -185,7 +185,6 @@ export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
             <CompareCard
               key={shoe.id}
               shoe={shoe}
-              comparedCount={localShoes.length}
               metricDiffMap={metricDiffMap}
               metricExtremaMap={metricExtremaMap}
               highlightDiffs={highlightDiffs}
