@@ -212,9 +212,9 @@ export function CompareCard({
             return (
               <div key={`${shoe.id}-${metric.key}`} className="rounded-md border border-[rgb(var(--muted)/0.32)] bg-[rgb(var(--bg-elev)/0.36)] px-1.5 py-1">
                 <div className="mb-0.5 flex items-center justify-between gap-1">
-                  <span className="line-clamp-1 text-[10px] leading-4 soft-text">{getMetricLabel(metric.label)}</span>
-                  {typeof metric.rank === "number" ? (
-                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[rgb(var(--muted)/0.45)] text-[9px] font-semibold text-[rgb(var(--text)/0.72)]">
+                  <span className="line-clamp-1 text-[10px] font-semibold leading-4 text-[rgb(var(--text)/0.9)]">{getMetricLabel(metric.label)}</span>
+                  {highlightDiffs && typeof metric.rank === "number" ? (
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[rgb(var(--muted)/0.5)] text-[10px] font-semibold text-[rgb(var(--text)/0.72)]">
                       {metric.rank}
                     </span>
                   ) : null}
