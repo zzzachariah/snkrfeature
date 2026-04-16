@@ -171,6 +171,12 @@ const UI_TRANSLATIONS_ZH: Record<string, string> = {
   "reset": "重置",
   "no player tag": "暂无球员标签",
   "add to compare": "加入对比",
+  "clear all shoes": "清空全部球鞋",
+  "show tech details": "显示科技详情",
+  "hide tech details": "隐藏科技详情",
+  "remove shoe from compare": "从对比中移除球鞋",
+  "no shoes in compare yet.": "当前还没有加入对比的球鞋。",
+  "use search and add controls to start building your comparison.": "使用上方搜索和添加功能开始建立对比。",
   "no shoes found": "未找到球鞋",
   "try broader keywords or remove one filter.": "请尝试更宽泛的关键词，或移除一个筛选条件。",
   "no playstyle summary available yet.": "暂无打法总结。",
@@ -229,6 +235,7 @@ type LocaleContextValue = {
   requestLocaleChange: (locale: Locale) => void;
   translate: (text: string) => string;
   translateDynamic: (text: string) => Promise<string>;
+  getRankLabel: (rank: number) => string;
   isTranslating: boolean;
 };
 
@@ -373,15 +380,25 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     }, SWITCH_OVERLAY_MS);
   }, [pendingLocale]);
 
+  const getRankLabel = useCallback(
+    (rank: number) => {
+      const safeRank = Number.isFinite(rank) && rank > 0 ? Math.floor(rank) : 1;
+      if (locale === "zh") return `第${safeRank}名`;
+      return `No.${safeRank}`;
+    },
+    [locale]
+  );
+
   const contextValue = useMemo<LocaleContextValue>(
     () => ({
       locale,
       requestLocaleChange,
       translate,
       translateDynamic,
+      getRankLabel,
       isTranslating
     }),
-    [isTranslating, locale, requestLocaleChange, translate, translateDynamic]
+    [getRankLabel, isTranslating, locale, requestLocaleChange, translate, translateDynamic]
   );
 
   return (
