@@ -44,6 +44,7 @@ const fieldDefs: Array<{
   { key: "traction", label: "Traction" },
   { key: "fit", label: "Fit" },
   { key: "playstyle_summary", label: "Playstyle summary", type: "textarea" },
+  { key: "story_title", label: "Story title" },
   { key: "story_summary", label: "Story/background notes", type: "textarea" },
   { key: "raw_text", label: "Raw notes / free text", type: "textarea" },
   { key: "reviewer_notes", label: "Reviewer notes", type: "textarea" }
@@ -149,6 +150,7 @@ export default function AdminSubmissionDetailPage() {
       traction: spec.traction ?? "",
       fit: spec.fit ?? "",
       playstyle_summary: spec.playstyle_summary ?? "",
+      story_title: targetShoe.shoe_stories?.[0]?.title ?? "",
       story_summary: targetShoe.shoe_stories?.[0]?.content ?? spec.story_summary ?? ""
     };
   }, [targetShoe]);

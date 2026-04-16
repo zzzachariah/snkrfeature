@@ -114,6 +114,8 @@ const UI_TRANSLATIONS_ZH: Record<string, string> = {
   "an existing published shoe": "一双已发布球鞋",
   "this goes to the same review queue and approval will update the existing record.": "该请求会进入同一审核队列，审核通过后将更新现有记录。",
   "submissions are stored as raw payload, normalized server-side, and routed to admin review before publication.": "投稿会先以原始数据保存，在服务端标准化后提交管理员审核，再发布。",
+  "story title": "故事标题",
+  "short headline for the story.": "故事的简短标题。",
   "story / background notes": "背景故事/补充说明",
   "release context, design intent, notable versions, community notes.": "发售背景、设计意图、重要版本、社区补充说明。",
   "raw notes (required)": "原始备注（必填）",

@@ -60,6 +60,7 @@ export async function POST(request: Request) {
       traction: parsed.data.traction,
       fit: parsed.data.fit,
       tags: parsed.data.tags,
+      story_title: parsed.data.story_title,
       story_notes: parsed.data.story_notes,
       raw_text: parsed.data.raw_text,
       source_links: parsed.data.source_links

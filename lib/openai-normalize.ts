@@ -13,7 +13,7 @@ export async function normalizeSubmission(input: Record<string, unknown>) {
   const client = new OpenAI({ apiKey: key });
 
   const prompt = `Normalize this sneaker submission into strict JSON with keys:
-brand,shoe_name,model_line,version_name,release_year,forefoot_midsole_tech,heel_midsole_tech,outsole_tech,upper_tech,cushioning_feel,court_feel,bounce,stability,traction,fit,playstyle_summary,story_summary,tags,source_links,confidence_score,reviewer_notes.\nInput:${JSON.stringify(
+brand,shoe_name,model_line,version_name,release_year,forefoot_midsole_tech,heel_midsole_tech,outsole_tech,upper_tech,cushioning_feel,court_feel,bounce,stability,traction,fit,playstyle_summary,story_title,story_summary,tags,source_links,confidence_score,reviewer_notes.\nInput:${JSON.stringify(
     input
   )}`;
 
