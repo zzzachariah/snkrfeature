@@ -32,7 +32,6 @@ type CompareCardProps = {
   fields: CardField[];
   metricDiffMap: Map<string, boolean>;
   metricExtremaMap: Map<string, { min: number; max: number }>;
-  metricRankMap: Map<string, Map<string, number>>;
   highlightDiffs: boolean;
   onRemove: (id: string) => void;
 };
@@ -44,7 +43,12 @@ type MetricConfig = {
   differs?: boolean;
 };
 
-const METRIC_BAR = "h-1.5 overflow-hidden rounded-full bg-[rgb(var(--muted)/0.35)]";
+const METRIC_GAUGE_SIZE = 48;
+const METRIC_GAUGE_STROKE = 4.5;
+const METRIC_GAUGE_RADIUS = (METRIC_GAUGE_SIZE - METRIC_GAUGE_STROKE) / 2;
+const METRIC_GAUGE_CIRCUMFERENCE = 2 * Math.PI * METRIC_GAUGE_RADIUS;
+const METRIC_GAUGE_ARC_RATIO = 0.9;
+const METRIC_GAUGE_ARC_LENGTH = METRIC_GAUGE_CIRCUMFERENCE * METRIC_GAUGE_ARC_RATIO;
 
 function getMetricConfigs(shoe: Shoe): MetricConfig[] {
   return [
@@ -81,11 +85,20 @@ function getMetricConfigs(shoe: Shoe): MetricConfig[] {
   ];
 }
 
-function metricTone(score: number) {
-  if (score < 35) return "bg-[rgb(var(--muted)/0.72)]";
-  if (score < 55) return "bg-[rgb(var(--ring)/0.52)]";
-  if (score < 75) return "bg-[rgb(var(--accent)/0.72)]";
-  return "bg-[rgb(var(--accent)/0.9)]";
+function getGaugeStrokeClass(score: number, highlightDiffs: boolean) {
+  if (!highlightDiffs) return "stroke-[rgb(var(--muted)/0.85)]";
+  if (score >= 80) return "stroke-emerald-400";
+  if (score >= 65) return "stroke-emerald-300";
+  if (score >= 50) return "stroke-[rgb(var(--ring)/0.85)]";
+  return "stroke-[rgb(var(--muted)/0.95)]";
+}
+
+function getGaugeTextClass(score: number, highlightDiffs: boolean) {
+  if (!highlightDiffs) return "text-[rgb(var(--text)/0.82)]";
+  if (score >= 80) return "text-emerald-300";
+  if (score >= 65) return "text-emerald-200";
+  if (score >= 50) return "text-[rgb(var(--text)/0.9)]";
+  return "text-[rgb(var(--text)/0.74)]";
 }
 
 export function CompareCard({
@@ -94,11 +107,10 @@ export function CompareCard({
   fields,
   metricDiffMap,
   metricExtremaMap,
-  metricRankMap,
   highlightDiffs,
   onRemove
 }: CompareCardProps) {
-  const { locale, translate, getRankLabel } = useLocale();
+  const { translate } = useLocale();
   const [showTechDetails, setShowTechDetails] = useState(false);
 
   function getTechLabel(field: CardField) {
@@ -160,42 +172,65 @@ export function CompareCard({
 
       <div className="mt-3 rounded-xl border border-[rgb(var(--muted)/0.36)] bg-[rgb(var(--bg-elev)/0.44)] p-2.5">
         <p className="text-[10px] uppercase tracking-[0.16em] soft-text">{translate("Performance profile")}</p>
-        <div className="mt-2 space-y-1.5">
+        <div className="mt-2 grid grid-cols-2 gap-1.5">
           {metrics.map((metric) => {
             const extrema = metricExtremaMap.get(metric.key);
             const isHighest = (extrema?.max ?? metric.score) === metric.score;
             const isLowest = (extrema?.min ?? metric.score) === metric.score;
-            const rank = metricRankMap.get(metric.key)?.get(shoe.id);
-            const showRanking = highlightDiffs && comparedCount > 2 && Boolean(rank);
             const showTwoShoeHighlight = highlightDiffs && comparedCount === 2;
+            const showMultiShoeHighlight = highlightDiffs && comparedCount > 2;
 
             const diffTone = highlightDiffs && metric.differs ? "bg-[rgb(var(--accent)/0.12)]" : "";
             const rankTone =
-              showTwoShoeHighlight || showRanking
+              showTwoShoeHighlight || showMultiShoeHighlight
                 ? isHighest && !isLowest
-                  ? "border border-emerald-400/35 bg-emerald-400/10"
-                  : isLowest && !isHighest
-                  ? "border border-rose-400/35 bg-rose-400/10"
-                  : showRanking
+                  ? "border border-emerald-400/28 bg-emerald-400/8"
+                  : isLowest && !isHighest && showTwoShoeHighlight
+                  ? "border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.5)]"
+                  : showMultiShoeHighlight
                   ? "border border-[rgb(var(--muted)/0.34)] bg-[rgb(var(--bg-elev)/0.36)]"
                   : ""
                 : "";
 
             return (
-              <div key={`${shoe.id}-${metric.key}`} className={`rounded-md px-1.5 py-1 ${diffTone} ${rankTone}`}>
-                <div className="mb-1 flex items-center justify-between gap-2 text-[10px]">
-                  <span className="soft-text">{translate(metric.label)}</span>
-                  <div className="flex items-center gap-1.5">
-                    {showRanking && rank ? (
-                      <span className="rounded-full border border-[rgb(var(--muted)/0.42)] bg-[rgb(var(--bg)/0.66)] px-1.5 py-0.5 text-[9px] tracking-[0.02em] text-[rgb(var(--text)/0.84)]">
-                        {getRankLabel(rank)}
-                      </span>
-                    ) : null}
-                    <span className={`text-[rgb(var(--text)/0.84)] ${locale === "zh" ? "font-medium" : ""}`}>{metric.score}</span>
+              <div key={`${shoe.id}-${metric.key}`} className={`rounded-md px-1.5 py-1.5 ${diffTone} ${rankTone}`}>
+                <div className="flex h-[86px] items-center gap-2">
+                  <div className="relative flex h-12 w-12 items-center justify-center">
+                    <svg
+                      width={METRIC_GAUGE_SIZE}
+                      height={METRIC_GAUGE_SIZE}
+                      viewBox={`0 0 ${METRIC_GAUGE_SIZE} ${METRIC_GAUGE_SIZE}`}
+                      className="-rotate-[228deg]"
+                    >
+                      <circle
+                        cx={METRIC_GAUGE_SIZE / 2}
+                        cy={METRIC_GAUGE_SIZE / 2}
+                        r={METRIC_GAUGE_RADIUS}
+                        fill="none"
+                        strokeWidth={METRIC_GAUGE_STROKE}
+                        className="stroke-[rgb(var(--muted)/0.32)]"
+                        strokeLinecap="round"
+                        strokeDasharray={`${METRIC_GAUGE_ARC_LENGTH} ${METRIC_GAUGE_CIRCUMFERENCE}`}
+                      />
+                      <motion.circle
+                        cx={METRIC_GAUGE_SIZE / 2}
+                        cy={METRIC_GAUGE_SIZE / 2}
+                        r={METRIC_GAUGE_RADIUS}
+                        fill="none"
+                        strokeWidth={METRIC_GAUGE_STROKE}
+                        className={getGaugeStrokeClass(metric.score, highlightDiffs)}
+                        strokeLinecap="round"
+                        strokeDasharray={`${METRIC_GAUGE_ARC_LENGTH} ${METRIC_GAUGE_CIRCUMFERENCE}`}
+                        initial={{ strokeDashoffset: METRIC_GAUGE_ARC_LENGTH }}
+                        animate={{ strokeDashoffset: METRIC_GAUGE_ARC_LENGTH * (1 - metric.score / 100) }}
+                        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                      />
+                    </svg>
+                    <span className={`absolute text-[11px] font-semibold ${getGaugeTextClass(metric.score, highlightDiffs)}`}>
+                      {metric.score}
+                    </span>
                   </div>
-                </div>
-                <div className={METRIC_BAR}>
-                  <div className={`h-full rounded-full transition-all duration-300 ${metricTone(metric.score)}`} style={{ width: `${metric.score}%` }} />
+                  <span className="line-clamp-2 text-[11px] leading-4 soft-text">{translate(metric.label)}</span>
                 </div>
               </div>
             );

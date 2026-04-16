@@ -124,24 +124,6 @@ export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
     [localShoes]
   );
 
-  const metricRankMap = useMemo(
-    () =>
-      new Map(
-        metricFields.map((field) => {
-          const scored = localShoes.map((shoe) => ({
-            shoeId: shoe.id,
-            score: Math.max(0, Math.min(100, Math.round(field.get(shoe))))
-          }));
-
-          const sortedUniqueScores = Array.from(new Set(scored.map((item) => item.score))).sort((a, b) => b - a);
-          const rankByScore = new Map(sortedUniqueScores.map((score, index) => [score, index + 1]));
-          const ranks = new Map(scored.map((item) => [item.shoeId, rankByScore.get(item.score) ?? sortedUniqueScores.length]));
-          return [field.key, ranks];
-        })
-      ),
-    [localShoes]
-  );
-
   if (!localShoes.length) {
     return (
       <section className="space-y-3">
@@ -206,7 +188,6 @@ export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
               comparedCount={localShoes.length}
               metricDiffMap={metricDiffMap}
               metricExtremaMap={metricExtremaMap}
-              metricRankMap={metricRankMap}
               highlightDiffs={highlightDiffs}
               onRemove={(id) => {
                 const nextShoes = localShoes.filter((item) => item.id !== id);
