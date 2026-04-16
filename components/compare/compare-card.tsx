@@ -198,9 +198,9 @@ export function CompareCard({
         ))}
       </div>
 
-      <div className="mt-3 rounded-xl border border-[rgb(var(--muted)/0.36)] bg-[rgb(var(--bg-elev)/0.44)] p-2.5">
+      <div className="mt-3 rounded-xl border border-[rgb(var(--muted)/0.36)] bg-[rgb(var(--bg-elev)/0.44)] px-2 py-2 sm:p-2.5">
         <p className="text-[10px] uppercase tracking-[0.16em] soft-text">{translate("Performance profile")}</p>
-        <div className="mt-1.5 grid grid-cols-2 gap-1">
+        <div className="mt-1.5 grid grid-cols-2 gap-0.5 sm:gap-1">
           {metrics.map((metric) => {
             const extrema = metricExtremaMap.get(metric.key);
             const isHighest = (extrema?.max ?? metric.score) === metric.score;
@@ -210,9 +210,11 @@ export function CompareCard({
             const isWorse = shouldCompareColors && isLowest && !isHighest;
 
             return (
-              <div key={`${shoe.id}-${metric.key}`} className="rounded-md border border-[rgb(var(--muted)/0.32)] bg-[rgb(var(--bg-elev)/0.36)] px-1.5 py-1">
+              <div key={`${shoe.id}-${metric.key}`} className="rounded-md border border-[rgb(var(--muted)/0.32)] bg-[rgb(var(--bg-elev)/0.36)] px-1 py-1 sm:px-1.5">
                 <div className="mb-0.5 flex items-center justify-between gap-1">
-                  <span className="line-clamp-1 text-[10px] font-semibold leading-4 text-[rgb(var(--text)/0.9)]">{getMetricLabel(metric.label)}</span>
+                  <span className="min-w-0 flex-1 break-all text-[10px] font-semibold leading-4 text-[rgb(var(--text)/0.9)] sm:break-normal">
+                    {getMetricLabel(metric.label)}
+                  </span>
                   {highlightDiffs && typeof metric.rank === "number" ? (
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[rgb(var(--muted)/0.5)] text-[10px] font-semibold text-[rgb(var(--text)/0.72)]">
                       {metric.rank}
