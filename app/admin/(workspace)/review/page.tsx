@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { requireAdminPageContext } from "@/lib/admin/auth";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export default async function AdminReviewPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requireAdminPageContext();
   const params = await searchParams;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   if (!supabase) return <Card className="p-5">Supabase is not configured.</Card>;
 
