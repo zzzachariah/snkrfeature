@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { CompareMatrix } from "@/components/compare/compare-matrix";
@@ -37,6 +38,13 @@ export function ComparePageClient({
   shouldShowAddPanel
 }: Props) {
   const { translate } = useLocale();
+  const hasActiveSearch = Boolean(rawQ || rawBrand || rawCategory || rawPlayer || rawTech);
+
+  const displayedSuggestions = useMemo(() => {
+    if (hasActiveSearch) return searchResults.slice(0, 18);
+    const shuffled = [...searchResults].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 2);
+  }, [hasActiveSearch, searchResults]);
 
   function buildCompareHref(nextId: string) {
     return `/compare?ids=${Array.from(new Set([...selected.map((shoe) => shoe.id), nextId])).join(",")}`;
@@ -103,7 +111,7 @@ export function ComparePageClient({
             </form>
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {searchResults.slice(0, 18).map((shoe) => (
+              {displayedSuggestions.map((shoe) => (
                 <Card key={shoe.id} className="p-4">
                   <p className="text-xs soft-text">
                     {shoe.brand}
@@ -134,7 +142,7 @@ export function ComparePageClient({
                 </Card>
               ))}
             </div>
-            {searchResults.length === 0 && (
+            {displayedSuggestions.length === 0 && (
               <Card className="p-5 text-center">
                 <p className="font-medium">{translate("No shoes found")}</p>
                 <p className="mt-1 text-xs soft-text">{translate("Try broader keywords or remove one filter.")}</p>

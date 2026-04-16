@@ -110,6 +110,7 @@ export default function LoginPage() {
       devLog("redirect start", { target: redirectTarget });
       if (pathname !== redirectTarget) {
         router.replace(redirectTarget);
+        router.refresh();
       }
       devLog("redirect end");
 
