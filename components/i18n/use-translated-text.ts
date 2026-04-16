@@ -34,6 +34,8 @@ export function useTranslatedText(
   const contentType = options.contentType ?? "descriptive";
   const source = text ?? "";
   const normalized = source.trim();
+  const cacheKey = `${locale}::${source}`;
+  const cachedDynamic = resolvedDynamicCache.get(cacheKey);
 
   const shouldSkipDynamic = useMemo(() => {
     if (!normalized) return true;
@@ -44,10 +46,10 @@ export function useTranslatedText(
     return false;
   }, [normalized, options.contentType, options.protectTechTerms, options.skipDynamic]);
 
-  const [resolved, setResolved] = useState(() => translate(source));
+  const [resolved, setResolved] = useState(() => cachedDynamic ?? translate(source));
 
   useEffect(() => {
-    const immediate = translate(source);
+    const immediate = cachedDynamic ?? translate(source);
     setResolved(immediate);
 
     if (isDebugEnabled) {
@@ -65,13 +67,11 @@ export function useTranslatedText(
     if (immediate !== source) return;
 
     let cancelled = false;
-    const cacheKey = `${locale}::${source}`;
-    const cachedValue = resolvedDynamicCache.get(cacheKey);
-    if (cachedValue) {
+    if (cachedDynamic) {
       if (isDebugEnabled) {
-        console.debug("[i18n/useTranslatedText] resolved cache hit", { cacheKey, value: cachedValue });
+        console.debug("[i18n/useTranslatedText] resolved cache hit", { cacheKey, value: cachedDynamic });
       }
-      setResolved(cachedValue);
+      setResolved(cachedDynamic);
       return;
     }
 
@@ -100,7 +100,7 @@ export function useTranslatedText(
     return () => {
       cancelled = true;
     };
-  }, [contentType, locale, normalized, shouldSkipDynamic, source, translate, translateDynamic]);
+  }, [cacheKey, cachedDynamic, contentType, locale, normalized, shouldSkipDynamic, source, translate, translateDynamic]);
 
   return resolved;
 }
