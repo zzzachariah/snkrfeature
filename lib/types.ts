@@ -48,6 +48,7 @@ export interface ShoeImageRecord {
   public_url: string;
   status: "pending" | "approved" | "rejected";
   provider: string;
+  provider_model?: string | null;
   prompt: string | null;
   created_at: string;
   approved_at: string | null;
