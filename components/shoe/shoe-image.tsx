@@ -54,7 +54,7 @@ export function ShoeImage({ src, alt, fallbackLabel, variant = "thumbnail", clas
   return (
     <div
       className={`mx-auto overflow-hidden rounded-xl border border-[rgb(var(--muted)/0.42)] bg-[rgb(var(--bg-elev)/0.85)] ${VARIANT_CLASS[variant]} ${className}`}
-      style={isDarkTheme ? { backgroundColor: "#000" } : undefined}
+      style={isDarkTheme ? { backgroundColor: "transparent" } : undefined}
     >
       {hasImage ? (
         <img
@@ -67,7 +67,8 @@ export function ShoeImage({ src, alt, fallbackLabel, variant = "thumbnail", clas
             isDarkTheme
               ? {
                   filter: "invert(1) brightness(1.1) contrast(1.1)",
-                  backgroundColor: "#000",
+                  backgroundColor: "transparent",
+                  mixBlendMode: "screen",
                   transform: `scale(${VARIANT_SCALE[variant]})`
                 }
               : {
