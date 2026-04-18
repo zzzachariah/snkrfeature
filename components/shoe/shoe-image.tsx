@@ -17,6 +17,13 @@ const VARIANT_CLASS: Record<NonNullable<ShoeImageProps["variant"]>, string> = {
   compare: "aspect-square w-full max-w-[13rem]"
 };
 
+const VARIANT_SCALE: Record<NonNullable<ShoeImageProps["variant"]>, number> = {
+  thumbnail: 1.12,
+  detail: 1.1,
+  suggestion: 1.1,
+  compare: 1.08
+};
+
 export function ShoeImage({ src, alt, fallbackLabel, variant = "thumbnail", className = "" }: ShoeImageProps) {
   const [failed, setFailed] = useState(false);
   const [isDarkTheme, setIsDarkTheme] = useState(false);
@@ -55,11 +62,19 @@ export function ShoeImage({ src, alt, fallbackLabel, variant = "thumbnail", clas
           alt={alt}
           loading="lazy"
           onError={() => setFailed(true)}
-          className="h-full w-full object-contain object-center p-0.5 transition"
+          className="h-full w-full object-contain object-center transition"
           style={
             isDarkTheme
-              ? { filter: "invert(1) brightness(1.1) contrast(1.1)", backgroundColor: "#000" }
-              : { filter: "none", backgroundColor: "#fff" }
+              ? {
+                  filter: "invert(1) brightness(1.1) contrast(1.1)",
+                  backgroundColor: "#000",
+                  transform: `scale(${VARIANT_SCALE[variant]})`
+                }
+              : {
+                  filter: "none",
+                  backgroundColor: "#fff",
+                  transform: `scale(${VARIANT_SCALE[variant]})`
+                }
           }
         />
       ) : (
