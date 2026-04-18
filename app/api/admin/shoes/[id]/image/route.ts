@@ -31,6 +31,8 @@ Use a square 1:1 canvas.
 The shoe must be shown in a strict lateral side profile only.
 No perspective, no 3/4 view, no top view, no outsole bottom view, no tilt, no rotation.
 The shoe must be horizontally aligned and centered.
+Orientation must be consistent: heel on the left, toe/front pointing to the right.
+Do not flip orientation. Do not mirror the shoe.
 The entire shoe must be fully visible.
 The shoe should occupy approximately 80% to 85% of the canvas width, with clean and even margin around it.
 No edge clipping. Do not render a tiny floating shoe.
