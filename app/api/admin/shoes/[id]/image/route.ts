@@ -196,18 +196,35 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const prompt = `Product shoe illustration for ${shoe.brand} ${shoe.shoe_name}, centered single sneaker, white background, clean black line art, minimal shading, no text, no watermark.`;
   console.info(`[admin] /image requestId=${requestId} step=prompt_built`, { prompt, model, bucket });
 
-  console.info(`[admin] /image requestId=${requestId} step=provider_request start url=${baseUrl.replace(/\/$/, "")}/v1/images/generations`);
-  const generationResponse = await fetch(`${baseUrl.replace(/\/$/, "")}/v1/images/generations`, {
+  const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
+  const isGeminiFlashImage = model.includes("gemini-2.5-flash-image");
+  const providerEndpoint = isGeminiFlashImage
+    ? `${normalizedBaseUrl}/v1beta/models/${model}:generateContent`
+    : `${normalizedBaseUrl}/v1/images/generations`;
+  const providerBody = isGeminiFlashImage
+    ? {
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"]
+        }
+      }
+    : {
+        model,
+        prompt,
+        size: "1024x1024"
+      };
+
+  console.info(`[admin] /image requestId=${requestId} step=provider_request start url=${providerEndpoint}`, {
+    providerShape: isGeminiFlashImage ? "gemini_generateContent" : "openai_images_generations"
+  });
+  const generationResponse = await fetch(providerEndpoint, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${apiKey}`
+      authorization: `Bearer ${apiKey}`,
+      "x-goog-api-key": apiKey
     },
-    body: JSON.stringify({
-      model,
-      prompt,
-      size: "1024x1024"
-    })
+    body: JSON.stringify(providerBody)
   });
   console.info(`[admin] /image requestId=${requestId} step=provider_response status=${generationResponse.status}`);
   const providerBodyText = await generationResponse.text();
@@ -247,14 +264,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   }
 
-  const parsedJson = generationJson as { data?: Array<{ url?: string; b64_json?: string }> };
+  const parsedJson = generationJson as {
+    data?: Array<{ url?: string; b64_json?: string }>;
+    candidates?: Array<{
+      content?: {
+        parts?: Array<{
+          inlineData?: { data?: string; mimeType?: string };
+        }>;
+      };
+    }>;
+  };
   const imagePayload = parsedJson?.data?.[0];
   const imageUrl = imagePayload?.url;
-  const b64 = imagePayload?.b64_json;
+  const openAiB64 = imagePayload?.b64_json;
+  const geminiInlineData = parsedJson?.candidates?.[0]?.content?.parts?.find((part) => Boolean(part.inlineData?.data))?.inlineData;
+  const b64 = openAiB64 ?? geminiInlineData?.data;
+  const imageMimeType = geminiInlineData?.mimeType ?? "image/png";
   console.info(`[admin] /image requestId=${requestId} step=provider_parse parsed`, {
     hasDataArray: Array.isArray(parsedJson?.data),
+    hasGeminiCandidates: Array.isArray(parsedJson?.candidates),
     hasImageUrl: Boolean(imageUrl),
-    hasB64: Boolean(b64)
+    hasB64: Boolean(b64),
+    imageMimeType
   });
   if (!imageUrl && !b64) {
     return fail({
@@ -295,7 +326,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const path = `shoes/${shoeId}/${Date.now()}-${randomUUID()}.png`;
   const { error: uploadError } = await adminClient.storage.from(bucket).upload(path, imageBytes, {
     upsert: false,
-    contentType: "image/png"
+    contentType: imageMimeType
   });
   if (uploadError) {
     return fail({
