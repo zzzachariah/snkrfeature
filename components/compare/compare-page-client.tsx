@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Shoe } from "@/lib/types";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { DynamicTranslatedText } from "@/components/i18n/dynamic-translated-text";
+import { ShoeImage } from "@/components/shoe/shoe-image";
 
 type Props = {
   selected: Shoe[];
@@ -113,16 +114,27 @@ export function ComparePageClient({
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {displayedSuggestions.map((shoe) => (
                 <Card key={shoe.id} className="p-4">
-                  <p className="text-xs soft-text">
-                    {shoe.brand}
-                    {shoe.category ? (
-                      <>
-                        {" • "}
-                        <DynamicTranslatedText as="span" text={shoe.category} contentType="descriptive" />
-                      </>
-                    ) : null}
-                  </p>
-                  <p className="mt-1 font-semibold">{shoe.shoe_name}</p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs soft-text">
+                        {shoe.brand}
+                        {shoe.category ? (
+                          <>
+                            {" • "}
+                            <DynamicTranslatedText as="span" text={shoe.category} contentType="descriptive" />
+                          </>
+                        ) : null}
+                      </p>
+                      <p className="mt-1 truncate font-semibold">{shoe.shoe_name}</p>
+                    </div>
+                    <ShoeImage
+                      src={shoe.image_url}
+                      alt={shoe.shoe_name}
+                      fallbackLabel={translate("No image")}
+                      variant="suggestion"
+                      className="shrink-0"
+                    />
+                  </div>
                   <p className="mt-1 text-xs soft-text">{shoe.player ?? translate("No player tag")}</p>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {(shoe.spec.tags ?? []).slice(0, 2).map((tag) => (

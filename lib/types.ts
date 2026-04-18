@@ -31,6 +31,7 @@ export interface Shoe {
   player?: string | null;
   price?: number | null;
   weight?: string | null;
+  image_url?: string | null;
   spec: ShoeSpec;
   story?: {
     title?: string | null;
@@ -38,4 +39,20 @@ export interface Shoe {
     source_label?: string | null;
     source_url?: string | null;
   } | null;
+}
+
+export interface ShoeImageRecord {
+  id: string;
+  shoe_id: string;
+  storage_path: string;
+  public_url: string;
+  status: "pending" | "approved" | "rejected";
+  provider: string;
+  provider_model?: string | null;
+  prompt: string | null;
+  created_at: string;
+  approved_at: string | null;
+  rejected_at: string | null;
+  rejection_reason?: string | null;
+  generation_error?: string | null;
 }
