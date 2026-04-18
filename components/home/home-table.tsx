@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { Input } from "@/components/ui/input";
 import { rankShoeMatch } from "@/lib/search/shoe-search";
+import { ShoeImage } from "@/components/shoe/shoe-image";
 
 type SortKey = "shoe_name" | "brand" | "release_year";
 
@@ -105,6 +106,7 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
             <thead className="sticky top-0 z-10 bg-[rgb(var(--glass-bg-strong)/0.98)] text-[rgb(var(--subtext))]">
               <tr>
                 <th className="px-4 py-3">{translate("Compare")}</th>
+                <th className="px-4 py-3">{translate("Image")}</th>
                 <th className="px-4 py-3"><button type="button" className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("shoe_name")}>{translate("Name")}<ArrowUpDown className="h-3 w-3" /></button></th>
                 <th className="px-4 py-3"><button type="button" className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("brand")}>{translate("Brand")}<ArrowUpDown className="h-3 w-3" /></button></th>
                 <th className="px-4 py-3"><button type="button" className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("release_year")}>{translate("Release")}<ArrowUpDown className="h-3 w-3" /></button></th>
@@ -113,7 +115,7 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-16 text-center soft-text">
+                  <td colSpan={5} className="px-4 py-16 text-center soft-text">
                     <div className="mx-auto flex max-w-md flex-col items-center gap-2">
                       <SearchX className="h-5 w-5" />
                       <p>{translate("No sneakers match this search.")}</p>
@@ -131,6 +133,9 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
                   className="border-t border-[rgb(var(--glass-stroke-soft)/0.35)] odd:bg-[rgb(var(--glass-bg-strong)/0.5)] transition hover:bg-[rgb(var(--accent)/0.08)]"
                 >
                   <td className="px-4 py-3 align-middle"><input className="h-4 w-4 accent-[rgb(var(--accent))]" type="checkbox" checked={selected.includes(shoe.id)} onChange={(e) => setSelected((p) => e.target.checked ? [...p, shoe.id] : p.filter((id) => id !== shoe.id))} /></td>
+                  <td className="px-4 py-3 align-middle">
+                    <ShoeImage src={shoe.image_url} alt={shoe.shoe_name} fallbackLabel={translate("No image")} variant="thumbnail" />
+                  </td>
                   <td data-field-key="shoe_name" className="px-4 py-3"><Link href={`/shoes/${shoe.slug}`} className="font-medium transition">{shoe.shoe_name}</Link></td>
                   <td data-field-key="brand" className="px-4 py-3">{shoe.brand}</td>
                   <td className="px-4 py-3">{shoe.release_year ?? "—"}</td>
