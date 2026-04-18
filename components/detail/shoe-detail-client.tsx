@@ -96,7 +96,10 @@ export function ShoeDetailClient({
       });
       const json = await res.json();
       if (!res.ok || !json?.ok) {
-        throw new Error(json?.message ?? translate("Image generation failed"));
+        const errorText = [json?.error, json?.step ? `step=${json.step}` : null, json?.detail ? `detail=${json.detail}` : null]
+          .filter(Boolean)
+          .join(" | ");
+        throw new Error(errorText || json?.message || translate("Image generation failed"));
       }
       setImageActionSuccess(json?.message ?? translate("Image approved"));
       router.refresh();
