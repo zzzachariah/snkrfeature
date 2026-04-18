@@ -102,11 +102,18 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
       </form>
       <div className="surface-card liquid-interactive overflow-hidden rounded-3xl premium-border">
         <div className="max-h-[560px] overflow-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full table-fixed text-left text-sm">
+            <colgroup>
+              <col className="w-[72px]" />
+              <col className="w-[104px]" />
+              <col />
+              <col className="w-[160px]" />
+              <col className="w-[120px]" />
+            </colgroup>
             <thead className="sticky top-0 z-10 bg-[rgb(var(--glass-bg-strong)/0.98)] text-[rgb(var(--subtext))]">
               <tr>
-                <th className="px-4 py-3">{translate("Compare")}</th>
-                <th className="px-4 py-3">{translate("Image")}</th>
+                <th className="px-4 py-3 text-center">{translate("Compare")}</th>
+                <th className="px-2 py-3 text-center">{translate("Image")}</th>
                 <th className="px-4 py-3"><button type="button" className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("shoe_name")}>{translate("Name")}<ArrowUpDown className="h-3 w-3" /></button></th>
                 <th className="px-4 py-3"><button type="button" className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("brand")}>{translate("Brand")}<ArrowUpDown className="h-3 w-3" /></button></th>
                 <th className="px-4 py-3"><button type="button" className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 transition hover:bg-[rgb(var(--muted)/0.3)]" onClick={() => toggleSort("release_year")}>{translate("Release")}<ArrowUpDown className="h-3 w-3" /></button></th>
@@ -132,8 +139,8 @@ export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initial
                   transition={{ delay: i * 0.01 }}
                   className="border-t border-[rgb(var(--glass-stroke-soft)/0.35)] odd:bg-[rgb(var(--glass-bg-strong)/0.5)] transition hover:bg-[rgb(var(--accent)/0.08)]"
                 >
-                  <td className="px-4 py-3 align-middle"><input className="h-4 w-4 accent-[rgb(var(--accent))]" type="checkbox" checked={selected.includes(shoe.id)} onChange={(e) => setSelected((p) => e.target.checked ? [...p, shoe.id] : p.filter((id) => id !== shoe.id))} /></td>
-                  <td className="px-4 py-3 align-middle">
+                  <td className="px-4 py-3 text-center align-middle"><input className="h-4 w-4 accent-[rgb(var(--accent))]" type="checkbox" checked={selected.includes(shoe.id)} onChange={(e) => setSelected((p) => e.target.checked ? [...p, shoe.id] : p.filter((id) => id !== shoe.id))} /></td>
+                  <td className="px-2 py-3 text-center align-middle">
                     <ShoeImage src={shoe.image_url} alt={shoe.shoe_name} fallbackLabel={translate("No image")} variant="thumbnail" />
                   </td>
                   <td data-field-key="shoe_name" className="px-4 py-3"><Link href={`/shoes/${shoe.slug}`} className="font-medium transition">{shoe.shoe_name}</Link></td>
