@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { CommentSection } from "@/components/detail/comment-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { PerformanceIndicator } from "@/components/shoe/performance-indicator";
-import { Shoe } from "@/lib/types";
+import { Shoe, ShoeImageRecord } from "@/lib/types";
 import {
   getBounceScore,
   getCourtFeelScore,
@@ -19,14 +22,35 @@ import {
 } from "@/lib/shoe-scoring";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { DynamicTranslatedText } from "@/components/i18n/dynamic-translated-text";
+import { ShoeImage } from "@/components/shoe/shoe-image";
 
 type TechCardConfig = {
   value: string | null | undefined;
   field: string;
 };
 
-export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[] }) {
+type ShoeDetailImageState = {
+  approved: ShoeImageRecord | null;
+  pending: ShoeImageRecord | null;
+  latestRejected: ShoeImageRecord | null;
+};
+
+export function ShoeDetailClient({
+  shoe,
+  related,
+  isAdmin,
+  imageState
+}: {
+  shoe: Shoe;
+  related: Shoe[];
+  isAdmin: boolean;
+  imageState: ShoeDetailImageState;
+}) {
   const { translate } = useLocale();
+  const router = useRouter();
+  const [imageActionLoading, setImageActionLoading] = useState<"generate" | "approve" | "reject" | null>(null);
+  const [imageActionError, setImageActionError] = useState<string | null>(null);
+  const [imageActionSuccess, setImageActionSuccess] = useState<string | null>(null);
 
   const storyTitle = shoe.story?.title?.trim();
   const storyContent = shoe.story?.content?.trim();
@@ -56,6 +80,35 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
       field: "upper_tech",
     },
   };
+
+  const reviewImage = imageState.pending?.public_url ?? imageState.approved?.public_url ?? shoe.image_url;
+  const hasPendingImage = Boolean(imageState.pending);
+
+  async function runAdminImageAction(action: "generate" | "approve" | "reject") {
+    setImageActionLoading(action);
+    setImageActionError(null);
+    setImageActionSuccess(null);
+    try {
+      const res = await fetch(`/api/admin/shoes/${shoe.id}/image`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action })
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) {
+        const errorText = [json?.error, json?.step ? `step=${json.step}` : null, json?.detail ? `detail=${json.detail}` : null]
+          .filter(Boolean)
+          .join(" | ");
+        throw new Error(errorText || json?.message || translate("Image generation failed"));
+      }
+      setImageActionSuccess(json?.message ?? translate("Image approved"));
+      router.refresh();
+    } catch (error) {
+      setImageActionError(error instanceof Error ? error.message : translate("Image generation failed"));
+    } finally {
+      setImageActionLoading(null);
+    }
+  }
 
   return (
     <main className="container-shell space-y-6 py-8">
@@ -103,6 +156,61 @@ export function ShoeDetailClient({ shoe, related }: { shoe: Shoe; related: Shoe[
             </Link>
           </div>
         </div>
+      </section>
+
+      <section className="surface-card premium-border flex flex-col items-center gap-4 rounded-3xl p-6 md:p-8">
+        <ShoeImage
+          src={reviewImage}
+          alt={`${shoe.brand} ${shoe.shoe_name}`}
+          fallbackLabel={translate("No image")}
+          variant="detail"
+        />
+        <div className="text-center text-sm">
+          {hasPendingImage ? (
+            <p className="font-medium text-amber-400">{translate("Image pending review")}</p>
+          ) : imageState.approved ? (
+            <p className="font-medium text-emerald-400">{translate("Image approved")}</p>
+          ) : imageState.latestRejected ? (
+            <p className="font-medium text-rose-400">{translate("Image rejected")}</p>
+          ) : (
+            <p className="font-medium soft-text">{translate("No image")}</p>
+          )}
+        </div>
+
+        {isAdmin && (
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button type="button" onClick={() => runAdminImageAction("generate")} disabled={imageActionLoading !== null}>
+              {imageActionLoading === "generate"
+                ? translate("Generating image...")
+                : hasPendingImage
+                  ? translate("Regenerate image")
+                  : translate("Generate image")}
+            </Button>
+            {hasPendingImage && (
+              <>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => runAdminImageAction("approve")}
+                  disabled={imageActionLoading !== null}
+                >
+                  {translate("Confirm image")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => runAdminImageAction("reject")}
+                  disabled={imageActionLoading !== null}
+                >
+                  {translate("Reject image")}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+
+        {imageActionError && <FeedbackMessage message={imageActionError} isError />}
+        {imageActionSuccess && <FeedbackMessage message={imageActionSuccess} />}
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
