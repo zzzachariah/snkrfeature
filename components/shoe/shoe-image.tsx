@@ -23,7 +23,7 @@ export function ShoeImage({ src, alt, fallbackLabel, variant = "thumbnail", clas
 
   return (
     <div
-      className={`mx-auto overflow-hidden rounded-xl border border-[rgb(var(--muted)/0.42)] bg-[rgb(var(--bg-elev)/0.85)] ${VARIANT_CLASS[variant]} ${className}`}
+      className={`mx-auto overflow-hidden rounded-xl border border-[rgb(var(--muted)/0.42)] bg-[rgb(var(--bg-elev)/0.85)] dark:bg-black ${VARIANT_CLASS[variant]} ${className}`}
     >
       {hasImage ? (
         <img
@@ -31,7 +31,7 @@ export function ShoeImage({ src, alt, fallbackLabel, variant = "thumbnail", clas
           alt={alt}
           loading="lazy"
           onError={() => setFailed(true)}
-          className="h-full w-full object-contain object-center bg-white p-0.5 transition dark:brightness-95 dark:contrast-110"
+          className="h-full w-full object-contain object-center bg-white p-0.5 transition dark:invert dark:brightness-110 dark:contrast-110"
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-[rgb(var(--bg-elev)/0.72)] px-2 text-center">
