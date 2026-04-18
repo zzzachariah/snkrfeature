@@ -11,10 +11,10 @@ type ShoeImageProps = {
 };
 
 const VARIANT_CLASS: Record<NonNullable<ShoeImageProps["variant"]>, string> = {
-  thumbnail: "h-12 w-16",
-  detail: "h-52 w-full max-w-xl md:h-64",
-  suggestion: "h-12 w-14",
-  compare: "h-36 w-full"
+  thumbnail: "aspect-square w-14 min-w-14",
+  detail: "aspect-square w-full max-w-[30rem]",
+  suggestion: "aspect-square w-16 min-w-16",
+  compare: "aspect-square w-full max-w-[13rem]"
 };
 
 export function ShoeImage({ src, alt, fallbackLabel, variant = "thumbnail", className = "" }: ShoeImageProps) {
@@ -23,7 +23,7 @@ export function ShoeImage({ src, alt, fallbackLabel, variant = "thumbnail", clas
 
   return (
     <div
-      className={`overflow-hidden rounded-xl border border-[rgb(var(--muted)/0.42)] bg-[rgb(var(--bg-elev)/0.85)] ${VARIANT_CLASS[variant]} ${className}`}
+      className={`mx-auto overflow-hidden rounded-xl border border-[rgb(var(--muted)/0.42)] bg-[rgb(var(--bg-elev)/0.85)] ${VARIANT_CLASS[variant]} ${className}`}
     >
       {hasImage ? (
         <img
@@ -31,7 +31,7 @@ export function ShoeImage({ src, alt, fallbackLabel, variant = "thumbnail", clas
           alt={alt}
           loading="lazy"
           onError={() => setFailed(true)}
-          className="h-full w-full object-contain bg-white p-2 transition dark:brightness-95 dark:contrast-110"
+          className="h-full w-full object-contain object-center bg-white p-0.5 transition dark:brightness-95 dark:contrast-110"
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-[rgb(var(--bg-elev)/0.72)] px-2 text-center">

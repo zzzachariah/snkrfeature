@@ -189,7 +189,7 @@ export function CompareCard({
           alt={shoe.shoe_name}
           fallbackLabel={translate("No image")}
           variant="compare"
-          className="max-w-[240px]"
+          className="w-full"
         />
       </div>
 
