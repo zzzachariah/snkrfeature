@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { DynamicTranslatedText } from "@/components/i18n/dynamic-translated-text";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { Shoe } from "@/lib/types";
+import { ShoeImage } from "@/components/shoe/shoe-image";
 import {
   getBounceScore,
   getCourtFeelScore,
@@ -182,12 +183,14 @@ export function CompareCard({
         </button>
       </div>
 
-      <div className="mt-3 rounded-xl border border-[rgb(var(--muted)/0.42)] bg-[rgb(var(--bg-elev)/0.58)] px-2.5 py-2 text-xs leading-5 soft-text">
-        {shoe.spec.playstyle_summary ? (
-          <DynamicTranslatedText as="p" text={shoe.spec.playstyle_summary} contentType="descriptive" />
-        ) : (
-          <p>{translate("No playstyle summary available yet.")}</p>
-        )}
+      <div className="mt-3 flex justify-center">
+        <ShoeImage
+          src={shoe.image_url}
+          alt={shoe.shoe_name}
+          fallbackLabel={translate("No image")}
+          variant="compare"
+          className="max-w-[240px]"
+        />
       </div>
 
       <div className="mt-2.5 flex flex-wrap gap-1.5">
