@@ -402,7 +402,11 @@ async function getLatestByStatus(supabase: SupabaseClient, shoeId: string, statu
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
   return data;
 }
 
@@ -415,8 +419,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     console.error(`[admin] /image requestId=${requestId} step=auth fail status=401_or_403`);
     return auth.error;
   }
+
   const { supabase, user } = auth;
   const adminClient = createAdminClient();
+
   if (!adminClient) {
     return fail({
       status: 500,
@@ -436,6 +442,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       requestId
     });
   }
+
   const { id: shoeId } = await params;
 
   if (parsed.data.action === "approve") {
@@ -450,11 +457,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const nowIso = new Date().toISOString();
+
     const { error: demoteError } = await supabase
       .from("shoe_images")
-      .update({ status: "rejected", rejected_at: nowIso, rejection_reason: "Superseded by newer approved image." })
+      .update({
+        status: "rejected",
+        rejected_at: nowIso,
+        rejection_reason: "Superseded by newer approved image."
+      })
       .eq("shoe_id", shoeId)
       .eq("status", "approved");
+
     if (demoteError) {
       return fail({
         status: 500,
@@ -467,8 +480,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { error: approveError } = await supabase
       .from("shoe_images")
-      .update({ status: "approved", approved_at: nowIso, rejected_at: null, rejection_reason: null })
+      .update({
+        status: "approved",
+        approved_at: nowIso,
+        rejected_at: null,
+        rejection_reason: null
+      })
       .eq("id", pending.id);
+
     if (approveError) {
       return fail({
         status: 500,
@@ -492,10 +511,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         requestId
       });
     }
+
     const { error: rejectError } = await supabase
       .from("shoe_images")
-      .update({ status: "rejected", rejected_at: new Date().toISOString(), rejection_reason: "Rejected by admin review." })
+      .update({
+        status: "rejected",
+        rejected_at: new Date().toISOString(),
+        rejection_reason: "Rejected by admin review."
+      })
       .eq("id", pending.id);
+
     if (rejectError) {
       return fail({
         status: 500,
@@ -505,11 +530,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         requestId
       });
     }
+
     return success({ message: "Image rejected" }, requestId);
   }
 
   console.info(`[admin] /image requestId=${requestId} step=shoe_load start shoeId=${shoeId}`);
-  const { data: shoe, error: shoeError } = await supabase.from("shoes").select("id, brand, shoe_name").eq("id", shoeId).maybeSingle();
+
+  const { data: shoe, error: shoeError } = await supabase
+    .from("shoes")
+    .select("id, brand, shoe_name")
+    .eq("id", shoeId)
+    .maybeSingle();
+
   if (shoeError || !shoe) {
     return fail({
       status: 404,
@@ -519,6 +551,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       requestId
     });
   }
+
   console.info(`[admin] /image requestId=${requestId} step=shoe_load success`, shoe);
 
   const searchConfig = getPackySearchConfig();
@@ -661,6 +694,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     generationFailureDetail = providerBodyText.slice(0, 2000);
   } else {
     let generationJson: unknown;
+
     try {
       generationJson = JSON.parse(providerBodyText);
     } catch (error) {
@@ -740,6 +774,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       rejected_at: new Date().toISOString(),
       rejection_reason: "Generation failed"
     });
+
     return fail({
       status: 502,
       error: "Provider generation failed.",
@@ -750,10 +785,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const path = `shoes/${shoeId}/${Date.now()}-${randomUUID()}.png`;
+
   const { error: uploadError } = await adminClient.storage.from(bucket).upload(path, imageBytes, {
     upsert: false,
     contentType: imageMimeType
   });
+
   if (uploadError) {
     return fail({
       status: 500,
@@ -763,13 +800,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       requestId
     });
   }
-  console.info(`[admin] /image requestId=${requestId} step=storage_upload success`, { bucket, path });
+
+  console.info(`[admin] /image requestId=${requestId} step=storage_upload success`, {
+    bucket,
+    path
+  });
 
   const { error: closePendingError } = await supabase
     .from("shoe_images")
-    .update({ status: "rejected", rejected_at: new Date().toISOString(), rejection_reason: "Superseded by regenerated candidate." })
+    .update({
+      status: "rejected",
+      rejected_at: new Date().toISOString(),
+      rejection_reason: "Superseded by regenerated candidate."
+    })
     .eq("shoe_id", shoeId)
     .eq("status", "pending");
+
   if (closePendingError) {
     return fail({
       status: 500,
@@ -779,9 +825,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       requestId
     });
   }
+
   console.info(`[admin] /image requestId=${requestId} step=db_update success previous_pending_closed`);
 
   const publicUrl = buildPublicUrl(supabaseUrl, bucket, path);
+
   if (!path || !publicUrl) {
     return fail({
       status: 500,
@@ -807,6 +855,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     prompt,
     created_by: user.id
   });
+
   if (insertError) {
     return fail({
       status: 500,
@@ -816,7 +865,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       requestId
     });
   }
-  console.info(`[admin] /image requestId=${requestId} step=db_insert success`, { shoeId, path, publicUrl });
 
-  return success({ message: "Image pending review", storage_path: path, public_url: publicUrl }, requestId);
+  console.info(`[admin] /image requestId=${requestId} step=db_insert success`, {
+    shoeId,
+    path,
+    publicUrl
+  });
+
+  return success(
+    {
+      message: "Image pending review",
+      storage_path: path,
+      public_url: publicUrl
+    },
+    requestId
+  );
 }
