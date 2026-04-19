@@ -454,6 +454,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       detail: `PACKYAPI_SEARCH_BASE_URL=${Boolean(process.env.PACKYAPI_SEARCH_BASE_URL)} PACKYAPI_SEARCH_MODEL=${Boolean(process.env.PACKYAPI_SEARCH_MODEL)} PACKYAPI_SEARCH_KEY=${Boolean(process.env.PACKYAPI_SEARCH_KEY)} PACKYAPI_IMAGE_BASE_URL=${Boolean(process.env.PACKYAPI_IMAGE_BASE_URL)} PACKYAPI_IMAGE_MODEL=${Boolean(process.env.PACKYAPI_IMAGE_MODEL)} PACKYAPI_IMAGE_KEY=${Boolean(process.env.PACKYAPI_IMAGE_KEY)} supabaseUrl=${Boolean(supabaseUrl)}`,
       requestId
     });
+  } catch (error) {
+    console.error(`[admin] /image requestId=${requestId} step=search_request fail`, error);
+  }
+
+  let referenceInlineData: { mimeType: string; data: string } | undefined;
+  if (selectedReference?.imageUrl) {
+    const refImageResponse = await fetch(selectedReference.imageUrl);
+    if (refImageResponse.ok) {
+      const refArrayBuffer = await refImageResponse.arrayBuffer();
+      const refBytes = Buffer.from(refArrayBuffer);
+      if (refBytes.length > 0) {
+        referenceInlineData = {
+          mimeType: refImageResponse.headers.get("content-type") ?? "image/jpeg",
+          data: refBytes.toString("base64")
+        };
+      }
+    } else {
+      console.warn(`[admin] /image requestId=${requestId} step=search_reference_fetch fail`, {
+        status: refImageResponse.status,
+        referenceUrl: selectedReference.imageUrl
+      });
+    }
   }
 
   const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
