@@ -160,7 +160,9 @@ function getPackySearchConfig(): PackySearchConfig | null {
   const baseUrl = process.env.PACKYAPI_SEARCH_BASE_URL;
   const model = process.env.PACKYAPI_SEARCH_MODEL;
   const apiKey = process.env.PACKYAPI_SEARCH_KEY;
+
   if (!baseUrl || !model || !apiKey) return null;
+
   return {
     baseUrl,
     model,
@@ -176,7 +178,9 @@ function getPackyImageConfig(): PackyImageConfig | null {
   const baseUrl = process.env.PACKYAPI_IMAGE_BASE_URL;
   const model = process.env.PACKYAPI_IMAGE_MODEL;
   const apiKey = process.env.PACKYAPI_IMAGE_KEY;
+
   if (!baseUrl || !model || !apiKey) return null;
+
   return {
     baseUrl,
     model,
@@ -188,19 +192,25 @@ function getPackyImageConfig(): PackyImageConfig | null {
   };
 }
 
-function buildPackyImageRequest(config: PackyImageConfig, prompt: string, referenceInlineData?: { mimeType: string; data: string }) {
+function buildPackyImageRequest(
+  config: PackyImageConfig,
+  prompt: string,
+  referenceInlineData?: { mimeType: string; data: string }
+) {
   const endpoint = `${config.baseUrl.replace(/\/$/, "")}/v1beta/models/${config.model}:generateContent`;
+
   const parts = referenceInlineData
     ? [
-        { text: prompt },
         {
           inlineData: {
             mimeType: referenceInlineData.mimeType,
             data: referenceInlineData.data
           }
-        }
+        },
+        { text: prompt }
       ]
     : [{ text: prompt }];
+
   return {
     endpoint,
     body: {
@@ -230,11 +240,14 @@ async function searchReferenceImage({
     const stripped = input.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
     return JSON.parse(stripped);
   };
+
   const isLikelyDirectImageAssetUrl = (url: string) => {
     const lower = url.toLowerCase();
     if (!lower.startsWith("http://") && !lower.startsWith("https://")) return false;
     if (/\.(jpg|jpeg|png|webp|gif|avif)(\?|#|$)/i.test(lower)) return true;
-    if (/(\/media\/|\/images\/|\/image\/|imgix|cloudinary|cdn)/i.test(lower) && !/\/product(s)?\//i.test(lower)) return true;
+    if (/(\/media\/|\/images\/|\/image\/|imgix|cloudinary|cdn)/i.test(lower) && !/\/product(s)?\//i.test(lower)) {
+      return true;
+    }
     return false;
   };
 
@@ -245,12 +258,14 @@ async function searchReferenceImage({
       if (headResponse.ok && headType.toLowerCase().startsWith("image/")) {
         return { ok: true, status: headResponse.status, contentType: headType, probeMethod: "HEAD" as const };
       }
+
       const getResponse = await fetch(url, {
         method: "GET",
         redirect: "follow",
         headers: { range: "bytes=0-0", accept: "image/*,*/*;q=0.8" }
       });
       const getType = getResponse.headers.get("content-type") ?? "";
+
       return {
         ok: getResponse.ok && getType.toLowerCase().startsWith("image/"),
         status: getResponse.status,
@@ -269,6 +284,7 @@ async function searchReferenceImage({
   };
 
   const endpoint = `${config.baseUrl.replace(/\/$/, "")}/v1beta/models/${config.model}:generateContent`;
+
   const searchPrompt = `You are selecting exactly ONE public reference image for generating a technical side-view shoe illustration.
 
 Target shoe model: "${shoeLabel}".
@@ -314,6 +330,7 @@ If no acceptable image is found, return:
     model: config.model,
     shoeLabel
   });
+
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
@@ -329,12 +346,17 @@ If no acceptable image is found, return:
       }
     })
   });
+
   const bodyText = await response.text();
+
   console.info(`[admin] /image requestId=${requestId} step=search_request response`, {
     status: response.status,
     raw: bodyText
   });
-  if (!response.ok) throw new Error(`search_provider_status=${response.status} body=${bodyText.slice(0, 500)}`);
+
+  if (!response.ok) {
+    throw new Error(`search_provider_status=${response.status} body=${bodyText.slice(0, 500)}`);
+  }
 
   let parsed: unknown;
   try {
@@ -342,11 +364,15 @@ If no acceptable image is found, return:
   } catch (error) {
     throw new Error(`search_response_non_json ${(error as Error).message}`);
   }
+
   const textPart =
-    (parsed as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })?.candidates?.[0]?.content?.parts?.find((part) =>
-      Boolean(part.text)
+    (parsed as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })?.candidates?.[0]?.content?.parts?.find(
+      (part) => Boolean(part.text)
     )?.text ?? "";
-  if (!textPart) throw new Error("search_response_missing_text");
+
+  if (!textPart) {
+    throw new Error("search_response_missing_text");
+  }
 
   let selected: unknown;
   try {
@@ -363,10 +389,12 @@ If no acceptable image is found, return:
     reference_summary?: string[];
     source_type?: string;
   };
+
   const imageUrl = typeof record.image_url === "string" ? record.image_url.trim() : "";
   const summaryBullets = Array.isArray(record.reference_summary)
     ? record.reference_summary.filter((v): v is string => typeof v === "string" && v.trim().length > 0).slice(0, 6)
     : [];
+
   console.info(`[admin] /image requestId=${requestId} step=search_parse result`, {
     parsedReference: selected,
     imageUrl,
@@ -376,11 +404,13 @@ If no acceptable image is found, return:
   if (!imageUrl) {
     return { selectedReference: null, failureReason: "search_returned_missing_image_url" };
   }
+
   if (!isLikelyDirectImageAssetUrl(imageUrl)) {
     return { selectedReference: null, failureReason: "search_returned_non_image_asset_url" };
   }
 
   const probe = await probeImageUrl(imageUrl);
+
   console.info(`[admin] /image requestId=${requestId} step=search_url_probe`, {
     imageUrl,
     probeOk: probe.ok,
@@ -389,11 +419,22 @@ If no acceptable image is found, return:
     probeContentType: probe.contentType,
     probeError: "error" in probe ? probe.error : null
   });
+
   if (!probe.ok) {
-    return { selectedReference: null, failureReason: `search_image_url_not_downloadable status=${probe.status} content_type=${probe.contentType || "unknown"}` };
+    return {
+      selectedReference: null,
+      failureReason: `search_image_url_not_downloadable status=${probe.status} content_type=${probe.contentType || "unknown"}`
+    };
   }
 
-  return { selectedReference: { imageUrl, summaryBullets, sourceType: record.source_type }, failureReason: null };
+  return {
+    selectedReference: {
+      imageUrl,
+      summaryBullets,
+      sourceType: record.source_type
+    },
+    failureReason: null
+  };
 }
 
 async function getLatestByStatus(supabase: SupabaseClient, shoeId: string, status: "pending" | "approved") {
@@ -561,6 +602,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const imageConfig = getPackyImageConfig();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "shoe-images";
+
   if (!searchConfig || !imageConfig || !supabaseUrl) {
     return fail({
       status: 500,
@@ -569,18 +611,35 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       detail: `PACKYAPI_SEARCH_BASE_URL=${Boolean(process.env.PACKYAPI_SEARCH_BASE_URL)} PACKYAPI_SEARCH_MODEL=${Boolean(process.env.PACKYAPI_SEARCH_MODEL)} PACKYAPI_SEARCH_KEY=${Boolean(process.env.PACKYAPI_SEARCH_KEY)} PACKYAPI_IMAGE_BASE_URL=${Boolean(process.env.PACKYAPI_IMAGE_BASE_URL)} PACKYAPI_IMAGE_MODEL=${Boolean(process.env.PACKYAPI_IMAGE_MODEL)} PACKYAPI_IMAGE_KEY=${Boolean(process.env.PACKYAPI_IMAGE_KEY)} supabaseUrl=${Boolean(supabaseUrl)}`,
       requestId
     });
+  }
+
+  const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
+
+  let selectedReference: SelectedReference | null = null;
+  let referenceSelectionFailureReason: string | null = null;
+
+  try {
+    const searchResult = await searchReferenceImage({
+      config: searchConfig,
+      shoeLabel,
+      requestId
+    });
+    selectedReference = searchResult.selectedReference;
+    referenceSelectionFailureReason = searchResult.failureReason;
   } catch (error) {
     console.error(`[admin] /image requestId=${requestId} step=search_request fail`, error);
+    referenceSelectionFailureReason = error instanceof Error ? error.message : "search_request_error";
   }
 
   console.info(`[admin] /image requestId=${requestId} step=search_reference_selected`, {
     selectedReferenceUrl: selectedReference?.imageUrl ?? null,
     selectedReferenceSourceType: selectedReference?.sourceType ?? null,
-    selectedReferenceSummaryCount: selectedReference?.summaryBullets.length ?? 0
+    selectedReferenceSummaryCount: selectedReference?.summaryBullets.length ?? 0,
+    referenceSelectionFailureReason
   });
 
   let referenceInlineData: { mimeType: string; data: string } | undefined;
-  let referenceDownloadFailureReason: string | null = null;
+  let referenceDownloadFailureReason: string | null = referenceSelectionFailureReason;
   let referenceBytesLength = 0;
 
   if (selectedReference?.imageUrl) {
@@ -618,72 +677,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         });
       }
     } catch (error) {
-      referenceDownloadFailureReason = error instanceof Error ? error.message : "reference_image_fetch_exception";
+      referenceDownloadFailureReason =
+        error instanceof Error ? error.message : "reference_image_fetch_exception";
       console.warn(`[admin] /image requestId=${requestId} step=search_reference_fetch fail`, {
         referenceUrl: selectedReference.imageUrl,
         error: referenceDownloadFailureReason
       });
     }
   } else {
-    referenceDownloadFailureReason = "reference_url_missing";
+    referenceDownloadFailureReason = referenceSelectionFailureReason ?? "reference_url_missing";
   }
 
-  const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
-  let selectedReference: SelectedReference | null = null;
-  let referenceSelectionFailureReason: string | null = null;
-  try {
-    const searchResult = await searchReferenceImage({
-      config: searchConfig,
-      shoeLabel,
-      requestId
-    });
-    selectedReference = searchResult.selectedReference;
-    referenceSelectionFailureReason = searchResult.failureReason;
-  } catch (error) {
-    console.error(`[admin] /image requestId=${requestId} step=search_request fail`, error);
-    referenceSelectionFailureReason = error instanceof Error ? error.message : "search_request_error";
-  }
-  console.info(`[admin] /image requestId=${requestId} step=search_reference_selected`, {
-    selectedReferenceUrl: selectedReference?.imageUrl ?? null,
-    selectedReferenceSourceType: selectedReference?.sourceType ?? null,
-    selectedReferenceSummaryCount: selectedReference?.summaryBullets.length ?? 0,
-    referenceSelectionFailureReason
-  });
-
-  let referenceInlineData: { mimeType: string; data: string } | undefined;
-  let referenceDownloadFailureReason: string | null = referenceSelectionFailureReason;
-  let referenceBytesLength = 0;
-  if (selectedReference?.imageUrl) {
-    const refImageResponse = await fetch(selectedReference.imageUrl, {
-      headers: {
-        accept: "image/*,*/*;q=0.8",
-        "user-agent": "snkrfeature-reference-fetch/1.0"
-      }
-    });
-    if (refImageResponse.ok) {
-      const refArrayBuffer = await refImageResponse.arrayBuffer();
-      const refBytes = Buffer.from(refArrayBuffer);
-      const detectedMimeType = refImageResponse.headers.get("content-type") ?? "image/jpeg";
-      referenceBytesLength = refBytes.length;
-      const looksLikeImage = detectedMimeType.toLowerCase().startsWith("image/");
-      if (refBytes.length > 0 && looksLikeImage) {
-        referenceInlineData = {
-          mimeType: detectedMimeType,
-          data: refBytes.toString("base64")
-        };
-      } else {
-        referenceDownloadFailureReason = !looksLikeImage ? `invalid_mime_${detectedMimeType}` : "empty_reference_image_bytes";
-      }
-    } else {
-      referenceDownloadFailureReason = `reference_image_download_failed_status_${refImageResponse.status}`;
-      console.warn(`[admin] /image requestId=${requestId} step=search_reference_fetch fail`, {
-        status: refImageResponse.status,
-        referenceUrl: selectedReference.imageUrl
-      });
-    }
-  } else {
-    referenceDownloadFailureReason = "reference_url_missing";
-  }
   console.info(`[admin] /image requestId=${requestId} step=search_reference_download`, {
     selectedReferenceUrl: selectedReference?.imageUrl ?? null,
     referenceDownloadSuccess: Boolean(referenceInlineData),
@@ -693,8 +697,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   });
 
   const referenceSummary =
-    selectedReference?.summaryBullets.length ? selectedReference.summaryBullets : ["No acceptable reference image was available from search."];
+    selectedReference?.summaryBullets.length
+      ? selectedReference.summaryBullets
+      : ["No acceptable reference image was available from search."];
+
   const prompt = buildShoeImagePrompt(shoe.brand, shoe.shoe_name, referenceSummary);
+
   console.info(`[admin] /image requestId=${requestId} step=prompt_built`, {
     prompt,
     imageModel: imageConfig.model,
@@ -707,9 +715,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   let imageMimeType = "image/png";
   let providerBodyText = "";
   let generationFailureDetail = "";
+
   const generationPath = referenceInlineData ? "reference_assisted" : "prompt_only_fallback";
-  const { endpoint: providerEndpoint, body: providerBody } = buildPackyImageRequest(imageConfig, prompt, referenceInlineData);
-  const requestParts = (providerBody.contents?.[0]?.parts ?? []) as Array<{ text?: string; inlineData?: { mimeType?: string; data?: string } }>;
+  const { endpoint: providerEndpoint, body: providerBody } = buildPackyImageRequest(
+    imageConfig,
+    prompt,
+    referenceInlineData
+  );
+
+  const requestParts = (providerBody.contents?.[0]?.parts ?? []) as Array<{
+    text?: string;
+    inlineData?: { mimeType?: string; data?: string };
+  }>;
+
   const requestIncludesImageInput = requestParts.some((part) => Boolean(part.inlineData?.data));
 
   console.info(`[admin] /image requestId=${requestId} step=provider_request config`, {
@@ -732,6 +750,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       referenceDownloadFailureReason
     });
   }
+
   const generationResponse = await fetch(providerEndpoint, {
     method: "POST",
     headers: {
@@ -745,7 +764,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   console.info(`[admin] /image requestId=${requestId} step=provider_response`, {
     status: generationResponse.status
   });
+
   providerBodyText = await generationResponse.text();
+
   console.info(`[admin] /image requestId=${requestId} step=provider_body`, {
     raw: providerBodyText
   });
@@ -772,12 +793,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           };
         }>;
       };
+
       const imagePayload = parsedJson?.data?.[0];
       const imageUrl = imagePayload?.url;
       const openAiB64 = imagePayload?.b64_json;
-      const geminiInlineData = parsedJson?.candidates?.[0]?.content?.parts?.find((part) => Boolean(part.inlineData?.data))?.inlineData;
+      const geminiInlineData =
+        parsedJson?.candidates?.[0]?.content?.parts?.find((part) => Boolean(part.inlineData?.data))
+          ?.inlineData;
+
       const b64 = openAiB64 ?? geminiInlineData?.data;
       imageMimeType = geminiInlineData?.mimeType ?? "image/png";
+
       console.info(`[admin] /image requestId=${requestId} step=provider_parse`, {
         hasDataArray: Array.isArray(parsedJson?.data),
         hasGeminiCandidates: Array.isArray(parsedJson?.candidates),
@@ -791,8 +817,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       } else if (b64) {
         imageBytes = Buffer.from(b64, "base64");
       } else if (imageUrl) {
-        console.info(`[admin] /image requestId=${requestId} step=provider_image_fetch start`, { imageUrl });
+        console.info(`[admin] /image requestId=${requestId} step=provider_image_fetch start`, {
+          imageUrl
+        });
+
         const remoteImageResponse = await fetch(imageUrl);
+
         if (!remoteImageResponse.ok) {
           generationFailureDetail = `remote_status=${remoteImageResponse.status}`;
         } else {
@@ -804,10 +834,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         generationFailureDetail = "empty image payload";
         imageBytes = null;
       }
+
       if (imageBytes && imageBytes.length < MIN_IMAGE_BYTES) {
         generationFailureDetail = `image payload too small (${imageBytes.length} bytes)`;
         imageBytes = null;
       }
+
       if (imageBytes) {
         console.info(`[admin] /image requestId=${requestId} step=provider_quality_check pass`, {
           bytes: imageBytes.length
