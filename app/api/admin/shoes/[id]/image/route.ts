@@ -6,7 +6,7 @@ import { requireAdminApi } from "@/lib/admin/route-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const schema = z.object({
-  action: z.enum(["generate", "approve", "reject"])
+  action: z.enum(["find", "approve", "reject"])
 });
 
 type ErrorStep =
@@ -16,148 +16,75 @@ type ErrorStep =
   | "env"
   | "search_request"
   | "search_parse"
-  | "search_reference_fetch"
-  | "provider_request"
-  | "provider_parse"
-  | "provider_image_fetch"
+  | "candidate_selection"
+  | "image_download"
   | "storage_upload"
   | "db_update"
   | "db_insert";
 
-const MIN_IMAGE_BYTES = 14_000;
+type SourceType = "official" | "retailer" | "review_media" | "unknown";
 
-const SHOE_PROMPT_BASE_TEMPLATE = `Create a clean, highly recognizable side-view minimalist line drawing of the basketball shoe "[SHOE NAME]".
+type SerpApiConfig = {
+  provider: string;
+  apiKey: string;
+  engine: string;
+  baseUrl: string;
+};
 
-Use the provided reference image as the authoritative shape source.
-Preserve the defining recognizable silhouette and model-specific structure of the exact shoe shown in the reference.
-Do not invent a substitute structure from memory.
-Do not collapse this shoe into a generic basketball shoe template.
-Preserve differences between this exact model and other basketball shoes.
+type SerpApiImageResult = {
+  original?: string;
+  thumbnail?: string;
+  title?: string;
+  source?: string;
+  link?: string;
+  original_width?: number;
+  original_height?: number;
+  position?: number;
+};
 
-The final output must be a square 1:1 image.
-Show exactly one shoe.
-The shoe must be in a strict lateral side view only.
-No three-quarter view.
-No perspective angle.
-No rotation.
-No tilt.
-The shoe must be horizontally aligned.
-The heel must be on the left.
-The toe/front must point to the right.
-Do not mirror or flip the shoe direction.
-
-The entire shoe must be fully visible in frame.
-Center the shoe carefully.
-The shoe should occupy approximately 80% to 85% of the canvas width.
-Keep clean, even margin around the shoe.
-Do not make the shoe tiny in the frame.
-Do not crop the shoe.
-
-Render the shoe as premium black line art on a pure white background.
-No color.
-No shading.
-No realistic material rendering.
-No textured painterly style.
-No decorative background.
-No text.
-No labels.
-No arrows.
-No human body parts.
-No foot.
-No leg.
-
-The result must be simplified but faithful.
-Do NOT turn it into a generic basketball shoe.
-Preserve the defining shape identity of the exact model.
-If simplification conflicts with recognizability, preserve recognizability.
-Recognizability of this exact model is more important than stylistic uniformity.
-The final shoe should be identifiable as "[SHOE NAME]", not merely "a basketball shoe line drawing".
-
-Focus on preserving:
-* overall silhouette
-* toe shape
-* forefoot curvature
-* heel geometry
-* collar cut and height
-* tongue profile
-* lace area structure
-* midsole sculpting
-* outsole edge profile
-* upper panel segmentation
-* sidewall geometry
-* any external support shapes
-* any visible model-specific structures from the reference
-
-Final style:
-premium monochrome technical silhouette illustration for a sneaker database UI.`;
-
-type SelectedReference = {
+type ScoredCandidate = {
   imageUrl: string;
-  summaryBullets: string[];
-  sourceType?: string;
+  title: string;
+  sourcePageUrl: string;
+  sourceDomain: string;
+  sourceType: SourceType;
+  width: number;
+  height: number;
+  score: number;
+  reasons: string[];
 };
 
-type SearchReferenceResult = {
-  selectedReference: SelectedReference | null;
-  failureReason: string | null;
-};
-
-type PackySearchConfig = {
-  baseUrl: string;
-  model: string;
-  apiKey: string;
-  baseUrlSource: "PACKYAPI_SEARCH_BASE_URL";
-  modelSource: "PACKYAPI_SEARCH_MODEL";
-  keySource: "PACKYAPI_SEARCH_KEY";
-  fallbackUsed: false;
-};
-
-type PackyImageConfig = {
-  baseUrl: string;
-  model: string;
-  apiKey: string;
-  baseUrlSource: "PACKYAPI_IMAGE_BASE_URL";
-  modelSource: "PACKYAPI_IMAGE_MODEL";
-  keySource: "PACKYAPI_IMAGE_KEY";
-  fallbackUsed: false;
-};
-
-const GENERIC_REFERENCE_SUMMARY_PATTERNS = [
-  "basketball shoe",
-  "sleek",
-  "clean lines",
-  "sporty",
-  "modern",
-  "performance",
-  "premium",
-  "athletic"
+const DEFAULT_SERP_BASE_URL = "https://serpapi.com/search.json";
+const MIN_IMAGE_BYTES = 14_000;
+const MIN_WIDTH = 400;
+const MIN_HEIGHT = 250;
+const RETAILER_DOMAINS = [
+  "nike.com",
+  "adidas.com",
+  "underarmour.com",
+  "newbalance.com",
+  "puma.com",
+  "anta.com",
+  "lining.com",
+  "wayofwade.com",
+  "footlocker.com",
+  "champssports.com",
+  "finishline.com",
+  "dickssportinggoods.com",
+  "eastbay.com",
+  "jd.com",
+  "goat.com",
+  "stockx.com",
+  "zappos.com"
 ];
-
-function buildShoeImagePrompt(brand: string, shoeName: string, summaryBullets: string[]) {
-  const modelLabel = `${brand} ${shoeName}`.trim();
-  const basePrompt = SHOE_PROMPT_BASE_TEMPLATE.replace("[SHOE NAME]", modelLabel);
-  const summarySection =
-    summaryBullets.length > 0
-      ? `\n\nReference summary:\n${summaryBullets.map((bullet) => `* ${bullet}`).join("\n")}`
-      : "\n\nReference summary:\n* No reliable reference summary was available. Keep strict model recognizability using the provided shoe name.";
-  return `${basePrompt}${summarySection}`;
-}
-
-function refineReferenceSummaryBullets(rawBullets: string[]) {
-  const cleaned = rawBullets
-    .map((bullet) => bullet.trim())
-    .filter((bullet) => bullet.length > 0)
-    .filter((bullet) => !GENERIC_REFERENCE_SUMMARY_PATTERNS.some((pattern) => bullet.toLowerCase().includes(pattern)));
-
-  const deDuplicated: string[] = [];
-  for (const bullet of cleaned) {
-    if (!deDuplicated.some((existing) => existing.toLowerCase() === bullet.toLowerCase())) {
-      deDuplicated.push(bullet);
-    }
-  }
-
-  return deDuplicated.slice(0, 6);
-}
+const REVIEW_MEDIA_DOMAINS = [
+  "weartesters.com",
+  "solecollector.com",
+  "sneakernews.com",
+  "kickscrew.com",
+  "highsnobiety.com"
+];
+const OFFICIAL_HINTS = ["official", "product", "nike", "adidas", "under armour", "new balance", "puma"];
 
 function fail({
   status,
@@ -172,10 +99,7 @@ function fail({
   detail?: string;
   requestId: string;
 }) {
-  console.error(`[admin] /image requestId=${requestId} step=${step} fail status=${status}`, {
-    error,
-    detail
-  });
+  console.error(`[admin] /image requestId=${requestId} step=${step} fail status=${status}`, { error, detail });
   return NextResponse.json({ ok: false, error, step, detail }, { status });
 }
 
@@ -188,248 +112,180 @@ function buildPublicUrl(baseUrl: string, bucket: string, path: string) {
   return `${baseUrl}/storage/v1/object/public/${bucket}/${path}`;
 }
 
-function getPackySearchConfig(): PackySearchConfig | null {
-  const baseUrl = process.env.PACKYAPI_SEARCH_BASE_URL;
-  const model = process.env.PACKYAPI_SEARCH_MODEL;
-  const apiKey = process.env.PACKYAPI_SEARCH_KEY;
-  if (!baseUrl || !model || !apiKey) return null;
-  return {
-    baseUrl,
-    model,
-    apiKey,
-    baseUrlSource: "PACKYAPI_SEARCH_BASE_URL",
-    modelSource: "PACKYAPI_SEARCH_MODEL",
-    keySource: "PACKYAPI_SEARCH_KEY",
-    fallbackUsed: false
-  };
+function normalizeText(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function getPackyImageConfig(): PackyImageConfig | null {
-  const baseUrl = process.env.PACKYAPI_IMAGE_BASE_URL;
-  const model = process.env.PACKYAPI_IMAGE_MODEL;
-  const apiKey = process.env.PACKYAPI_IMAGE_KEY;
-  if (!baseUrl || !model || !apiKey) return null;
-  return {
-    baseUrl,
-    model,
-    apiKey,
-    baseUrlSource: "PACKYAPI_IMAGE_BASE_URL",
-    modelSource: "PACKYAPI_IMAGE_MODEL",
-    keySource: "PACKYAPI_IMAGE_KEY",
-    fallbackUsed: false
-  };
+function tokens(value: string) {
+  return normalizeText(value)
+    .split(" ")
+    .map((part) => part.trim())
+    .filter((part) => part.length >= 2);
 }
 
-function buildPackyImageRequest(config: PackyImageConfig, prompt: string, referenceInlineData?: { mimeType: string; data: string }) {
-  const endpoint = `${config.baseUrl.replace(/\/$/, "")}/v1beta/models/${config.model}:generateContent`;
-  const parts = referenceInlineData
-    ? [
-        { text: prompt },
-        {
-          inlineData: {
-            mimeType: referenceInlineData.mimeType,
-            data: referenceInlineData.data
-          }
-        }
-      ]
-    : [{ text: prompt }];
-  return {
-    endpoint,
-    body: {
-      contents: [
-        {
-          role: "user",
-          parts
-        }
-      ],
-      generationConfig: {
-        responseModalities: ["TEXT", "IMAGE"]
-      }
-    }
-  };
-}
-
-async function searchReferenceImage({
-  config,
-  shoeLabel,
-  requestId
-}: {
-  config: PackySearchConfig;
-  shoeLabel: string;
-  requestId: string;
-}): Promise<SearchReferenceResult> {
-  const parseJsonLoose = (input: string) => {
-    const stripped = input.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-    return JSON.parse(stripped);
-  };
-  const isLikelyDirectImageAssetUrl = (url: string) => {
-    const lower = url.toLowerCase();
-    if (!lower.startsWith("http://") && !lower.startsWith("https://")) return false;
-    if (/\.(jpg|jpeg|png|webp|gif|avif)(\?|#|$)/i.test(lower)) return true;
-    if (/(\/media\/|\/images\/|\/image\/|imgix|cloudinary|cdn)/i.test(lower) && !/\/product(s)?\//i.test(lower)) return true;
-    return false;
-  };
-
-  const probeImageUrl = async (url: string) => {
-    try {
-      const headResponse = await fetch(url, { method: "HEAD", redirect: "follow" });
-      const headType = headResponse.headers.get("content-type") ?? "";
-      if (headResponse.ok && headType.toLowerCase().startsWith("image/")) {
-        return { ok: true, status: headResponse.status, contentType: headType, probeMethod: "HEAD" as const };
-      }
-      const getResponse = await fetch(url, {
-        method: "GET",
-        redirect: "follow",
-        headers: { range: "bytes=0-0", accept: "image/*,*/*;q=0.8" }
-      });
-      const getType = getResponse.headers.get("content-type") ?? "";
-      return {
-        ok: getResponse.ok && getType.toLowerCase().startsWith("image/"),
-        status: getResponse.status,
-        contentType: getType,
-        probeMethod: "GET" as const
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        status: 0,
-        contentType: "",
-        probeMethod: "GET" as const,
-        error: error instanceof Error ? error.message : "probe_unknown_error"
-      };
-    }
-  };
-
-  const endpoint = `${config.baseUrl.replace(/\/$/, "")}/v1beta/models/${config.model}:generateContent`;
-  const searchPrompt = `You are selecting exactly ONE public reference image for generating a technical side-view shoe illustration.
-
-Target shoe model: "${shoeLabel}".
-Find one best image for the exact model (not broad family).
-
-Hard requirement:
-- Return exactly one direct image asset URL in "image_url".
-- URL must be publicly downloadable by backend server.
-- URL must point to an image file/asset, not a web page.
-- Do not return a product page URL or article URL.
-- Prefer direct URLs ending in .jpg, .jpeg, .png, or .webp.
-- Must match the exact model string "${shoeLabel}", not just model family/player line.
-- If exact-model confidence is low, return NO_ACCEPTABLE_REFERENCE.
-
-Selection priority:
-1) official product image
-2) retailer product image
-3) clean review/media image
-
-Prefer: clean side or near-side view, full shoe visible, clear shape.
-Avoid if possible: on-foot shots, heavy perspective, cluttered background, tiny thumbnails, stylized poster edits, partial crops.
-
-Return JSON only with this exact schema:
-{
-  "image_url": "https://...",
-  "source_type": "official|retailer|review_media|unknown",
-  "reference_summary": ["distinctive geometric cue", "distinctive geometric cue", "distinctive geometric cue"],
-  "selection_reason": "short reason"
-}
-
-Rules for "reference_summary":
-- Keep each bullet about visible geometry that distinguishes this shoe from other basketball shoes.
-- Prioritize: unusual heel geometry, signature midsole sculpting, collar cut/height, toe shape, lateral sidewall structures, panel segmentation, support wing/outrigger forms.
-- Avoid generic wording that applies to most shoes.
-
-If no acceptable image is found, return:
-{
-  "image_url": "",
-  "source_type": "unknown",
-  "reference_summary": [],
-  "selection_reason": "NO_ACCEPTABLE_REFERENCE"
-}`;
-
-  console.info(`[admin] /image requestId=${requestId} step=search_request config`, {
-    searchBaseUrlSource: config.baseUrlSource,
-    searchModelSource: config.modelSource,
-    searchKeySource: config.keySource,
-    searchFallbackUsed: config.fallbackUsed,
-    endpoint,
-    model: config.model,
-    shoeLabel
-  });
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${config.apiKey}`,
-      "x-goog-api-key": config.apiKey
-    },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: searchPrompt }] }],
-      tools: [{ google_search: {} }]
-    })
-  });
-  const bodyText = await response.text();
-  console.info(`[admin] /image requestId=${requestId} step=search_request response`, {
-    status: response.status,
-    raw: bodyText
-  });
-  if (!response.ok) throw new Error(`search_provider_status=${response.status} body=${bodyText.slice(0, 500)}`);
-
-  let parsed: unknown;
+function parseDomain(urlValue?: string) {
+  if (!urlValue) return "";
   try {
-    parsed = JSON.parse(bodyText);
-  } catch (error) {
-    throw new Error(`search_response_non_json ${(error as Error).message}`);
-  }
-  const textPart =
-    (parsed as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })?.candidates?.[0]?.content?.parts?.find((part) =>
-      Boolean(part.text)
-    )?.text ?? "";
-  if (!textPart) throw new Error("search_response_missing_text");
-
-  let selected: unknown;
-  try {
-    selected = parseJsonLoose(textPart);
+    return new URL(urlValue).hostname.toLowerCase();
   } catch {
-    console.warn(`[admin] /image requestId=${requestId} step=search_parse warn text_non_json`, {
-      textPart: textPart.slice(0, 1000)
-    });
-    return { selectedReference: null, failureReason: "search_text_non_json" };
+    return "";
+  }
+}
+
+function domainMatches(domain: string, candidates: string[]) {
+  return candidates.some((candidate) => domain === candidate || domain.endsWith(`.${candidate}`));
+}
+
+function classifySourceType(domain: string): SourceType {
+  if (!domain) return "unknown";
+  if (domainMatches(domain, RETAILER_DOMAINS.slice(0, 7))) return "official";
+  if (domainMatches(domain, RETAILER_DOMAINS)) return "retailer";
+  if (domainMatches(domain, REVIEW_MEDIA_DOMAINS)) return "review_media";
+  return "unknown";
+}
+
+function getSerpApiConfig(): SerpApiConfig | null {
+  const provider = process.env.SERP_API_PROVIDER;
+  const apiKey = process.env.SERP_API_KEY;
+  const engine = process.env.SERP_API_ENGINE;
+  const baseUrl = process.env.SERP_API_BASE_URL ?? DEFAULT_SERP_BASE_URL;
+  if (!provider || !apiKey || !engine) return null;
+  return { provider, apiKey, engine, baseUrl };
+}
+
+function buildSearchQuery(brand: string, shoeName: string) {
+  return `${brand} ${shoeName} official product image side view`.replace(/\s+/g, " ").trim();
+}
+
+function chooseBestCandidate({
+  brand,
+  shoeName,
+  results
+}: {
+  brand: string;
+  shoeName: string;
+  results: SerpApiImageResult[];
+}): ScoredCandidate | null {
+  const brandTokens = tokens(brand);
+  const shoeTokens = tokens(shoeName);
+  const shoeNumberTokens = shoeTokens.filter((token) => /^\d+[a-z]*$/.test(token));
+
+  const scored: ScoredCandidate[] = [];
+
+  for (const result of results) {
+    const imageUrl = result.original?.trim() || "";
+    const title = result.title?.trim() || "";
+    const sourcePageUrl = result.link?.trim() || "";
+    const sourceText = result.source?.trim() || "";
+    const width = result.original_width ?? 0;
+    const height = result.original_height ?? 0;
+    if (!imageUrl) continue;
+
+    const haystack = normalizeText(`${title} ${sourceText} ${sourcePageUrl}`);
+    const sourceDomain = parseDomain(sourcePageUrl || imageUrl);
+    const sourceType = classifySourceType(sourceDomain);
+
+    if (shoeNumberTokens.some((token) => !haystack.includes(token))) {
+      continue;
+    }
+
+    const matchedShoeTokens = shoeTokens.filter((token) => haystack.includes(token));
+    const matchedBrandTokens = brandTokens.filter((token) => haystack.includes(token));
+
+    if (shoeTokens.length > 0 && matchedShoeTokens.length < Math.max(1, Math.ceil(shoeTokens.length * 0.5))) {
+      continue;
+    }
+
+    let score = 0;
+    const reasons: string[] = [];
+
+    score += matchedShoeTokens.length * 8;
+    if (matchedShoeTokens.length > 0) reasons.push(`shoe_tokens:${matchedShoeTokens.length}`);
+
+    score += matchedBrandTokens.length * 6;
+    if (matchedBrandTokens.length > 0) reasons.push(`brand_tokens:${matchedBrandTokens.length}`);
+
+    if (sourceType === "official") {
+      score += 28;
+      reasons.push("source:official");
+    } else if (sourceType === "retailer") {
+      score += 18;
+      reasons.push("source:retailer");
+    } else if (sourceType === "review_media") {
+      score += 9;
+      reasons.push("source:review_media");
+    }
+
+    const lowerTitle = title.toLowerCase();
+
+    if (OFFICIAL_HINTS.some((hint) => lowerTitle.includes(hint))) {
+      score += 6;
+      reasons.push("official_hint");
+    }
+    if (lowerTitle.includes("side") || lowerTitle.includes("lateral") || lowerTitle.includes("profile")) {
+      score += 10;
+      reasons.push("side_view_hint");
+    }
+    if (lowerTitle.includes("on foot") || lowerTitle.includes("on-foot") || lowerTitle.includes("outfit")) {
+      score -= 10;
+      reasons.push("penalty:on_foot");
+    }
+    if (lowerTitle.includes("thumbnail") || lowerTitle.includes("thumb") || lowerTitle.includes("logo")) {
+      score -= 10;
+      reasons.push("penalty:thumbnail_or_logo");
+    }
+
+    if (width >= 1200 && height >= 700) {
+      score += 8;
+      reasons.push("resolution:high");
+    } else if (width >= 800 && height >= 500) {
+      score += 4;
+      reasons.push("resolution:medium");
+    } else if (width > 0 && height > 0) {
+      score -= 8;
+      reasons.push("penalty:low_resolution");
+    }
+
+    if ((width > 0 && width < MIN_WIDTH) || (height > 0 && height < MIN_HEIGHT)) {
+      score -= 20;
+      reasons.push("penalty:tiny_image");
+    }
+
+    scored.push({ imageUrl, title, sourcePageUrl, sourceDomain, sourceType, width, height, score, reasons });
   }
 
-  const record = selected as {
-    image_url?: string;
-    reference_summary?: string[];
-    source_type?: string;
-  };
-  const imageUrl = typeof record.image_url === "string" ? record.image_url.trim() : "";
-  const summaryBullets = Array.isArray(record.reference_summary)
-    ? refineReferenceSummaryBullets(record.reference_summary.filter((v): v is string => typeof v === "string"))
-    : [];
-  console.info(`[admin] /image requestId=${requestId} step=search_parse result`, {
-    parsedReference: selected,
-    imageUrl,
-    summaryCount: summaryBullets.length
-  });
+  if (!scored.length) return null;
 
-  if (!imageUrl) {
-    return { selectedReference: null, failureReason: "search_returned_missing_image_url" };
-  }
-  if (!isLikelyDirectImageAssetUrl(imageUrl)) {
-    return { selectedReference: null, failureReason: "search_returned_non_image_asset_url" };
-  }
+  scored.sort((a, b) => b.score - a.score);
 
-  const probe = await probeImageUrl(imageUrl);
-  console.info(`[admin] /image requestId=${requestId} step=search_url_probe`, {
-    imageUrl,
-    probeOk: probe.ok,
-    probeMethod: probe.probeMethod,
-    probeStatus: probe.status,
-    probeContentType: probe.contentType,
-    probeError: "error" in probe ? probe.error : null
-  });
-  if (!probe.ok) {
-    return { selectedReference: null, failureReason: `search_image_url_not_downloadable status=${probe.status} content_type=${probe.contentType || "unknown"}` };
+  if (scored[0].score < 20) return null;
+  return scored[0];
+}
+
+async function searchCandidates({ config, query }: { config: SerpApiConfig; query: string }): Promise<SerpApiImageResult[]> {
+  const url = new URL(config.baseUrl);
+  url.searchParams.set("engine", config.engine);
+  url.searchParams.set("q", query);
+  url.searchParams.set("api_key", config.apiKey);
+  url.searchParams.set("num", "20");
+
+  const response = await fetch(url.toString(), { method: "GET" });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`serpapi_status=${response.status} body=${text.slice(0, 400)}`);
   }
 
-  return { selectedReference: { imageUrl, summaryBullets, sourceType: record.source_type }, failureReason: null };
+  let payload: unknown;
+  try {
+    payload = JSON.parse(text);
+  } catch (error) {
+    throw new Error(`serpapi_non_json ${(error as Error).message}`);
+  }
+
+  const imagesResults = (payload as { images_results?: SerpApiImageResult[] }).images_results;
+  if (!Array.isArray(imagesResults)) return [];
+
+  return imagesResults;
 }
 
 async function getLatestByStatus(supabase: SupabaseClient, shoeId: string, status: "pending" | "approved") {
@@ -487,12 +343,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (parsed.data.action === "approve") {
     const pending = await getLatestByStatus(supabase, shoeId, "pending");
     if (!pending) {
-      return fail({
-        status: 400,
-        error: "No pending image to approve.",
-        step: "db_update",
-        requestId
-      });
+      return fail({ status: 400, error: "No pending image to approve.", step: "db_update", requestId });
     }
 
     const nowIso = new Date().toISOString();
@@ -519,12 +370,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { error: approveError } = await supabase
       .from("shoe_images")
-      .update({
-        status: "approved",
-        approved_at: nowIso,
-        rejected_at: null,
-        rejection_reason: null
-      })
+      .update({ status: "approved", approved_at: nowIso, rejected_at: null, rejection_reason: null })
       .eq("id", pending.id);
 
     if (approveError) {
@@ -543,12 +389,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (parsed.data.action === "reject") {
     const pending = await getLatestByStatus(supabase, shoeId, "pending");
     if (!pending) {
-      return fail({
-        status: 400,
-        error: "No pending image to reject.",
-        step: "db_update",
-        requestId
-      });
+      return fail({ status: 400, error: "No pending image to reject.", step: "db_update", requestId });
     }
 
     const { error: rejectError } = await supabase
@@ -573,7 +414,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return success({ message: "Image rejected" }, requestId);
   }
 
-  console.info(`[admin] /image requestId=${requestId} step=shoe_load start shoeId=${shoeId}`);
+  const config = getSerpApiConfig();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "shoe-images";
+
+  if (!config || !supabaseUrl) {
+    return fail({
+      status: 500,
+      error: "Search/import environment variables are incomplete.",
+      step: "env",
+      detail: `SERP_API_PROVIDER=${Boolean(process.env.SERP_API_PROVIDER)} SERP_API_KEY=${Boolean(process.env.SERP_API_KEY)} SERP_API_ENGINE=${Boolean(process.env.SERP_API_ENGINE)} supabaseUrl=${Boolean(supabaseUrl)}`,
+      requestId
+    });
+  }
 
   const { data: shoe, error: shoeError } = await supabase
     .from("shoes")
@@ -591,303 +444,105 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   }
 
-  console.info(`[admin] /image requestId=${requestId} step=shoe_load success`, shoe);
-
-  const searchConfig = getPackySearchConfig();
-  const imageConfig = getPackyImageConfig();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "shoe-images";
-if (!searchConfig || !imageConfig || !supabaseUrl) {
-  return fail({
-    status: 500,
-    error: "Image generation environment variables are incomplete.",
-    step: "env",
-    detail: `PACKYAPI_SEARCH_BASE_URL=${Boolean(process.env.PACKYAPI_SEARCH_BASE_URL)} PACKYAPI_SEARCH_MODEL=${Boolean(process.env.PACKYAPI_SEARCH_MODEL)} PACKYAPI_SEARCH_KEY=${Boolean(process.env.PACKYAPI_SEARCH_KEY)} PACKYAPI_IMAGE_BASE_URL=${Boolean(process.env.PACKYAPI_IMAGE_BASE_URL)} PACKYAPI_IMAGE_MODEL=${Boolean(process.env.PACKYAPI_IMAGE_MODEL)} PACKYAPI_IMAGE_KEY=${Boolean(process.env.PACKYAPI_IMAGE_KEY)} supabaseUrl=${Boolean(supabaseUrl)}`,
-    requestId
-  });
-}
-
-const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
-
-let selectedReference: SelectedReference | null = null;
-let referenceSelectionFailureReason: string | null = null;
-
-try {
-  const searchResult = await searchReferenceImage({
-    config: searchConfig,
-    shoeLabel,
-    requestId
-  });
-
-  selectedReference = searchResult.selectedReference;
-  referenceSelectionFailureReason = searchResult.failureReason;
-} catch (error) {
-  console.error(`[admin] /image requestId=${requestId} step=search_request fail`, error);
-  referenceSelectionFailureReason =
-    error instanceof Error ? error.message : "search_request_error";
-}
-
-console.info(`[admin] /image requestId=${requestId} step=search_reference_selected`, {
-  selectedReferenceUrl: selectedReference?.imageUrl ?? null,
-  selectedReferenceSourceType: selectedReference?.sourceType ?? null,
-  selectedReferenceSummaryCount: selectedReference?.summaryBullets.length ?? 0,
-  referenceSelectionFailureReason
-});
-  
-  const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
-  let selectedReference: SelectedReference | null = null;
-  let referenceSelectionFailureReason: string | null = null;
+  const query = buildSearchQuery(shoe.brand, shoe.shoe_name);
+  let candidates: SerpApiImageResult[] = [];
   try {
-    const searchResult = await searchReferenceImage({
-      config: searchConfig,
-      shoeLabel,
-      requestId
-    });
-    selectedReference = searchResult.selectedReference;
-    referenceSelectionFailureReason = searchResult.failureReason;
+    candidates = await searchCandidates({ config, query });
   } catch (error) {
-    console.error(`[admin] /image requestId=${requestId} step=search_request fail`, error);
-    referenceSelectionFailureReason = error instanceof Error ? error.message : "search_request_error";
-  }
-  console.info(`[admin] /image requestId=${requestId} step=search_reference_selected`, {
-    selectedReferenceUrl: selectedReference?.imageUrl ?? null,
-    selectedReferenceSourceType: selectedReference?.sourceType ?? null,
-    selectedReferenceSummaryCount: selectedReference?.summaryBullets.length ?? 0,
-    referenceSelectionFailureReason
-  });
-
-  let referenceInlineData: { mimeType: string; data: string } | undefined;
-  let referenceDownloadFailureReason: string | null = referenceSelectionFailureReason;
-  let referenceBytesLength = 0;
-  if (selectedReference?.imageUrl) {
-    const refImageResponse = await fetch(selectedReference.imageUrl, {
-      headers: {
-        accept: "image/*,*/*;q=0.8",
-        "user-agent": "snkrfeature-reference-fetch/1.0"
-      }
-    });
-    if (refImageResponse.ok) {
-      const refArrayBuffer = await refImageResponse.arrayBuffer();
-      const refBytes = Buffer.from(refArrayBuffer);
-      const detectedMimeType = refImageResponse.headers.get("content-type") ?? "image/jpeg";
-      referenceBytesLength = refBytes.length;
-      const looksLikeImage = detectedMimeType.toLowerCase().startsWith("image/");
-      if (refBytes.length > 0 && looksLikeImage) {
-        referenceInlineData = {
-          mimeType: detectedMimeType,
-          data: refBytes.toString("base64")
-        };
-      } else {
-        referenceDownloadFailureReason = !looksLikeImage ? `invalid_mime_${detectedMimeType}` : "empty_reference_image_bytes";
-      }
-    } else {
-      referenceDownloadFailureReason = `reference_image_download_failed_status_${refImageResponse.status}`;
-      console.warn(`[admin] /image requestId=${requestId} step=search_reference_fetch fail`, {
-        status: refImageResponse.status,
-        referenceUrl: selectedReference.imageUrl
-      });
-    }
-  } else {
-    referenceDownloadFailureReason = "reference_url_missing";
-  }
-  console.info(`[admin] /image requestId=${requestId} step=search_reference_download`, {
-    selectedReferenceUrl: selectedReference?.imageUrl ?? null,
-    referenceDownloadSuccess: Boolean(referenceInlineData),
-    referenceDownloadFailureReason,
-    referenceMimeType: referenceInlineData?.mimeType ?? null,
-    referenceBytesLength
-  });
-
-  const referenceSummary =
-    selectedReference?.summaryBullets.length
-      ? selectedReference.summaryBullets
-      : [
-          "No discriminative reference summary was available; preserve exact model-specific silhouette differences from the provided reference image."
-        ];
-  const prompt = buildShoeImagePrompt(shoe.brand, shoe.shoe_name, referenceSummary);
-  console.info(`[admin] /image requestId=${requestId} step=prompt_built`, {
-    prompt,
-    imageModel: imageConfig.model,
-    bucket,
-    searchUsed: Boolean(referenceInlineData),
-    referenceImageUrl: selectedReference?.imageUrl ?? null
-  });
-
-  let imageBytes: Buffer | null = null;
-  let imageMimeType = "image/png";
-  let providerBodyText = "";
-  let generationFailureDetail = "";
-  const generationPath = referenceInlineData ? "reference_assisted" : "prompt_only_fallback";
-  const { endpoint: providerEndpoint, body: providerBody } = buildPackyImageRequest(imageConfig, prompt, referenceInlineData);
-  const requestParts = (providerBody.contents?.[0]?.parts ?? []) as Array<{ text?: string; inlineData?: { mimeType?: string; data?: string } }>;
-  const requestIncludesImageInput = requestParts.some((part) => Boolean(part.inlineData?.data));
-
-  console.info(`[admin] /image requestId=${requestId} step=provider_request config`, {
-    imageBaseUrlSource: imageConfig.baseUrlSource,
-    imageModelSource: imageConfig.modelSource,
-    imageKeySource: imageConfig.keySource,
-    imageFallbackUsed: imageConfig.fallbackUsed,
-    providerEndpoint,
-    providerShape: "gemini_generateContent",
-    generationPath,
-    referenceImageIncluded: requestIncludesImageInput,
-    referenceMimeType: referenceInlineData?.mimeType ?? null,
-    referenceBytesLength,
-    requestPartsCount: requestParts.length,
-    referenceSummary,
-    prompt
-  });
-
-  if (!requestIncludesImageInput) {
-    console.warn(`[admin] /image requestId=${requestId} step=provider_request reference_missing`, {
-      generationPath,
-      referenceDownloadFailureReason
-    });
-  }
-  const generationResponse = await fetch(providerEndpoint, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${imageConfig.apiKey}`,
-      "x-goog-api-key": imageConfig.apiKey
-    },
-    body: JSON.stringify(providerBody)
-  });
-
-  console.info(`[admin] /image requestId=${requestId} step=provider_response`, {
-    status: generationResponse.status
-  });
-  providerBodyText = await generationResponse.text();
-  console.info(`[admin] /image requestId=${requestId} step=provider_body`, {
-    raw: providerBodyText
-  });
-
-  if (!generationResponse.ok) {
-    generationFailureDetail = providerBodyText.slice(0, 2000);
-  } else {
-    let generationJson: unknown;
-
-    try {
-      generationJson = JSON.parse(providerBodyText);
-    } catch (error) {
-      generationFailureDetail = error instanceof Error ? error.message : "JSON parse failed";
-    }
-
-    if (generationJson) {
-      const parsedJson = generationJson as {
-        data?: Array<{ url?: string; b64_json?: string }>;
-        candidates?: Array<{
-          content?: {
-            parts?: Array<{
-              inlineData?: { data?: string; mimeType?: string };
-            }>;
-          };
-        }>;
-      };
-      const imagePayload = parsedJson?.data?.[0];
-      const imageUrl = imagePayload?.url;
-      const openAiB64 = imagePayload?.b64_json;
-      const geminiInlineData = parsedJson?.candidates?.[0]?.content?.parts?.find((part) => Boolean(part.inlineData?.data))?.inlineData;
-      const b64 = openAiB64 ?? geminiInlineData?.data;
-      imageMimeType = geminiInlineData?.mimeType ?? "image/png";
-      console.info(`[admin] /image requestId=${requestId} step=provider_parse`, {
-        hasDataArray: Array.isArray(parsedJson?.data),
-        hasGeminiCandidates: Array.isArray(parsedJson?.candidates),
-        hasImageUrl: Boolean(imageUrl),
-        hasB64: Boolean(b64),
-        imageMimeType
-      });
-
-      if (!imageUrl && !b64) {
-        generationFailureDetail = providerBodyText.slice(0, 2000);
-      } else if (b64) {
-        imageBytes = Buffer.from(b64, "base64");
-      } else if (imageUrl) {
-        console.info(`[admin] /image requestId=${requestId} step=provider_image_fetch start`, { imageUrl });
-        const remoteImageResponse = await fetch(imageUrl);
-        if (!remoteImageResponse.ok) {
-          generationFailureDetail = `remote_status=${remoteImageResponse.status}`;
-        } else {
-          imageBytes = Buffer.from(await remoteImageResponse.arrayBuffer());
-        }
-      }
-
-      if (imageBytes && !imageBytes.length) {
-        generationFailureDetail = "empty image payload";
-        imageBytes = null;
-      }
-      if (imageBytes && imageBytes.length < MIN_IMAGE_BYTES) {
-        generationFailureDetail = `image payload too small (${imageBytes.length} bytes)`;
-        imageBytes = null;
-      }
-      if (imageBytes) {
-        console.info(`[admin] /image requestId=${requestId} step=provider_quality_check pass`, {
-          bytes: imageBytes.length
-        });
-      }
-    }
-  }
-
-  if (!imageBytes) {
-    await supabase.from("shoe_images").insert({
-      shoe_id: shoeId,
-      storage_path: "",
-      public_url: "",
-      status: "rejected",
-      provider: "PackyAPI",
-      prompt,
-      provider_model: imageConfig.model,
-      search_provider: "PackyAPI",
-      search_model: searchConfig.model,
-      search_used: Boolean(referenceInlineData),
-      reference_summary: referenceSummary.join("; "),
-      reference_image_url: selectedReference?.imageUrl ?? null,
-      generation_path: generationPath,
-      reference_image_attached: requestIncludesImageInput,
-      reference_image_mime_type: referenceInlineData?.mimeType ?? null,
-      reference_image_bytes: referenceBytesLength || null,
-      generation_error: `Provider error: ${(generationFailureDetail || providerBodyText).slice(0, 500)} | generation_path=${generationPath} | reference_download_failure=${referenceDownloadFailureReason ?? "none"}`,
-      rejected_at: new Date().toISOString(),
-      rejection_reason: "Generation failed"
-    });
-
     return fail({
       status: 502,
-      error: "Provider generation failed.",
-      step: "provider_request",
-      detail: `${generationFailureDetail || providerBodyText.slice(0, 2000)} | generation_path=${generationPath} | reference_download_failure=${referenceDownloadFailureReason ?? "none"}`,
+      error: "Image search failed",
+      step: "search_request",
+      detail: error instanceof Error ? error.message : "unknown_search_error",
       requestId
     });
   }
 
-  const path = `shoes/${shoeId}/${Date.now()}-${randomUUID()}.png`;
+  const bestCandidate = chooseBestCandidate({ brand: shoe.brand, shoeName: shoe.shoe_name, results: candidates });
+  if (!bestCandidate) {
+    return fail({
+      status: 404,
+      error: "No suitable image found",
+      step: "candidate_selection",
+      requestId
+    });
+  }
+
+  let imageBytes: Buffer;
+  let contentType = "image/jpeg";
+  try {
+    const response = await fetch(bestCandidate.imageUrl, {
+      headers: {
+        accept: "image/*,*/*;q=0.8",
+        "user-agent": "snkrfeature-image-import/1.0"
+      }
+    });
+
+    if (!response.ok) {
+      return fail({
+        status: 502,
+        error: "Selected image could not be downloaded",
+        step: "image_download",
+        detail: `status=${response.status}`,
+        requestId
+      });
+    }
+
+    contentType = response.headers.get("content-type") ?? contentType;
+    if (!contentType.toLowerCase().startsWith("image/")) {
+      return fail({
+        status: 502,
+        error: "Selected image could not be downloaded",
+        step: "image_download",
+        detail: `invalid_content_type=${contentType}`,
+        requestId
+      });
+    }
+
+    imageBytes = Buffer.from(await response.arrayBuffer());
+    if (imageBytes.byteLength < MIN_IMAGE_BYTES) {
+      return fail({
+        status: 502,
+        error: "Selected image could not be downloaded",
+        step: "image_download",
+        detail: `image_too_small=${imageBytes.byteLength}`,
+        requestId
+      });
+    }
+  } catch (error) {
+    return fail({
+      status: 502,
+      error: "Selected image could not be downloaded",
+      step: "image_download",
+      detail: error instanceof Error ? error.message : "download_error",
+      requestId
+    });
+  }
+
+  const extension = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
+  const path = `shoes/${shoeId}/${Date.now()}-${randomUUID()}.${extension}`;
 
   const { error: uploadError } = await adminClient.storage.from(bucket).upload(path, imageBytes, {
     upsert: false,
-    contentType: imageMimeType
+    contentType
   });
 
   if (uploadError) {
     return fail({
       status: 500,
-      error: "Storage upload failed.",
+      error: "Image import upload failed",
       step: "storage_upload",
       detail: uploadError.message,
       requestId
     });
   }
 
-  console.info(`[admin] /image requestId=${requestId} step=storage_upload success`, {
-    bucket,
-    path
-  });
-
   const { error: closePendingError } = await supabase
     .from("shoe_images")
     .update({
       status: "rejected",
       rejected_at: new Date().toISOString(),
-      rejection_reason: "Superseded by regenerated candidate."
+      rejection_reason: "Superseded by newer pending import."
     })
     .eq("shoe_id", shoeId)
     .eq("status", "pending");
@@ -902,61 +557,43 @@ console.info(`[admin] /image requestId=${requestId} step=search_reference_select
     });
   }
 
-  console.info(`[admin] /image requestId=${requestId} step=db_update success previous_pending_closed`);
-
   const publicUrl = buildPublicUrl(supabaseUrl, bucket, path);
-
-  if (!path || !publicUrl) {
-    return fail({
-      status: 500,
-      error: "Invalid storage output path/url.",
-      step: "storage_upload",
-      detail: `path=${path} publicUrl=${publicUrl}`,
-      requestId
-    });
-  }
+  const selectionReason = `score=${bestCandidate.score}; reasons=${bestCandidate.reasons.join(",")}; query=${query}`;
 
   const { error: insertError } = await supabase.from("shoe_images").insert({
     shoe_id: shoeId,
     storage_path: path,
     public_url: publicUrl,
     status: "pending",
-    provider: "PackyAPI",
-    provider_model: imageConfig.model,
-    search_provider: "PackyAPI",
-    search_model: searchConfig.model,
-    search_used: Boolean(referenceInlineData),
-    reference_summary: referenceSummary.join("; "),
-    reference_image_url: selectedReference?.imageUrl ?? null,
-    generation_path: generationPath,
-    reference_image_attached: requestIncludesImageInput,
-    reference_image_mime_type: referenceInlineData?.mimeType ?? null,
-    reference_image_bytes: referenceBytesLength || null,
-    prompt,
+    provider: "SerpApi",
+    search_provider: "SerpApi",
+    search_model: config.engine,
+    source_image_url: bestCandidate.imageUrl,
+    source_domain: bestCandidate.sourceDomain || null,
+    source_type: bestCandidate.sourceType,
+    selection_reason: selectionReason,
     created_by: user.id
   });
 
   if (insertError) {
     return fail({
       status: 500,
-      error: "Image metadata insert failed.",
+      error: "Image metadata insert failed",
       step: "db_insert",
       detail: insertError.message,
       requestId
     });
   }
 
-  console.info(`[admin] /image requestId=${requestId} step=db_insert success`, {
-    shoeId,
-    path,
-    publicUrl
-  });
-
   return success(
     {
-      message: "Image pending review",
+      message: "Image imported for review",
       storage_path: path,
-      public_url: publicUrl
+      public_url: publicUrl,
+      source_image_url: bestCandidate.imageUrl,
+      source_domain: bestCandidate.sourceDomain,
+      source_type: bestCandidate.sourceType,
+      selection_reason: selectionReason
     },
     requestId
   );
