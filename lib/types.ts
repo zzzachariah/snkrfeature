@@ -54,6 +54,10 @@ export interface ShoeImageRecord {
   search_used?: boolean;
   reference_summary?: string | null;
   reference_image_url?: string | null;
+  generation_path?: string | null;
+  reference_image_attached?: boolean | null;
+  reference_image_mime_type?: string | null;
+  reference_image_bytes?: number | null;
   prompt: string | null;
   created_at: string;
   approved_at: string | null;

@@ -28,8 +28,11 @@ const MIN_IMAGE_BYTES = 14_000;
 
 const SHOE_PROMPT_BASE_TEMPLATE = `Create a clean, highly recognizable side-view minimalist line drawing of the basketball shoe "[SHOE NAME]".
 
-Use the provided reference image as the primary shape reference.
+Use the provided reference image as the authoritative shape source.
 Preserve the defining recognizable silhouette and model-specific structure of the exact shoe shown in the reference.
+Do not invent a substitute structure from memory.
+Do not collapse this shoe into a generic basketball shoe template.
+Preserve differences between this exact model and other basketball shoes.
 
 The final output must be a square 1:1 image.
 Show exactly one shoe.
@@ -67,6 +70,8 @@ The result must be simplified but faithful.
 Do NOT turn it into a generic basketball shoe.
 Preserve the defining shape identity of the exact model.
 If simplification conflicts with recognizability, preserve recognizability.
+Recognizability of this exact model is more important than stylistic uniformity.
+The final shoe should be identifiable as "[SHOE NAME]", not merely "a basketball shoe line drawing".
 
 Focus on preserving:
 * overall silhouette
@@ -117,6 +122,17 @@ type PackyImageConfig = {
   fallbackUsed: false;
 };
 
+const GENERIC_REFERENCE_SUMMARY_PATTERNS = [
+  "basketball shoe",
+  "sleek",
+  "clean lines",
+  "sporty",
+  "modern",
+  "performance",
+  "premium",
+  "athletic"
+];
+
 function buildShoeImagePrompt(brand: string, shoeName: string, summaryBullets: string[]) {
   const modelLabel = `${brand} ${shoeName}`.trim();
   const basePrompt = SHOE_PROMPT_BASE_TEMPLATE.replace("[SHOE NAME]", modelLabel);
@@ -125,6 +141,22 @@ function buildShoeImagePrompt(brand: string, shoeName: string, summaryBullets: s
       ? `\n\nReference summary:\n${summaryBullets.map((bullet) => `* ${bullet}`).join("\n")}`
       : "\n\nReference summary:\n* No reliable reference summary was available. Keep strict model recognizability using the provided shoe name.";
   return `${basePrompt}${summarySection}`;
+}
+
+function refineReferenceSummaryBullets(rawBullets: string[]) {
+  const cleaned = rawBullets
+    .map((bullet) => bullet.trim())
+    .filter((bullet) => bullet.length > 0)
+    .filter((bullet) => !GENERIC_REFERENCE_SUMMARY_PATTERNS.some((pattern) => bullet.toLowerCase().includes(pattern)));
+
+  const deDuplicated: string[] = [];
+  for (const bullet of cleaned) {
+    if (!deDuplicated.some((existing) => existing.toLowerCase() === bullet.toLowerCase())) {
+      deDuplicated.push(bullet);
+    }
+  }
+
+  return deDuplicated.slice(0, 6);
 }
 
 function fail({
@@ -280,6 +312,8 @@ Hard requirement:
 - URL must point to an image file/asset, not a web page.
 - Do not return a product page URL or article URL.
 - Prefer direct URLs ending in .jpg, .jpeg, .png, or .webp.
+- Must match the exact model string "${shoeLabel}", not just model family/player line.
+- If exact-model confidence is low, return NO_ACCEPTABLE_REFERENCE.
 
 Selection priority:
 1) official product image
@@ -293,9 +327,14 @@ Return JSON only with this exact schema:
 {
   "image_url": "https://...",
   "source_type": "official|retailer|review_media|unknown",
-  "reference_summary": ["short structural cue", "short structural cue", "short structural cue"],
+  "reference_summary": ["distinctive geometric cue", "distinctive geometric cue", "distinctive geometric cue"],
   "selection_reason": "short reason"
 }
+
+Rules for "reference_summary":
+- Keep each bullet about visible geometry that distinguishes this shoe from other basketball shoes.
+- Prioritize: unusual heel geometry, signature midsole sculpting, collar cut/height, toe shape, lateral sidewall structures, panel segmentation, support wing/outrigger forms.
+- Avoid generic wording that applies to most shoes.
 
 If no acceptable image is found, return:
 {
@@ -362,7 +401,7 @@ If no acceptable image is found, return:
   };
   const imageUrl = typeof record.image_url === "string" ? record.image_url.trim() : "";
   const summaryBullets = Array.isArray(record.reference_summary)
-    ? record.reference_summary.filter((v): v is string => typeof v === "string" && v.trim().length > 0).slice(0, 6)
+    ? refineReferenceSummaryBullets(record.reference_summary.filter((v): v is string => typeof v === "string"))
     : [];
   console.info(`[admin] /image requestId=${requestId} step=search_parse result`, {
     parsedReference: selected,
@@ -566,7 +605,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       detail: `PACKYAPI_SEARCH_BASE_URL=${Boolean(process.env.PACKYAPI_SEARCH_BASE_URL)} PACKYAPI_SEARCH_MODEL=${Boolean(process.env.PACKYAPI_SEARCH_MODEL)} PACKYAPI_SEARCH_KEY=${Boolean(process.env.PACKYAPI_SEARCH_KEY)} PACKYAPI_IMAGE_BASE_URL=${Boolean(process.env.PACKYAPI_IMAGE_BASE_URL)} PACKYAPI_IMAGE_MODEL=${Boolean(process.env.PACKYAPI_IMAGE_MODEL)} PACKYAPI_IMAGE_KEY=${Boolean(process.env.PACKYAPI_IMAGE_KEY)} supabaseUrl=${Boolean(supabaseUrl)}`,
       requestId
     });
+    selectedReference = searchResult.selectedReference;
+    referenceSelectionFailureReason = searchResult.failureReason;
+  } catch (error) {
+    console.error(`[admin] /image requestId=${requestId} step=search_request fail`, error);
+    referenceSelectionFailureReason = error instanceof Error ? error.message : "search_request_error";
   }
+  console.info(`[admin] /image requestId=${requestId} step=search_reference_selected`, {
+    selectedReferenceUrl: selectedReference?.imageUrl ?? null,
+    selectedReferenceSourceType: selectedReference?.sourceType ?? null,
+    selectedReferenceSummaryCount: selectedReference?.summaryBullets.length ?? 0,
+    referenceSelectionFailureReason
+  });
 
   const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
   let selectedReference: SelectedReference | null = null;
@@ -633,7 +683,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   });
 
   const referenceSummary =
-    selectedReference?.summaryBullets.length ? selectedReference.summaryBullets : ["No acceptable reference image was available from search."];
+    selectedReference?.summaryBullets.length
+      ? selectedReference.summaryBullets
+      : [
+          "No discriminative reference summary was available; preserve exact model-specific silhouette differences from the provided reference image."
+        ];
   const prompt = buildShoeImagePrompt(shoe.brand, shoe.shoe_name, referenceSummary);
   console.info(`[admin] /image requestId=${requestId} step=prompt_built`, {
     prompt,
@@ -663,7 +717,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     referenceImageIncluded: requestIncludesImageInput,
     referenceMimeType: referenceInlineData?.mimeType ?? null,
     referenceBytesLength,
-    requestPartsCount: requestParts.length
+    requestPartsCount: requestParts.length,
+    referenceSummary,
+    prompt
   });
 
   if (!requestIncludesImageInput) {
@@ -770,6 +826,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       search_used: Boolean(referenceInlineData),
       reference_summary: referenceSummary.join("; "),
       reference_image_url: selectedReference?.imageUrl ?? null,
+      generation_path: generationPath,
+      reference_image_attached: requestIncludesImageInput,
+      reference_image_mime_type: referenceInlineData?.mimeType ?? null,
+      reference_image_bytes: referenceBytesLength || null,
       generation_error: `Provider error: ${(generationFailureDetail || providerBodyText).slice(0, 500)} | generation_path=${generationPath} | reference_download_failure=${referenceDownloadFailureReason ?? "none"}`,
       rejected_at: new Date().toISOString(),
       rejection_reason: "Generation failed"
@@ -852,6 +912,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     search_used: Boolean(referenceInlineData),
     reference_summary: referenceSummary.join("; "),
     reference_image_url: selectedReference?.imageUrl ?? null,
+    generation_path: generationPath,
+    reference_image_attached: requestIncludesImageInput,
+    reference_image_mime_type: referenceInlineData?.mimeType ?? null,
+    reference_image_bytes: referenceBytesLength || null,
     prompt,
     created_by: user.id
   });
