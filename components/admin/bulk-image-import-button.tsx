@@ -12,7 +12,7 @@ type BulkStats = {
 
 type BulkJob = {
   id: string;
-  status: "running" | "completed" | "failed";
+  status: "running" | "cancel_requested" | "cancelled" | "completed" | "failed";
   total_count: number;
   processed_count: number;
   success_count: number;
@@ -38,6 +38,7 @@ export function BulkImageImportButton() {
   const [latestJob, setLatestJob] = useState<BulkJob | null>(null);
   const [latestItems, setLatestItems] = useState<BulkJobItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -58,20 +59,16 @@ export function BulkImageImportButton() {
   const loadStatus = useCallback(async () => {
     const response = await fetch("/api/admin/shoes/images/bulk", { method: "GET", cache: "no-store" });
     const json = await response.json();
-    if (!response.ok || !json?.ok) {
-      throw new Error(json?.error ?? "Failed to load bulk image status");
-    }
+    if (!response.ok || !json?.ok) throw new Error(json?.error ?? "Failed to load bulk image status");
     hydrateState(json);
   }, [hydrateState]);
 
   const tickJob = useCallback(async () => {
     const response = await fetch("/api/admin/shoes/images/bulk/tick", { method: "POST" });
     const json = await response.json();
-    if (!response.ok || !json?.ok) {
-      throw new Error(json?.error ?? "Failed to update bulk image progress");
-    }
+    if (!response.ok || !json?.ok) throw new Error(json?.error ?? "Failed to update bulk image progress");
     setStats(json?.stats ?? stats);
-    setActiveJob(json?.job?.status === "running" ? json.job : null);
+    setActiveJob(json?.job?.status === "running" || json?.job?.status === "cancel_requested" ? json.job : null);
     setLatestJob(json?.job ?? latestJob);
   }, [latestJob, stats]);
 
@@ -92,7 +89,7 @@ export function BulkImageImportButton() {
       try {
         await loadStatus();
       } catch {
-        // best effort polling
+        // best effort
       }
     }, 4000);
 
@@ -103,7 +100,7 @@ export function BulkImageImportButton() {
   }, [loadStatus]);
 
   useEffect(() => {
-    if (!activeJob || activeJob.status !== "running") return;
+    if (!activeJob || (activeJob.status !== "running" && activeJob.status !== "cancel_requested")) return;
 
     let cancelled = false;
     const timer = setInterval(async () => {
@@ -112,7 +109,7 @@ export function BulkImageImportButton() {
         await tickJob();
         await loadStatus();
       } catch {
-        // keep polling even when one tick fails
+        // continue polling
       }
     }, 1800);
 
@@ -129,7 +126,6 @@ export function BulkImageImportButton() {
       const response = await fetch("/api/admin/shoes/images/bulk", { method: "POST" });
       const json = await response.json();
       if (!response.ok || !json?.ok) throw new Error(json?.error ?? "Bulk image import failed");
-
       setMessage(translate(json?.message ?? "Bulk image import started"));
       hydrateState({ stats: json?.stats, active_job: json?.job, latest_job: json?.job, latest_items: latestItems });
       await loadStatus();
@@ -141,8 +137,26 @@ export function BulkImageImportButton() {
     }
   }
 
+  async function abortBulkImport() {
+    setStopping(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/shoes/images/bulk/abort", { method: "POST" });
+      const json = await response.json();
+      if (!response.ok || !json?.ok) throw new Error(json?.error ?? "Failed to request stop");
+      setMessage(translate(json?.message ?? "Stopping..."));
+      hydrateState({ stats: json?.stats, active_job: json?.job, latest_job: json?.job, latest_items: latestItems });
+      await loadStatus();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to request stop");
+    } finally {
+      setStopping(false);
+    }
+  }
+
   const displayJob = activeJob ?? latestJob;
   const isRunning = activeJob?.status === "running";
+  const isStopping = activeJob?.status === "cancel_requested" || stopping;
 
   return (
     <div className="space-y-3 rounded-2xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-4">
@@ -151,9 +165,16 @@ export function BulkImageImportButton() {
         <p><span className="soft-text">{translate("Total shoes")}: </span><span className="font-semibold">{stats.totalShoes}</span></p>
       </div>
 
-      <Button type="button" onClick={startBulkImport} disabled={loading || isRunning}>
-        {isRunning ? translate("Bulk job in progress") : loading ? translate("Searching images...") : translate("Find images for all missing shoes")}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" onClick={startBulkImport} disabled={loading || isRunning || isStopping}>
+          {isRunning || isStopping ? translate("Bulk job in progress") : loading ? translate("Searching images...") : translate("Find images for all missing shoes")}
+        </Button>
+        {(isRunning || isStopping) && (
+          <Button type="button" variant="secondary" onClick={abortBulkImport} disabled={isStopping}>
+            {isStopping ? translate("Stopping...") : translate("Abort")}
+          </Button>
+        )}
+      </div>
 
       {message && <FeedbackMessage message={message} />}
       {error && <FeedbackMessage message={error} isError />}
@@ -161,7 +182,17 @@ export function BulkImageImportButton() {
       {displayJob ? (
         <div className="space-y-2 text-sm">
           <p className="font-medium">
-            {translate("Status")}: {displayJob.status === "running" ? translate("Running") : displayJob.status === "completed" ? translate("Completed") : translate("Failed")}
+            {translate("Status")}: {
+              displayJob.status === "running"
+                ? translate("Running")
+                : displayJob.status === "cancel_requested"
+                  ? translate("Stopping...")
+                  : displayJob.status === "cancelled"
+                    ? translate("Cancelled")
+                    : displayJob.status === "completed"
+                      ? translate("Completed")
+                      : translate("Failed")
+            }
           </p>
           <p>{translate("Progress")}: {displayJob.processed_count} / {displayJob.total_count}</p>
           <div className="h-2 w-full rounded-full bg-[rgb(var(--muted)/0.35)]">
@@ -179,7 +210,9 @@ export function BulkImageImportButton() {
       {latestItems.length > 0 && (
         <div className="text-xs soft-text">
           {latestItems.slice(0, 5).map((item) => (
-            <p key={`${item.shoe_id}-${item.status}`}>• {item.shoe_label}: {item.status === "failed" ? `${translate("Failed")}${item.error_message ? ` (${item.error_message})` : ""}` : translate("Skipped")}</p>
+            <p key={`${item.shoe_id}-${item.status}`}>
+              • {item.shoe_label}: {item.status === "failed" ? `${translate("Failed")}${item.error_message ? ` (${item.error_message})` : ""}` : translate("Skipped")}
+            </p>
           ))}
         </div>
       )}

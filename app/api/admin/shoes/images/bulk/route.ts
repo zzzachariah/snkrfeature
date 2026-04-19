@@ -3,9 +3,9 @@ import { requireAdminApi } from "@/lib/admin/route-auth";
 import {
   computeBulkImageStats,
   createBulkJob,
+  getActiveBulkJob,
   getBulkJobItemsSummary,
-  getLatestBulkJob,
-  getRunningBulkJob
+  getLatestBulkJob
 } from "@/lib/admin/bulk-image-jobs";
 
 export async function GET() {
@@ -15,10 +15,10 @@ export async function GET() {
   const { supabase } = auth;
 
   try {
-    const [stats, latestJob, runningJob] = await Promise.all([
+    const [stats, latestJob, activeJob] = await Promise.all([
       computeBulkImageStats(supabase),
       getLatestBulkJob(supabase),
-      getRunningBulkJob(supabase)
+      getActiveBulkJob(supabase)
     ]);
 
     const items = latestJob ? await getBulkJobItemsSummary(supabase, latestJob.id) : [];
@@ -26,7 +26,7 @@ export async function GET() {
     return NextResponse.json({
       ok: true,
       stats,
-      active_job: runningJob,
+      active_job: activeJob,
       latest_job: latestJob,
       latest_items: items
     });
