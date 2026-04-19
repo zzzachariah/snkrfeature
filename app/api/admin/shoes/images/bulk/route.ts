@@ -3,7 +3,7 @@ import { requireAdminApi } from "@/lib/admin/route-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSerpApiConfig, importBestShoeImage } from "@/lib/admin/shoe-image-import";
 
-type ShoeRow = { id: string; brand: string; shoe_name: string };
+type ShoeRow = { id: string; brand: string; shoe_name: string; release_year?: number | null };
 
 export async function POST() {
   const auth = await requireAdminApi();
@@ -29,7 +29,7 @@ export async function POST() {
     );
   }
 
-  const { data: shoes, error: shoesError } = await supabase.from("shoes").select("id, brand, shoe_name").order("created_at", { ascending: true });
+  const { data: shoes, error: shoesError } = await supabase.from("shoes").select("id, brand, shoe_name, release_year").order("created_at", { ascending: true });
   if (shoesError) {
     return NextResponse.json({ ok: false, error: "Failed to load shoes.", detail: shoesError.message }, { status: 500 });
   }

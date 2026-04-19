@@ -24,7 +24,7 @@ type ImportMode = "single_pending" | "bulk_auto_approve";
 type ImportBestImageInput = {
   supabase: SupabaseClient;
   adminStorageClient: SupabaseClient;
-  shoe: { id: string; brand: string; shoe_name: string };
+  shoe: { id: string; brand: string; shoe_name: string; release_year?: number | null };
   mode: ImportMode;
   createdBy: string;
   bucket?: string;
@@ -106,12 +106,12 @@ export function getSerpApiConfig(): SerpApiConfig | null {
   return { provider, apiKey, engine, baseUrl };
 }
 
-function buildSearchQueries(brand: string, shoeName: string) {
-  const base = `${brand} ${shoeName}`.replace(/\s+/g, " ").trim();
+function buildSearchQueries(brand: string, shoeName: string, releaseYear?: number | null) {
+  const core = `${brand} ${shoeName} ${releaseYear ?? ""}`.replace(/\s+/g, " ").trim();
   return [
-    `${base} official product image side view basketball shoe`,
-    `${base} lateral product photo basketball shoe`,
-    `${base} retailer product image side profile`
+    `${core} official product image side view basketball shoe`,
+    `${core} lateral product photo basketball shoe`,
+    `${core} retailer product image side profile`
   ];
 }
 
@@ -132,15 +132,18 @@ type ScoredCandidate = {
 function chooseBestCandidate({
   brand,
   shoeName,
+  releaseYear,
   results
 }: {
   brand: string;
   shoeName: string;
+  releaseYear?: number | null;
   results: SerpApiImageResult[];
 }): ScoredCandidate | null {
   const brandTokens = tokens(brand);
   const shoeTokens = tokens(shoeName);
   const shoeNumberTokens = shoeTokens.filter((token) => /^\d+[a-z]*$/.test(token));
+  const releaseYearToken = releaseYear ? String(releaseYear) : null;
 
   const scored: ScoredCandidate[] = [];
 
@@ -159,6 +162,7 @@ function chooseBestCandidate({
     const sourceType = classifySourceType(sourceDomain);
 
     if (shoeNumberTokens.some((token) => !haystack.includes(token))) continue;
+    if (releaseYearToken && !haystack.includes(releaseYearToken)) continue;
 
     const matchedShoeTokens = shoeTokens.filter((token) => haystack.includes(token));
     const matchedBrandTokens = brandTokens.filter((token) => haystack.includes(token));
@@ -312,7 +316,7 @@ export async function importBestShoeImage(input: ImportBestImageInput): Promise<
     return { ok: false, error: "No suitable image found", detail: "serp_api_config_missing" };
   }
 
-  const queries = buildSearchQueries(input.shoe.brand, input.shoe.shoe_name);
+  const queries = buildSearchQueries(input.shoe.brand, input.shoe.shoe_name, input.shoe.release_year);
   const uniqueResults: SerpApiImageResult[] = [];
   const seen = new Set<string>();
 
@@ -329,6 +333,7 @@ export async function importBestShoeImage(input: ImportBestImageInput): Promise<
   const bestCandidate = chooseBestCandidate({
     brand: input.shoe.brand,
     shoeName: input.shoe.shoe_name,
+    releaseYear: input.shoe.release_year,
     results: uniqueResults
   });
 

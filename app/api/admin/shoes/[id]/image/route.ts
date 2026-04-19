@@ -162,7 +162,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { data: shoe, error: shoeError } = await supabase
     .from("shoes")
-    .select("id, brand, shoe_name")
+    .select("id, brand, shoe_name, release_year")
     .eq("id", shoeId)
     .maybeSingle();
 
