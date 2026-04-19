@@ -14,6 +14,9 @@ type ErrorStep =
   | "auth"
   | "shoe_load"
   | "env"
+  | "search_request"
+  | "search_parse"
+  | "search_reference_fetch"
   | "provider_request"
   | "provider_parse"
   | "provider_image_fetch"
@@ -23,33 +26,80 @@ type ErrorStep =
 
 const MIN_IMAGE_BYTES = 14_000;
 
-function buildShoeImagePrompt(brand: string, shoeName: string) {
-  const modelLabel = `${brand} ${shoeName}`.trim();
-  return `Create a clean, highly recognizable side-view minimalist line drawing of the basketball shoe "${modelLabel}".
+const SHOE_PROMPT_BASE_TEMPLATE = `Create a clean, highly recognizable side-view minimalist line drawing of the basketball shoe "[SHOE NAME]".
 
-Use a square 1:1 canvas.
-The shoe must be shown in a strict lateral side profile only.
-No perspective, no 3/4 view, no top view, no outsole bottom view, no tilt, no rotation.
-The shoe must be horizontally aligned and centered.
-Orientation must be consistent: heel on the left, toe/front pointing to the right.
-Do not flip orientation. Do not mirror the shoe.
-The entire shoe must be fully visible.
-The shoe should occupy approximately 80% to 85% of the canvas width, with clean and even margin around it.
-No edge clipping. Do not render a tiny floating shoe.
+Use the provided reference image as the primary shape reference.
+Preserve the defining recognizable silhouette and model-specific structure of the exact shoe shown in the reference.
+
+The final output must be a square 1:1 image.
+Show exactly one shoe.
+The shoe must be in a strict lateral side view only.
+No three-quarter view.
+No perspective angle.
+No rotation.
+No tilt.
+The shoe must be horizontally aligned.
+The heel must be on the left.
+The toe/front must point to the right.
+Do not mirror or flip the shoe direction.
+
+The entire shoe must be fully visible in frame.
+Center the shoe carefully.
+The shoe should occupy approximately 80% to 85% of the canvas width.
+Keep clean, even margin around the shoe.
+Do not make the shoe tiny in the frame.
+Do not crop the shoe.
 
 Render the shoe as premium black line art on a pure white background.
-No color, no shading, no realistic material rendering, no texture-heavy rendering, no painterly style, no cartoon style, no fashion sketch style.
-No decorative background, no text, no labels, no human body parts.
+No color.
+No shading.
+No realistic material rendering.
+No textured painterly style.
+No decorative background.
+No text.
+No labels.
+No arrows.
+No human body parts.
+No foot.
+No leg.
 
 The result must be simplified but faithful.
-Do NOT create a generic basketball shoe.
-Preserve the defining recognizable features of "${modelLabel}", including overall silhouette, toe box shape, forefoot curvature, heel geometry, collar height and cut, tongue profile, lace panel structure, midsole sculpting, outsole edge shape, sidewall geometry, panel segmentation, and visible support structures.
-Preserve any signature model-specific structural cues.
-
-Recognition is more important than stylistic minimalism.
+Do NOT turn it into a generic basketball shoe.
+Preserve the defining shape identity of the exact model.
 If simplification conflicts with recognizability, preserve recognizability.
 
-Final output target: premium technical sneaker silhouette illustration for a basketball shoe database UI — clean, model-specific, stable, centered, monochrome, and instantly recognizable.`;
+Focus on preserving:
+* overall silhouette
+* toe shape
+* forefoot curvature
+* heel geometry
+* collar cut and height
+* tongue profile
+* lace area structure
+* midsole sculpting
+* outsole edge profile
+* upper panel segmentation
+* sidewall geometry
+* any external support shapes
+* any visible model-specific structures from the reference
+
+Final style:
+premium monochrome technical silhouette illustration for a sneaker database UI.`;
+
+type SelectedReference = {
+  imageUrl: string;
+  summaryBullets: string[];
+  sourceType?: string;
+};
+
+function buildShoeImagePrompt(brand: string, shoeName: string, summaryBullets: string[]) {
+  const modelLabel = `${brand} ${shoeName}`.trim();
+  const basePrompt = SHOE_PROMPT_BASE_TEMPLATE.replace("[SHOE NAME]", modelLabel);
+  const summarySection =
+    summaryBullets.length > 0
+      ? `\n\nReference summary:\n${summaryBullets.map((bullet) => `* ${bullet}`).join("\n")}`
+      : "\n\nReference summary:\n* No reliable reference summary was available. Keep strict model recognizability using the provided shoe name.";
+  return `${basePrompt}${summarySection}`;
 }
 
 function fail({
@@ -81,15 +131,20 @@ function buildPublicUrl(baseUrl: string, bucket: string, path: string) {
   return `${baseUrl}/storage/v1/object/public/${bucket}/${path}`;
 }
 
-function getProviderConfig(baseUrl: string, model: string, prompt: string) {
+function getImageProviderConfig(baseUrl: string, model: string, prompt: string, referenceInlineData?: { mimeType: string; data: string }) {
   const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
-  const isGeminiFlashImage = model.includes("gemini-2.5-flash-image");
-  const providerEndpoint = isGeminiFlashImage
+  const isGeminiGenerateContent = model.includes("gemini");
+  const providerEndpoint = isGeminiGenerateContent
     ? `${normalizedBaseUrl}/v1beta/models/${model}:generateContent`
     : `${normalizedBaseUrl}/v1/images/generations`;
-  const providerBody = isGeminiFlashImage
+  const providerBody = isGeminiGenerateContent
     ? {
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        contents: [
+          {
+            role: "user",
+            parts: referenceInlineData ? [{ text: prompt }, { inlineData: referenceInlineData }] : [{ text: prompt }]
+          }
+        ],
         generationConfig: {
           responseModalities: ["TEXT", "IMAGE"]
         }
@@ -99,7 +154,109 @@ function getProviderConfig(baseUrl: string, model: string, prompt: string) {
         prompt,
         size: "1024x1024"
       };
-  return { providerEndpoint, providerBody, providerShape: isGeminiFlashImage ? "gemini_generateContent" : "openai_images_generations" };
+  return {
+    providerEndpoint,
+    providerBody,
+    providerShape: isGeminiGenerateContent ? "gemini_generateContent" : "openai_images_generations"
+  };
+}
+
+async function searchReferenceImage({
+  baseUrl,
+  model,
+  apiKey,
+  shoeLabel,
+  requestId
+}: {
+  baseUrl: string;
+  model: string;
+  apiKey: string;
+  shoeLabel: string;
+  requestId: string;
+}): Promise<SelectedReference | null> {
+  const endpoint = `${baseUrl.replace(/\/$/, "")}/v1beta/models/${model}:generateContent`;
+  const searchPrompt = `You are selecting exactly ONE public reference image for generating a technical side-view shoe illustration.
+
+Target shoe model: "${shoeLabel}".
+Find one best image for the exact model (not broad family).
+
+Selection priority:
+1) official product image
+2) retailer product image
+3) clean review/media image
+
+Prefer: clean side or near-side view, full shoe visible, clear shape.
+Avoid if possible: on-foot shots, heavy perspective, cluttered background, tiny thumbnails, stylized poster edits, partial crops.
+
+Return JSON only with this exact schema:
+{
+  "image_url": "https://...",
+  "source_type": "official|retailer|review_media|unknown",
+  "reference_summary": ["short structural cue", "short structural cue", "short structural cue"],
+  "selection_reason": "short reason"
+}
+
+If no acceptable image is found, return:
+{
+  "image_url": "",
+  "source_type": "unknown",
+  "reference_summary": [],
+  "selection_reason": "NO_ACCEPTABLE_REFERENCE"
+}`;
+
+  console.info(`[admin] /image requestId=${requestId} step=search_request start`, { endpoint, model, shoeLabel });
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${apiKey}`,
+      "x-goog-api-key": apiKey
+    },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: searchPrompt }] }],
+      tools: [{ google_search: {} }],
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
+    })
+  });
+  const bodyText = await response.text();
+  console.info(`[admin] /image requestId=${requestId} step=search_request response`, {
+    status: response.status,
+    raw: bodyText
+  });
+  if (!response.ok) throw new Error(`search_provider_status=${response.status} body=${bodyText.slice(0, 500)}`);
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(bodyText);
+  } catch (error) {
+    throw new Error(`search_response_non_json ${(error as Error).message}`);
+  }
+  const textPart =
+    (parsed as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })?.candidates?.[0]?.content?.parts?.find((part) =>
+      Boolean(part.text)
+    )?.text ?? "";
+  if (!textPart) throw new Error("search_response_missing_text");
+
+  let selected: unknown;
+  try {
+    selected = JSON.parse(textPart);
+  } catch {
+    throw new Error(`search_text_non_json text=${textPart.slice(0, 500)}`);
+  }
+
+  const record = selected as {
+    image_url?: string;
+    reference_summary?: string[];
+    source_type?: string;
+  };
+  const imageUrl = typeof record.image_url === "string" ? record.image_url.trim() : "";
+  const summaryBullets = Array.isArray(record.reference_summary)
+    ? record.reference_summary.filter((v): v is string => typeof v === "string" && v.trim().length > 0).slice(0, 6)
+    : [];
+  if (!imageUrl) return null;
+  return { imageUrl, summaryBullets, sourceType: record.source_type };
 }
 
 async function getLatestByStatus(supabase: SupabaseClient, shoeId: string, status: "pending" | "approved") {
@@ -230,140 +387,161 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
   console.info(`[admin] /image requestId=${requestId} step=shoe_load success`, shoe);
 
-  const baseUrl = process.env.PACKYAPI_BASE_URL;
-  const model = process.env.PACKYAPI_IMAGE_MODEL;
-  const apiKey = process.env.PACKYAPI_KEY;
+  const searchBaseUrl = process.env.PACKYAPI_SEARCH_BASE_URL;
+  const searchModel = process.env.PACKYAPI_SEARCH_MODEL;
+  const searchKey = process.env.PACKYAPI_SEARCH_KEY;
+  const imageBaseUrl = process.env.PACKYAPI_IMAGE_BASE_URL;
+  const imageModel = process.env.PACKYAPI_IMAGE_MODEL;
+  const imageKey = process.env.PACKYAPI_IMAGE_KEY;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "shoe-images";
-  if (!baseUrl || !model || !apiKey || !supabaseUrl) {
+  if (!searchBaseUrl || !searchModel || !searchKey || !imageBaseUrl || !imageModel || !imageKey || !supabaseUrl) {
     return fail({
       status: 500,
       error: "Image generation environment variables are incomplete.",
       step: "env",
-      detail: `baseUrl=${Boolean(baseUrl)} model=${Boolean(model)} apiKey=${Boolean(apiKey)} supabaseUrl=${Boolean(supabaseUrl)}`,
+      detail: `searchBaseUrl=${Boolean(searchBaseUrl)} searchModel=${Boolean(searchModel)} searchKey=${Boolean(searchKey)} imageBaseUrl=${Boolean(imageBaseUrl)} imageModel=${Boolean(imageModel)} imageKey=${Boolean(imageKey)} supabaseUrl=${Boolean(supabaseUrl)}`,
       requestId
     });
   }
 
-  const prompt = buildShoeImagePrompt(shoe.brand, shoe.shoe_name);
-  console.info(`[admin] /image requestId=${requestId} step=prompt_built`, { prompt, model, bucket });
+  const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
+  let selectedReference: SelectedReference | null = null;
+  try {
+    selectedReference = await searchReferenceImage({
+      baseUrl: searchBaseUrl,
+      model: searchModel,
+      apiKey: searchKey,
+      shoeLabel,
+      requestId
+    });
+  } catch (error) {
+    console.error(`[admin] /image requestId=${requestId} step=search_request fail`, error);
+  }
+
+  let referenceInlineData: { mimeType: string; data: string } | undefined;
+  if (selectedReference?.imageUrl) {
+    const refImageResponse = await fetch(selectedReference.imageUrl);
+    if (refImageResponse.ok) {
+      const refArrayBuffer = await refImageResponse.arrayBuffer();
+      const refBytes = Buffer.from(refArrayBuffer);
+      if (refBytes.length > 0) {
+        referenceInlineData = {
+          mimeType: refImageResponse.headers.get("content-type") ?? "image/jpeg",
+          data: refBytes.toString("base64")
+        };
+      }
+    } else {
+      console.warn(`[admin] /image requestId=${requestId} step=search_reference_fetch fail`, {
+        status: refImageResponse.status,
+        referenceUrl: selectedReference.imageUrl
+      });
+    }
+  }
+
+  const referenceSummary =
+    selectedReference?.summaryBullets.length ? selectedReference.summaryBullets : ["No acceptable reference image was available from search."];
+  const prompt = buildShoeImagePrompt(shoe.brand, shoe.shoe_name, referenceSummary);
+  console.info(`[admin] /image requestId=${requestId} step=prompt_built`, {
+    prompt,
+    imageModel,
+    bucket,
+    searchUsed: Boolean(referenceInlineData),
+    referenceImageUrl: selectedReference?.imageUrl ?? null
+  });
 
   let imageBytes: Buffer | null = null;
   let imageMimeType = "image/png";
   let providerBodyText = "";
   let generationFailureDetail = "";
-  const attemptErrors: string[] = [];
-  const maxAttempts = 2;
+  const { providerEndpoint, providerBody, providerShape } = getImageProviderConfig(imageBaseUrl, imageModel, prompt, referenceInlineData);
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const retryPrompt =
-      attempt === 1
-        ? prompt
-        : `${prompt}\n\nRetry pass ${attempt}: enforce composition harder. Strictly center one shoe in exact side profile, horizontal alignment, no tilt, subject width target 80%-85%.`;
-    const { providerEndpoint, providerBody, providerShape } = getProviderConfig(baseUrl, model, retryPrompt);
+  console.info(`[admin] /image requestId=${requestId} step=provider_request start`, {
+    providerEndpoint,
+    providerShape,
+    searchUsed: Boolean(referenceInlineData)
+  });
+  const generationResponse = await fetch(providerEndpoint, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${imageKey}`,
+      "x-goog-api-key": imageKey
+    },
+    body: JSON.stringify(providerBody)
+  });
 
-    console.info(`[admin] /image requestId=${requestId} step=provider_request start`, {
-      attempt,
-      providerEndpoint,
-      providerShape
-    });
-    const generationResponse = await fetch(providerEndpoint, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${apiKey}`,
-        "x-goog-api-key": apiKey
-      },
-      body: JSON.stringify(providerBody)
-    });
+  console.info(`[admin] /image requestId=${requestId} step=provider_response`, {
+    status: generationResponse.status
+  });
+  providerBodyText = await generationResponse.text();
+  console.info(`[admin] /image requestId=${requestId} step=provider_body`, {
+    raw: providerBodyText
+  });
 
-    console.info(`[admin] /image requestId=${requestId} step=provider_response`, {
-      attempt,
-      status: generationResponse.status
-    });
-    providerBodyText = await generationResponse.text();
-    console.info(`[admin] /image requestId=${requestId} step=provider_body`, {
-      attempt,
-      raw: providerBodyText
-    });
-
-    if (!generationResponse.ok) {
-      generationFailureDetail = providerBodyText.slice(0, 2000);
-      attemptErrors.push(`attempt=${attempt} provider_status=${generationResponse.status}`);
-      continue;
-    }
-
+  if (!generationResponse.ok) {
+    generationFailureDetail = providerBodyText.slice(0, 2000);
+  } else {
     let generationJson: unknown;
     try {
       generationJson = JSON.parse(providerBodyText);
     } catch (error) {
       generationFailureDetail = error instanceof Error ? error.message : "JSON parse failed";
-      attemptErrors.push(`attempt=${attempt} provider_non_json`);
-      continue;
     }
 
-    const parsedJson = generationJson as {
-      data?: Array<{ url?: string; b64_json?: string }>;
-      candidates?: Array<{
-        content?: {
-          parts?: Array<{
-            inlineData?: { data?: string; mimeType?: string };
-          }>;
-        };
-      }>;
-    };
-    const imagePayload = parsedJson?.data?.[0];
-    const imageUrl = imagePayload?.url;
-    const openAiB64 = imagePayload?.b64_json;
-    const geminiInlineData = parsedJson?.candidates?.[0]?.content?.parts?.find((part) => Boolean(part.inlineData?.data))?.inlineData;
-    const b64 = openAiB64 ?? geminiInlineData?.data;
-    imageMimeType = geminiInlineData?.mimeType ?? "image/png";
-    console.info(`[admin] /image requestId=${requestId} step=provider_parse`, {
-      attempt,
-      hasDataArray: Array.isArray(parsedJson?.data),
-      hasGeminiCandidates: Array.isArray(parsedJson?.candidates),
-      hasImageUrl: Boolean(imageUrl),
-      hasB64: Boolean(b64),
-      imageMimeType
-    });
+    if (generationJson) {
+      const parsedJson = generationJson as {
+        data?: Array<{ url?: string; b64_json?: string }>;
+        candidates?: Array<{
+          content?: {
+            parts?: Array<{
+              inlineData?: { data?: string; mimeType?: string };
+            }>;
+          };
+        }>;
+      };
+      const imagePayload = parsedJson?.data?.[0];
+      const imageUrl = imagePayload?.url;
+      const openAiB64 = imagePayload?.b64_json;
+      const geminiInlineData = parsedJson?.candidates?.[0]?.content?.parts?.find((part) => Boolean(part.inlineData?.data))?.inlineData;
+      const b64 = openAiB64 ?? geminiInlineData?.data;
+      imageMimeType = geminiInlineData?.mimeType ?? "image/png";
+      console.info(`[admin] /image requestId=${requestId} step=provider_parse`, {
+        hasDataArray: Array.isArray(parsedJson?.data),
+        hasGeminiCandidates: Array.isArray(parsedJson?.candidates),
+        hasImageUrl: Boolean(imageUrl),
+        hasB64: Boolean(b64),
+        imageMimeType
+      });
 
-    if (!imageUrl && !b64) {
-      generationFailureDetail = providerBodyText.slice(0, 2000);
-      attemptErrors.push(`attempt=${attempt} provider_no_image_data`);
-      continue;
-    }
-
-    if (b64) {
-      imageBytes = Buffer.from(b64, "base64");
-    } else {
-      console.info(`[admin] /image requestId=${requestId} step=provider_image_fetch start`, { attempt, imageUrl });
-      const remoteImageResponse = await fetch(imageUrl!);
-      if (!remoteImageResponse.ok) {
-        generationFailureDetail = `remote_status=${remoteImageResponse.status}`;
-        attemptErrors.push(`attempt=${attempt} provider_image_url_fetch_failed`);
-        continue;
+      if (!imageUrl && !b64) {
+        generationFailureDetail = providerBodyText.slice(0, 2000);
+      } else if (b64) {
+        imageBytes = Buffer.from(b64, "base64");
+      } else if (imageUrl) {
+        console.info(`[admin] /image requestId=${requestId} step=provider_image_fetch start`, { imageUrl });
+        const remoteImageResponse = await fetch(imageUrl);
+        if (!remoteImageResponse.ok) {
+          generationFailureDetail = `remote_status=${remoteImageResponse.status}`;
+        } else {
+          imageBytes = Buffer.from(await remoteImageResponse.arrayBuffer());
+        }
       }
-      imageBytes = Buffer.from(await remoteImageResponse.arrayBuffer());
-    }
 
-    if (!imageBytes.length) {
-      generationFailureDetail = "empty image payload";
-      attemptErrors.push(`attempt=${attempt} image_empty_payload`);
-      continue;
+      if (imageBytes && !imageBytes.length) {
+        generationFailureDetail = "empty image payload";
+        imageBytes = null;
+      }
+      if (imageBytes && imageBytes.length < MIN_IMAGE_BYTES) {
+        generationFailureDetail = `image payload too small (${imageBytes.length} bytes)`;
+        imageBytes = null;
+      }
+      if (imageBytes) {
+        console.info(`[admin] /image requestId=${requestId} step=provider_quality_check pass`, {
+          bytes: imageBytes.length
+        });
+      }
     }
-
-    if (imageBytes.length < MIN_IMAGE_BYTES) {
-      generationFailureDetail = `image payload too small (${imageBytes.length} bytes)`;
-      attemptErrors.push(`attempt=${attempt} image_too_small`);
-      imageBytes = null;
-      continue;
-    }
-
-    console.info(`[admin] /image requestId=${requestId} step=provider_quality_check pass`, {
-      attempt,
-      bytes: imageBytes.length
-    });
-    break;
   }
 
   if (!imageBytes) {
@@ -374,16 +552,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       status: "rejected",
       provider: "PackyAPI",
       prompt,
-      provider_model: model,
-      generation_error: `Provider error: ${(generationFailureDetail || providerBodyText).slice(0, 500)} | attempts=${attemptErrors.join(",")}`,
+      provider_model: imageModel,
+      search_provider: "PackyAPI",
+      search_model: searchModel,
+      search_used: Boolean(referenceInlineData),
+      reference_summary: referenceSummary.join("; "),
+      reference_image_url: selectedReference?.imageUrl ?? null,
+      generation_error: `Provider error: ${(generationFailureDetail || providerBodyText).slice(0, 500)} | fallback=prompt_only_${referenceInlineData ? "no" : "yes"}`,
       rejected_at: new Date().toISOString(),
       rejection_reason: "Generation failed"
     });
     return fail({
       status: 502,
-      error: "Provider generation failed after retries.",
+      error: "Provider generation failed.",
       step: "provider_request",
-      detail: `${generationFailureDetail || providerBodyText.slice(0, 2000)} | attempts=${attemptErrors.join(",")}`,
+      detail: `${generationFailureDetail || providerBodyText.slice(0, 2000)} | fallback=prompt_only_${referenceInlineData ? "no" : "yes"}`,
       requestId
     });
   }
@@ -437,7 +620,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     public_url: publicUrl,
     status: "pending",
     provider: "PackyAPI",
-    provider_model: model,
+    provider_model: imageModel,
+    search_provider: "PackyAPI",
+    search_model: searchModel,
+    search_used: Boolean(referenceInlineData),
+    reference_summary: referenceSummary.join("; "),
+    reference_image_url: selectedReference?.imageUrl ?? null,
     prompt,
     created_by: user.id
   });
