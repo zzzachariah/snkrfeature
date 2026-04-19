@@ -293,6 +293,17 @@ export async function processBulkJobTick({
     .update({ current_shoe_id: nextItem.shoe_id, current_shoe_label: nextItem.shoe_label, updated_at: new Date().toISOString() })
     .eq("id", active.id);
 
+  const { data: jobStateNow } = await supabase.from("admin_bulk_image_jobs").select("status").eq("id", active.id).single();
+  if (jobStateNow?.status === "cancel_requested") {
+    await supabase
+      .from("admin_bulk_image_job_items")
+      .update({ status: "pending", updated_at: new Date().toISOString() })
+      .eq("id", nextItem.id)
+      .eq("status", "processing");
+    await setJobCancelled(supabase, active.id);
+    return { hasRunningJob: false as const, job: await getLatestBulkJob(supabase) };
+  }
+
   const { data: existing, error: existingError } = await supabase
     .from("shoe_images")
     .select("status")

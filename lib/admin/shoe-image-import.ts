@@ -53,8 +53,6 @@ export type ImportBestImageResult = ImportBestImageSuccess | ImportBestImageFail
 
 const DEFAULT_SERP_BASE_URL = "https://serpapi.com/search.json";
 const MIN_IMAGE_BYTES = 14_000;
-const MIN_WIDTH = 400;
-const MIN_HEIGHT = 250;
 const MAX_CANDIDATE_ATTEMPTS = 8;
 
 const OFFICIAL_DOMAINS = ["nike.com", "adidas.com", "underarmour.com", "newbalance.com", "puma.com", "anta.com", "lining.com", "wayofwade.com", "asics.com", "jordan.com"];
@@ -62,9 +60,9 @@ const RETAILER_DOMAINS = ["footlocker.com", "champssports.com", "finishline.com"
 const REVIEW_MEDIA_DOMAINS = ["weartesters.com", "solecollector.com", "sneakernews.com", "highsnobiety.com"];
 const BLOCKED_DOMAINS = ["pinterest.com", "pinimg.com", "facebook.com", "instagram.com", "twitter.com", "x.com"];
 
-const STRONG_POSITIVE_TERMS = ["official", "product", "lateral", "side", "profile", "catalog", "basketball", "retailer"];
-const STRONG_NEGATIVE_TERMS = ["on foot", "on-foot", "outfit", "campaign", "lookbook", "editorial", "thumbnail", "collage", "grid", "top 10", "best shoes", "collection", "ranking"];
-const STOPWORDS = new Set(["the", "and", "for", "with", "shoe", "shoes", "basketball", "model", "official", "product", "image", "view"]);
+const STRONG_POSITIVE_TERMS = ["official", "picture", "product", "retailer", "shoe"];
+const STRONG_NEGATIVE_TERMS = ["thumbnail", "sprite", "proxy", "logo", "icon", "top 10", "ranking"];
+const STOPWORDS = new Set(["the", "and", "for", "with", "shoe", "shoes", "model", "official", "picture", "image"]);
 
 function normalizeText(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
@@ -112,14 +110,9 @@ export function getSerpApiConfig(): SerpApiConfig | null {
   return { provider, apiKey, engine, baseUrl };
 }
 
-function buildSearchQueries(brand: string, shoeName: string, releaseYear?: number | null) {
-  const core = `${brand} ${shoeName} ${releaseYear ?? ""}`.replace(/\s+/g, " ").trim();
-  return [
-    `${core} official product image side view basketball shoe`,
-    `${core} lateral product photo basketball shoe`,
-    `${core} retailer product image side profile`,
-    `${core} official basketball shoe product shot lateral`
-  ];
+function buildSearchQueries(brand: string, shoeName: string) {
+  const core = `${brand} ${shoeName}`.replace(/\s+/g, " ").trim();
+  return [`${core} official picture`];
 }
 
 type ScoredCandidate = {
@@ -128,28 +121,14 @@ type ScoredCandidate = {
   sourcePageUrl: string;
   sourceDomain: string;
   sourceType: SourceType;
-  width: number;
-  height: number;
   score: number;
-  isSideViewLike: boolean;
   isHighResolution: boolean;
 };
 
-function scoreCandidates({
-  brand,
-  shoeName,
-  releaseYear,
-  results
-}: {
-  brand: string;
-  shoeName: string;
-  releaseYear?: number | null;
-  results: SerpApiImageResult[];
-}): ScoredCandidate[] {
+function scoreCandidates({ brand, shoeName, results }: { brand: string; shoeName: string; results: SerpApiImageResult[] }): ScoredCandidate[] {
   const brandTokens = tokens(brand);
   const shoeTokens = tokens(shoeName);
   const shoeNumberTokens = shoeTokens.filter((token) => /^\d+[a-z]*$/.test(token));
-  const releaseYearToken = releaseYear ? String(releaseYear) : null;
 
   const scored: ScoredCandidate[] = [];
 
@@ -170,58 +149,36 @@ function scoreCandidates({
     const sourceType = classifySourceType(sourceDomain);
 
     if (shoeNumberTokens.some((token) => !haystack.includes(token))) continue;
-    if (releaseYearToken && !haystack.includes(releaseYearToken)) continue;
 
     const matchedShoeTokens = shoeTokens.filter((token) => haystack.includes(token));
     const matchedBrandTokens = brandTokens.filter((token) => haystack.includes(token));
 
-    if (shoeTokens.length > 0 && matchedShoeTokens.length < Math.max(1, Math.ceil(shoeTokens.length * 0.7))) continue;
+    if (shoeTokens.length > 0 && matchedShoeTokens.length < Math.max(1, Math.ceil(shoeTokens.length * 0.45))) continue;
     if (brandTokens.length > 0 && matchedBrandTokens.length === 0) continue;
 
     const lowerTitle = title.toLowerCase();
     let score = 0;
 
-    score += matchedShoeTokens.length * 10;
-    score += matchedBrandTokens.length * 8;
+    score += matchedShoeTokens.length * 11;
+    score += matchedBrandTokens.length * 9;
 
-    if (sourceType === "official") score += 42;
-    else if (sourceType === "retailer") score += 32;
-    else if (sourceType === "review_media") score += 16;
+    if (sourceType === "official") score += 44;
+    else if (sourceType === "retailer") score += 34;
+    else if (sourceType === "review_media") score += 18;
 
     const positiveHits = STRONG_POSITIVE_TERMS.filter((term) => lowerTitle.includes(term));
     const negativeHits = STRONG_NEGATIVE_TERMS.filter((term) => lowerTitle.includes(term));
     score += positiveHits.length * 6;
-    score -= negativeHits.length * 10;
-
-    const isSideViewLike = ["side", "lateral", "profile"].some((term) => lowerTitle.includes(term));
-    if (isSideViewLike) score += 14;
+    score -= negativeHits.length * 8;
 
     if (isLikelyDirectImageUrl(imageUrl)) score += 24;
-    if (/cdn|images|media|img/i.test(imageUrl)) score += 5;
-    if (/thumbnail|thumb|sprite|proxy/i.test(imageUrl)) score -= 24;
+    if (/cdn|images|media|img/i.test(imageUrl)) score += 6;
+    if (/thumbnail|thumb|sprite|proxy/i.test(imageUrl)) score -= 12;
 
-    const isLandscape = width > 0 && height > 0 && width >= height;
-    if (isLandscape) score += 4;
+    const isHighResolution = width >= 1000 && height >= 600;
+    if (isHighResolution) score += 8;
 
-    const isHighResolution = width >= 1200 && height >= 700;
-    if (isHighResolution) score += 10;
-    else if (width >= 800 && height >= 500) score += 4;
-    else if (width > 0 && height > 0) score -= 12;
-
-    if ((width > 0 && width < MIN_WIDTH) || (height > 0 && height < MIN_HEIGHT)) score -= 30;
-
-    scored.push({
-      imageUrl,
-      title,
-      sourcePageUrl,
-      sourceDomain,
-      sourceType,
-      width,
-      height,
-      score,
-      isSideViewLike,
-      isHighResolution
-    });
+    scored.push({ imageUrl, title, sourcePageUrl, sourceDomain, sourceType, score, isHighResolution });
   }
 
   return scored.sort((a, b) => b.score - a.score);
@@ -237,16 +194,10 @@ function buildSelectionReason(candidate: ScoredCandidate) {
           ? "review"
           : "unknown-source";
 
-  if (candidate.isSideViewLike && candidate.isHighResolution) {
-    return `${sourcePrefix} side-view product image with exact model match and high resolution`;
-  }
-  if (candidate.isSideViewLike) {
-    return `${sourcePrefix} side-view product image with exact model match`;
-  }
   if (candidate.isHighResolution) {
-    return `${sourcePrefix} product image with exact model match and high resolution`;
+    return `${sourcePrefix} image with exact model match and strong downloadability`;
   }
-  return `${sourcePrefix} product image chosen as best exact model candidate`;
+  return `${sourcePrefix} image with exact model match and successful download`;
 }
 
 async function searchCandidates(config: SerpApiConfig, query: string): Promise<SerpApiImageResult[]> {
@@ -266,8 +217,7 @@ async function searchCandidates(config: SerpApiConfig, query: string): Promise<S
 function getDownloadHeaders(url: string, sourcePageUrl: string) {
   const referer = sourcePageUrl || `${new URL(url).origin}/`;
   return {
-    "user-agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
     accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
     "accept-language": "en-US,en;q=0.9",
     referer
@@ -288,37 +238,24 @@ async function probeCandidate(candidate: ScoredCandidate) {
       signal: AbortSignal.timeout(12_000)
     });
 
-    if (!head.ok) {
-      return { ok: false as const, reason: `probe_head_status_${head.status}` };
-    }
+    if (!head.ok) return { ok: false as const, reason: `probe_head_status_${head.status}` };
 
     const ct = (head.headers.get("content-type") ?? "").toLowerCase();
-    if (ct.startsWith("image/")) {
-      return { ok: true as const, reason: "probe_head_image_ok" };
-    }
+    if (ct.startsWith("image/")) return { ok: true as const, reason: "probe_head_image_ok" };
 
     const partial = await fetch(candidate.imageUrl, {
       method: "GET",
       redirect: "follow",
-      headers: {
-        ...getDownloadHeaders(candidate.imageUrl, candidate.sourcePageUrl),
-        range: "bytes=0-2047"
-      },
+      headers: { ...getDownloadHeaders(candidate.imageUrl, candidate.sourcePageUrl), range: "bytes=0-2047" },
       signal: AbortSignal.timeout(12_000)
     });
 
-    if (!partial.ok) {
-      return { ok: false as const, reason: `probe_get_status_${partial.status}` };
-    }
+    if (!partial.ok) return { ok: false as const, reason: `probe_get_status_${partial.status}` };
 
     const partialCt = (partial.headers.get("content-type") ?? "").toLowerCase();
     const bytes = Buffer.from(await partial.arrayBuffer());
-    if (!partialCt.startsWith("image/")) {
-      return { ok: false as const, reason: `probe_non_image_content_type_${partialCt || "unknown"}` };
-    }
-    if (looksLikeHtml(bytes)) {
-      return { ok: false as const, reason: "probe_html_payload" };
-    }
+    if (!partialCt.startsWith("image/")) return { ok: false as const, reason: `probe_non_image_content_type_${partialCt || "unknown"}` };
+    if (looksLikeHtml(bytes)) return { ok: false as const, reason: "probe_html_payload" };
 
     return { ok: true as const, reason: "probe_get_image_ok" };
   } catch (error) {
@@ -338,9 +275,7 @@ async function downloadCandidate(candidate: ScoredCandidate) {
     if (!response.ok) return { ok: false as const, reason: `download_status_${response.status}` };
 
     const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
-    if (!contentType.startsWith("image/")) {
-      return { ok: false as const, reason: `download_non_image_content_type_${contentType || "unknown"}` };
-    }
+    if (!contentType.startsWith("image/")) return { ok: false as const, reason: `download_non_image_content_type_${contentType || "unknown"}` };
 
     const imageBytes = Buffer.from(await response.arrayBuffer());
     if (looksLikeHtml(imageBytes)) return { ok: false as const, reason: "download_html_payload" };
@@ -356,7 +291,7 @@ export async function importBestShoeImage(input: ImportBestImageInput): Promise<
   const config = getSerpApiConfig();
   if (!config) return { ok: false, error: "No suitable image found", detail: "serp_api_config_missing" };
 
-  const queries = buildSearchQueries(input.shoe.brand, input.shoe.shoe_name, input.shoe.release_year);
+  const queries = buildSearchQueries(input.shoe.brand, input.shoe.shoe_name);
   const uniqueResults: SerpApiImageResult[] = [];
   const seen = new Set<string>();
 
@@ -370,13 +305,7 @@ export async function importBestShoeImage(input: ImportBestImageInput): Promise<
     }
   }
 
-  const ranked = scoreCandidates({
-    brand: input.shoe.brand,
-    shoeName: input.shoe.shoe_name,
-    releaseYear: input.shoe.release_year,
-    results: uniqueResults
-  });
-
+  const ranked = scoreCandidates({ brand: input.shoe.brand, shoeName: input.shoe.shoe_name, results: uniqueResults });
   if (!ranked.length) return { ok: false, error: "No suitable image found" };
 
   const attempts: string[] = [];
@@ -402,18 +331,10 @@ export async function importBestShoeImage(input: ImportBestImageInput): Promise<
   }
 
   if (!selectedCandidate || !selectedDownload) {
-    return {
-      ok: false,
-      error: "Selected image could not be downloaded",
-      detail: attempts.length ? attempts.join("; ").slice(0, 1800) : "no_viable_candidate_download"
-    };
+    return { ok: false, error: "Selected image could not be downloaded", detail: attempts.length ? attempts.join("; ").slice(0, 1800) : "no_viable_candidate_download" };
   }
 
-  const extension = selectedDownload.contentType.includes("png")
-    ? "png"
-    : selectedDownload.contentType.includes("webp")
-      ? "webp"
-      : "jpg";
+  const extension = selectedDownload.contentType.includes("png") ? "png" : selectedDownload.contentType.includes("webp") ? "webp" : "jpg";
   const bucket = input.bucket ?? "shoe-images";
   const path = `shoes/${input.shoe.id}/${Date.now()}-${randomUUID()}.${extension}`;
 
