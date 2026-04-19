@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdminPageContext } from "@/lib/admin/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BulkImageImportButton } from "@/components/admin/bulk-image-import-button";
 
 export default async function AdminPage() {
   await requireAdminPageContext();
@@ -36,6 +37,9 @@ export default async function AdminPage() {
           </Link>
         </div>
         <p className="mt-2 text-sm soft-text">Use Review Queue for pending moderation. Use Published Records for live edits.</p>
+        <div className="mt-3">
+          <BulkImageImportButton />
+        </div>
       </Card>
 
       <section className="grid gap-3">

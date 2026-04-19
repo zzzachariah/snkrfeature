@@ -52,13 +52,11 @@ export interface ShoeImageRecord {
   search_provider?: string | null;
   search_model?: string | null;
   search_used?: boolean;
-  reference_summary?: string | null;
-  reference_image_url?: string | null;
-  generation_path?: string | null;
-  reference_image_attached?: boolean | null;
-  reference_image_mime_type?: string | null;
-  reference_image_bytes?: number | null;
-  prompt: string | null;
+  source_image_url?: string | null;
+  source_domain?: string | null;
+  source_type?: "official" | "retailer" | "review_media" | "unknown" | null;
+  selection_reason?: string | null;
+  prompt?: string | null;
   created_at: string;
   approved_at: string | null;
   rejected_at: string | null;
