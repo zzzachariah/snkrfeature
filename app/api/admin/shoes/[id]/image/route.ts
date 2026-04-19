@@ -185,13 +185,24 @@ function getPackyImageConfig(): PackyImageConfig | null {
 
 function buildPackyImageRequest(config: PackyImageConfig, prompt: string, referenceInlineData?: { mimeType: string; data: string }) {
   const endpoint = `${config.baseUrl.replace(/\/$/, "")}/v1beta/models/${config.model}:generateContent`;
+  const parts = referenceInlineData
+    ? [
+        { text: prompt },
+        {
+          inlineData: {
+            mimeType: referenceInlineData.mimeType,
+            data: referenceInlineData.data
+          }
+        }
+      ]
+    : [{ text: prompt }];
   return {
     endpoint,
     body: {
       contents: [
         {
           role: "user",
-          parts: referenceInlineData ? [{ text: prompt }, { inlineData: referenceInlineData }] : [{ text: prompt }]
+          parts
         }
       ],
       generationConfig: {
@@ -435,24 +446,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const imageConfig = getPackyImageConfig();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "shoe-images";
-  
   if (!searchConfig || !imageConfig || !supabaseUrl) {
     return fail({
       status: 500,
       error: "Image generation environment variables are incomplete.",
       step: "env",
       detail: `PACKYAPI_SEARCH_BASE_URL=${Boolean(process.env.PACKYAPI_SEARCH_BASE_URL)} PACKYAPI_SEARCH_MODEL=${Boolean(process.env.PACKYAPI_SEARCH_MODEL)} PACKYAPI_SEARCH_KEY=${Boolean(process.env.PACKYAPI_SEARCH_KEY)} PACKYAPI_IMAGE_BASE_URL=${Boolean(process.env.PACKYAPI_IMAGE_BASE_URL)} PACKYAPI_IMAGE_MODEL=${Boolean(process.env.PACKYAPI_IMAGE_MODEL)} PACKYAPI_IMAGE_KEY=${Boolean(process.env.PACKYAPI_IMAGE_KEY)} supabaseUrl=${Boolean(supabaseUrl)}`,
-      requestId
-    });
-  }
-  
-  const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
-  let selectedReference: SelectedReference | null = null;
-  
-  try {
-    selectedReference = await searchReferenceImage({
-      config: searchConfig,
-      shoeLabel,
       requestId
     });
   } catch (error) {
@@ -479,6 +478,65 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
   }
 
+  const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
+  let selectedReference: SelectedReference | null = null;
+  try {
+    selectedReference = await searchReferenceImage({
+      config: searchConfig,
+      shoeLabel,
+      requestId
+    });
+  } catch (error) {
+    console.error(`[admin] /image requestId=${requestId} step=search_request fail`, error);
+  }
+  console.info(`[admin] /image requestId=${requestId} step=search_reference_selected`, {
+    selectedReferenceUrl: selectedReference?.imageUrl ?? null,
+    selectedReferenceSourceType: selectedReference?.sourceType ?? null,
+    selectedReferenceSummaryCount: selectedReference?.summaryBullets.length ?? 0
+  });
+
+  let referenceInlineData: { mimeType: string; data: string } | undefined;
+  let referenceDownloadFailureReason: string | null = null;
+  let referenceBytesLength = 0;
+  if (selectedReference?.imageUrl) {
+    const refImageResponse = await fetch(selectedReference.imageUrl, {
+      headers: {
+        accept: "image/*,*/*;q=0.8",
+        "user-agent": "snkrfeature-reference-fetch/1.0"
+      }
+    });
+    if (refImageResponse.ok) {
+      const refArrayBuffer = await refImageResponse.arrayBuffer();
+      const refBytes = Buffer.from(refArrayBuffer);
+      const detectedMimeType = refImageResponse.headers.get("content-type") ?? "image/jpeg";
+      referenceBytesLength = refBytes.length;
+      const looksLikeImage = detectedMimeType.toLowerCase().startsWith("image/");
+      if (refBytes.length > 0 && looksLikeImage) {
+        referenceInlineData = {
+          mimeType: detectedMimeType,
+          data: refBytes.toString("base64")
+        };
+      } else {
+        referenceDownloadFailureReason = !looksLikeImage ? `invalid_mime_${detectedMimeType}` : "empty_reference_image_bytes";
+      }
+    } else {
+      referenceDownloadFailureReason = `reference_image_download_failed_status_${refImageResponse.status}`;
+      console.warn(`[admin] /image requestId=${requestId} step=search_reference_fetch fail`, {
+        status: refImageResponse.status,
+        referenceUrl: selectedReference.imageUrl
+      });
+    }
+  } else {
+    referenceDownloadFailureReason = "reference_url_missing";
+  }
+  console.info(`[admin] /image requestId=${requestId} step=search_reference_download`, {
+    selectedReferenceUrl: selectedReference?.imageUrl ?? null,
+    referenceDownloadSuccess: Boolean(referenceInlineData),
+    referenceDownloadFailureReason,
+    referenceMimeType: referenceInlineData?.mimeType ?? null,
+    referenceBytesLength
+  });
+
   const referenceSummary =
     selectedReference?.summaryBullets.length ? selectedReference.summaryBullets : ["No acceptable reference image was available from search."];
   const prompt = buildShoeImagePrompt(shoe.brand, shoe.shoe_name, referenceSummary);
@@ -494,7 +552,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   let imageMimeType = "image/png";
   let providerBodyText = "";
   let generationFailureDetail = "";
+  const generationPath = referenceInlineData ? "reference_assisted" : "prompt_only_fallback";
   const { endpoint: providerEndpoint, body: providerBody } = buildPackyImageRequest(imageConfig, prompt, referenceInlineData);
+  const requestParts = (providerBody.contents?.[0]?.parts ?? []) as Array<{ text?: string; inlineData?: { mimeType?: string; data?: string } }>;
+  const requestIncludesImageInput = requestParts.some((part) => Boolean(part.inlineData?.data));
 
   console.info(`[admin] /image requestId=${requestId} step=provider_request config`, {
     imageBaseUrlSource: imageConfig.baseUrlSource,
@@ -503,8 +564,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     imageFallbackUsed: imageConfig.fallbackUsed,
     providerEndpoint,
     providerShape: "gemini_generateContent",
-    searchUsed: Boolean(referenceInlineData)
+    generationPath,
+    referenceImageIncluded: requestIncludesImageInput,
+    referenceMimeType: referenceInlineData?.mimeType ?? null,
+    referenceBytesLength,
+    requestPartsCount: requestParts.length
   });
+
+  if (!requestIncludesImageInput) {
+    console.warn(`[admin] /image requestId=${requestId} step=provider_request reference_missing`, {
+      generationPath,
+      referenceDownloadFailureReason
+    });
+  }
   const generationResponse = await fetch(providerEndpoint, {
     method: "POST",
     headers: {
@@ -602,7 +674,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       search_used: Boolean(referenceInlineData),
       reference_summary: referenceSummary.join("; "),
       reference_image_url: selectedReference?.imageUrl ?? null,
-      generation_error: `Provider error: ${(generationFailureDetail || providerBodyText).slice(0, 500)} | fallback=prompt_only_${referenceInlineData ? "no" : "yes"}`,
+      generation_error: `Provider error: ${(generationFailureDetail || providerBodyText).slice(0, 500)} | generation_path=${generationPath} | reference_download_failure=${referenceDownloadFailureReason ?? "none"}`,
       rejected_at: new Date().toISOString(),
       rejection_reason: "Generation failed"
     });
@@ -610,7 +682,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       status: 502,
       error: "Provider generation failed.",
       step: "provider_request",
-      detail: `${generationFailureDetail || providerBodyText.slice(0, 2000)} | fallback=prompt_only_${referenceInlineData ? "no" : "yes"}`,
+      detail: `${generationFailureDetail || providerBodyText.slice(0, 2000)} | generation_path=${generationPath} | reference_download_failure=${referenceDownloadFailureReason ?? "none"}`,
       requestId
     });
   }
