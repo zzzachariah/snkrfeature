@@ -155,7 +155,9 @@ function getPackySearchConfig(): PackySearchConfig | null {
   const baseUrl = process.env.PACKYAPI_SEARCH_BASE_URL;
   const model = process.env.PACKYAPI_SEARCH_MODEL;
   const apiKey = process.env.PACKYAPI_SEARCH_KEY;
+
   if (!baseUrl || !model || !apiKey) return null;
+
   return {
     baseUrl,
     model,
@@ -171,7 +173,9 @@ function getPackyImageConfig(): PackyImageConfig | null {
   const baseUrl = process.env.PACKYAPI_IMAGE_BASE_URL;
   const model = process.env.PACKYAPI_IMAGE_MODEL;
   const apiKey = process.env.PACKYAPI_IMAGE_KEY;
+
   if (!baseUrl || !model || !apiKey) return null;
+
   return {
     baseUrl,
     model,
@@ -183,19 +187,25 @@ function getPackyImageConfig(): PackyImageConfig | null {
   };
 }
 
-function buildPackyImageRequest(config: PackyImageConfig, prompt: string, referenceInlineData?: { mimeType: string; data: string }) {
+function buildPackyImageRequest(
+  config: PackyImageConfig,
+  prompt: string,
+  referenceInlineData?: { mimeType: string; data: string }
+) {
   const endpoint = `${config.baseUrl.replace(/\/$/, "")}/v1beta/models/${config.model}:generateContent`;
+
   const parts = referenceInlineData
     ? [
-        { text: prompt },
         {
           inlineData: {
             mimeType: referenceInlineData.mimeType,
             data: referenceInlineData.data
           }
-        }
+        },
+        { text: prompt }
       ]
     : [{ text: prompt }];
+
   return {
     endpoint,
     body: {
@@ -222,6 +232,7 @@ async function searchReferenceImage({
   requestId: string;
 }): Promise<SelectedReference | null> {
   const endpoint = `${config.baseUrl.replace(/\/$/, "")}/v1beta/models/${config.model}:generateContent`;
+
   const searchPrompt = `You are selecting exactly ONE public reference image for generating a technical side-view shoe illustration.
 
 Target shoe model: "${shoeLabel}".
@@ -260,6 +271,7 @@ If no acceptable image is found, return:
     model: config.model,
     shoeLabel
   });
+
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
@@ -275,12 +287,17 @@ If no acceptable image is found, return:
       }
     })
   });
+
   const bodyText = await response.text();
+
   console.info(`[admin] /image requestId=${requestId} step=search_request response`, {
     status: response.status,
     raw: bodyText
   });
-  if (!response.ok) throw new Error(`search_provider_status=${response.status} body=${bodyText.slice(0, 500)}`);
+
+  if (!response.ok) {
+    throw new Error(`search_provider_status=${response.status} body=${bodyText.slice(0, 500)}`);
+  }
 
   let parsed: unknown;
   try {
@@ -288,11 +305,15 @@ If no acceptable image is found, return:
   } catch (error) {
     throw new Error(`search_response_non_json ${(error as Error).message}`);
   }
+
   const textPart =
-    (parsed as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })?.candidates?.[0]?.content?.parts?.find((part) =>
-      Boolean(part.text)
+    (parsed as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })?.candidates?.[0]?.content?.parts?.find(
+      (part) => Boolean(part.text)
     )?.text ?? "";
-  if (!textPart) throw new Error("search_response_missing_text");
+
+  if (!textPart) {
+    throw new Error("search_response_missing_text");
+  }
 
   let selected: unknown;
   try {
@@ -306,12 +327,19 @@ If no acceptable image is found, return:
     reference_summary?: string[];
     source_type?: string;
   };
+
   const imageUrl = typeof record.image_url === "string" ? record.image_url.trim() : "";
   const summaryBullets = Array.isArray(record.reference_summary)
     ? record.reference_summary.filter((v): v is string => typeof v === "string" && v.trim().length > 0).slice(0, 6)
     : [];
+
   if (!imageUrl) return null;
-  return { imageUrl, summaryBullets, sourceType: record.source_type };
+
+  return {
+    imageUrl,
+    summaryBullets,
+    sourceType: record.source_type
+  };
 }
 
 async function getLatestByStatus(supabase: SupabaseClient, shoeId: string, status: "pending" | "approved") {
@@ -323,7 +351,11 @@ async function getLatestByStatus(supabase: SupabaseClient, shoeId: string, statu
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
   return data;
 }
 
@@ -336,8 +368,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     console.error(`[admin] /image requestId=${requestId} step=auth fail status=401_or_403`);
     return auth.error;
   }
+
   const { supabase, user } = auth;
   const adminClient = createAdminClient();
+
   if (!adminClient) {
     return fail({
       status: 500,
@@ -357,6 +391,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       requestId
     });
   }
+
   const { id: shoeId } = await params;
 
   if (parsed.data.action === "approve") {
@@ -371,11 +406,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const nowIso = new Date().toISOString();
+
     const { error: demoteError } = await supabase
       .from("shoe_images")
-      .update({ status: "rejected", rejected_at: nowIso, rejection_reason: "Superseded by newer approved image." })
+      .update({
+        status: "rejected",
+        rejected_at: nowIso,
+        rejection_reason: "Superseded by newer approved image."
+      })
       .eq("shoe_id", shoeId)
       .eq("status", "approved");
+
     if (demoteError) {
       return fail({
         status: 500,
@@ -388,8 +429,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { error: approveError } = await supabase
       .from("shoe_images")
-      .update({ status: "approved", approved_at: nowIso, rejected_at: null, rejection_reason: null })
+      .update({
+        status: "approved",
+        approved_at: nowIso,
+        rejected_at: null,
+        rejection_reason: null
+      })
       .eq("id", pending.id);
+
     if (approveError) {
       return fail({
         status: 500,
@@ -413,10 +460,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         requestId
       });
     }
+
     const { error: rejectError } = await supabase
       .from("shoe_images")
-      .update({ status: "rejected", rejected_at: new Date().toISOString(), rejection_reason: "Rejected by admin review." })
+      .update({
+        status: "rejected",
+        rejected_at: new Date().toISOString(),
+        rejection_reason: "Rejected by admin review."
+      })
       .eq("id", pending.id);
+
     if (rejectError) {
       return fail({
         status: 500,
@@ -426,11 +479,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         requestId
       });
     }
+
     return success({ message: "Image rejected" }, requestId);
   }
 
   console.info(`[admin] /image requestId=${requestId} step=shoe_load start shoeId=${shoeId}`);
-  const { data: shoe, error: shoeError } = await supabase.from("shoes").select("id, brand, shoe_name").eq("id", shoeId).maybeSingle();
+
+  const { data: shoe, error: shoeError } = await supabase
+    .from("shoes")
+    .select("id, brand, shoe_name")
+    .eq("id", shoeId)
+    .maybeSingle();
+
   if (shoeError || !shoe) {
     return fail({
       status: 404,
@@ -440,13 +500,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       requestId
     });
   }
+
   console.info(`[admin] /image requestId=${requestId} step=shoe_load success`, shoe);
 
   const searchConfig = getPackySearchConfig();
   const imageConfig = getPackyImageConfig();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "shoe-images";
-  
+
   if (!searchConfig || !imageConfig || !supabaseUrl) {
     return fail({
       status: 500,
@@ -457,27 +518,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   }
 
-  let referenceInlineData: { mimeType: string; data: string } | undefined;
-  if (selectedReference?.imageUrl) {
-    const refImageResponse = await fetch(selectedReference.imageUrl);
-    if (refImageResponse.ok) {
-      const refArrayBuffer = await refImageResponse.arrayBuffer();
-      const refBytes = Buffer.from(refArrayBuffer);
-      if (refBytes.length > 0) {
-        referenceInlineData = {
-          mimeType: refImageResponse.headers.get("content-type") ?? "image/jpeg",
-          data: refBytes.toString("base64")
-        };
-      }
-    } else {
-      console.warn(`[admin] /image requestId=${requestId} step=search_reference_fetch fail`, {
-        status: refImageResponse.status,
-        referenceUrl: selectedReference.imageUrl
-      });
-    }
-  }
-
   const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
+
   let selectedReference: SelectedReference | null = null;
   try {
     selectedReference = await searchReferenceImage({
@@ -488,6 +530,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   } catch (error) {
     console.error(`[admin] /image requestId=${requestId} step=search_request fail`, error);
   }
+
   console.info(`[admin] /image requestId=${requestId} step=search_reference_selected`, {
     selectedReferenceUrl: selectedReference?.imageUrl ?? null,
     selectedReferenceSourceType: selectedReference?.sourceType ?? null,
@@ -497,37 +540,52 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   let referenceInlineData: { mimeType: string; data: string } | undefined;
   let referenceDownloadFailureReason: string | null = null;
   let referenceBytesLength = 0;
+
   if (selectedReference?.imageUrl) {
-    const refImageResponse = await fetch(selectedReference.imageUrl, {
-      headers: {
-        accept: "image/*,*/*;q=0.8",
-        "user-agent": "snkrfeature-reference-fetch/1.0"
-      }
-    });
-    if (refImageResponse.ok) {
-      const refArrayBuffer = await refImageResponse.arrayBuffer();
-      const refBytes = Buffer.from(refArrayBuffer);
-      const detectedMimeType = refImageResponse.headers.get("content-type") ?? "image/jpeg";
-      referenceBytesLength = refBytes.length;
-      const looksLikeImage = detectedMimeType.toLowerCase().startsWith("image/");
-      if (refBytes.length > 0 && looksLikeImage) {
-        referenceInlineData = {
-          mimeType: detectedMimeType,
-          data: refBytes.toString("base64")
-        };
+    try {
+      const refImageResponse = await fetch(selectedReference.imageUrl, {
+        headers: {
+          accept: "image/*,*/*;q=0.8",
+          "user-agent": "snkrfeature-reference-fetch/1.0"
+        }
+      });
+
+      if (refImageResponse.ok) {
+        const refArrayBuffer = await refImageResponse.arrayBuffer();
+        const refBytes = Buffer.from(refArrayBuffer);
+        const detectedMimeType = refImageResponse.headers.get("content-type") ?? "image/jpeg";
+
+        referenceBytesLength = refBytes.length;
+        const looksLikeImage = detectedMimeType.toLowerCase().startsWith("image/");
+
+        if (refBytes.length > 0 && looksLikeImage) {
+          referenceInlineData = {
+            mimeType: detectedMimeType,
+            data: refBytes.toString("base64")
+          };
+        } else {
+          referenceDownloadFailureReason = !looksLikeImage
+            ? `invalid_mime_${detectedMimeType}`
+            : "empty_reference_image_bytes";
+        }
       } else {
-        referenceDownloadFailureReason = !looksLikeImage ? `invalid_mime_${detectedMimeType}` : "empty_reference_image_bytes";
+        referenceDownloadFailureReason = `reference_image_download_failed_status_${refImageResponse.status}`;
+        console.warn(`[admin] /image requestId=${requestId} step=search_reference_fetch fail`, {
+          status: refImageResponse.status,
+          referenceUrl: selectedReference.imageUrl
+        });
       }
-    } else {
-      referenceDownloadFailureReason = `reference_image_download_failed_status_${refImageResponse.status}`;
+    } catch (error) {
+      referenceDownloadFailureReason = error instanceof Error ? error.message : "reference_image_fetch_exception";
       console.warn(`[admin] /image requestId=${requestId} step=search_reference_fetch fail`, {
-        status: refImageResponse.status,
-        referenceUrl: selectedReference.imageUrl
+        referenceUrl: selectedReference.imageUrl,
+        error: referenceDownloadFailureReason
       });
     }
   } else {
     referenceDownloadFailureReason = "reference_url_missing";
   }
+
   console.info(`[admin] /image requestId=${requestId} step=search_reference_download`, {
     selectedReferenceUrl: selectedReference?.imageUrl ?? null,
     referenceDownloadSuccess: Boolean(referenceInlineData),
@@ -537,8 +595,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   });
 
   const referenceSummary =
-    selectedReference?.summaryBullets.length ? selectedReference.summaryBullets : ["No acceptable reference image was available from search."];
+    selectedReference?.summaryBullets.length
+      ? selectedReference.summaryBullets
+      : ["No acceptable reference image was available from search."];
+
   const prompt = buildShoeImagePrompt(shoe.brand, shoe.shoe_name, referenceSummary);
+
   console.info(`[admin] /image requestId=${requestId} step=prompt_built`, {
     prompt,
     imageModel: imageConfig.model,
@@ -551,9 +613,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   let imageMimeType = "image/png";
   let providerBodyText = "";
   let generationFailureDetail = "";
+
   const generationPath = referenceInlineData ? "reference_assisted" : "prompt_only_fallback";
-  const { endpoint: providerEndpoint, body: providerBody } = buildPackyImageRequest(imageConfig, prompt, referenceInlineData);
-  const requestParts = (providerBody.contents?.[0]?.parts ?? []) as Array<{ text?: string; inlineData?: { mimeType?: string; data?: string } }>;
+  const { endpoint: providerEndpoint, body: providerBody } = buildPackyImageRequest(
+    imageConfig,
+    prompt,
+    referenceInlineData
+  );
+
+  const requestParts = (providerBody.contents?.[0]?.parts ?? []) as Array<{
+    text?: string;
+    inlineData?: { mimeType?: string; data?: string };
+  }>;
+
   const requestIncludesImageInput = requestParts.some((part) => Boolean(part.inlineData?.data));
 
   console.info(`[admin] /image requestId=${requestId} step=provider_request config`, {
@@ -576,6 +648,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       referenceDownloadFailureReason
     });
   }
+
   const generationResponse = await fetch(providerEndpoint, {
     method: "POST",
     headers: {
@@ -589,7 +662,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   console.info(`[admin] /image requestId=${requestId} step=provider_response`, {
     status: generationResponse.status
   });
+
   providerBodyText = await generationResponse.text();
+
   console.info(`[admin] /image requestId=${requestId} step=provider_body`, {
     raw: providerBodyText
   });
@@ -598,6 +673,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     generationFailureDetail = providerBodyText.slice(0, 2000);
   } else {
     let generationJson: unknown;
+
     try {
       generationJson = JSON.parse(providerBodyText);
     } catch (error) {
@@ -615,12 +691,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           };
         }>;
       };
+
       const imagePayload = parsedJson?.data?.[0];
       const imageUrl = imagePayload?.url;
       const openAiB64 = imagePayload?.b64_json;
-      const geminiInlineData = parsedJson?.candidates?.[0]?.content?.parts?.find((part) => Boolean(part.inlineData?.data))?.inlineData;
+      const geminiInlineData =
+        parsedJson?.candidates?.[0]?.content?.parts?.find((part) => Boolean(part.inlineData?.data))?.inlineData;
       const b64 = openAiB64 ?? geminiInlineData?.data;
       imageMimeType = geminiInlineData?.mimeType ?? "image/png";
+
       console.info(`[admin] /image requestId=${requestId} step=provider_parse`, {
         hasDataArray: Array.isArray(parsedJson?.data),
         hasGeminiCandidates: Array.isArray(parsedJson?.candidates),
@@ -634,8 +713,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       } else if (b64) {
         imageBytes = Buffer.from(b64, "base64");
       } else if (imageUrl) {
-        console.info(`[admin] /image requestId=${requestId} step=provider_image_fetch start`, { imageUrl });
+        console.info(`[admin] /image requestId=${requestId} step=provider_image_fetch start`, {
+          imageUrl
+        });
+
         const remoteImageResponse = await fetch(imageUrl);
+
         if (!remoteImageResponse.ok) {
           generationFailureDetail = `remote_status=${remoteImageResponse.status}`;
         } else {
@@ -647,10 +730,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         generationFailureDetail = "empty image payload";
         imageBytes = null;
       }
+
       if (imageBytes && imageBytes.length < MIN_IMAGE_BYTES) {
         generationFailureDetail = `image payload too small (${imageBytes.length} bytes)`;
         imageBytes = null;
       }
+
       if (imageBytes) {
         console.info(`[admin] /image requestId=${requestId} step=provider_quality_check pass`, {
           bytes: imageBytes.length
@@ -677,6 +762,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       rejected_at: new Date().toISOString(),
       rejection_reason: "Generation failed"
     });
+
     return fail({
       status: 502,
       error: "Provider generation failed.",
@@ -687,10 +773,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const path = `shoes/${shoeId}/${Date.now()}-${randomUUID()}.png`;
+
   const { error: uploadError } = await adminClient.storage.from(bucket).upload(path, imageBytes, {
     upsert: false,
     contentType: imageMimeType
   });
+
   if (uploadError) {
     return fail({
       status: 500,
@@ -700,13 +788,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       requestId
     });
   }
-  console.info(`[admin] /image requestId=${requestId} step=storage_upload success`, { bucket, path });
+
+  console.info(`[admin] /image requestId=${requestId} step=storage_upload success`, {
+    bucket,
+    path
+  });
 
   const { error: closePendingError } = await supabase
     .from("shoe_images")
-    .update({ status: "rejected", rejected_at: new Date().toISOString(), rejection_reason: "Superseded by regenerated candidate." })
+    .update({
+      status: "rejected",
+      rejected_at: new Date().toISOString(),
+      rejection_reason: "Superseded by regenerated candidate."
+    })
     .eq("shoe_id", shoeId)
     .eq("status", "pending");
+
   if (closePendingError) {
     return fail({
       status: 500,
@@ -716,9 +813,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       requestId
     });
   }
+
   console.info(`[admin] /image requestId=${requestId} step=db_update success previous_pending_closed`);
 
   const publicUrl = buildPublicUrl(supabaseUrl, bucket, path);
+
   if (!path || !publicUrl) {
     return fail({
       status: 500,
@@ -744,6 +843,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     prompt,
     created_by: user.id
   });
+
   if (insertError) {
     return fail({
       status: 500,
@@ -753,7 +853,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       requestId
     });
   }
-  console.info(`[admin] /image requestId=${requestId} step=db_insert success`, { shoeId, path, publicUrl });
 
-  return success({ message: "Image pending review", storage_path: path, public_url: publicUrl }, requestId);
+  console.info(`[admin] /image requestId=${requestId} step=db_insert success`, {
+    shoeId,
+    path,
+    publicUrl
+  });
+
+  return success(
+    {
+      message: "Image pending review",
+      storage_path: path,
+      public_url: publicUrl
+    },
+    requestId
+  );
 }
