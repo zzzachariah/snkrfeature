@@ -597,27 +597,43 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const imageConfig = getPackyImageConfig();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "shoe-images";
-  if (!searchConfig || !imageConfig || !supabaseUrl) {
-    return fail({
-      status: 500,
-      error: "Image generation environment variables are incomplete.",
-      step: "env",
-      detail: `PACKYAPI_SEARCH_BASE_URL=${Boolean(process.env.PACKYAPI_SEARCH_BASE_URL)} PACKYAPI_SEARCH_MODEL=${Boolean(process.env.PACKYAPI_SEARCH_MODEL)} PACKYAPI_SEARCH_KEY=${Boolean(process.env.PACKYAPI_SEARCH_KEY)} PACKYAPI_IMAGE_BASE_URL=${Boolean(process.env.PACKYAPI_IMAGE_BASE_URL)} PACKYAPI_IMAGE_MODEL=${Boolean(process.env.PACKYAPI_IMAGE_MODEL)} PACKYAPI_IMAGE_KEY=${Boolean(process.env.PACKYAPI_IMAGE_KEY)} supabaseUrl=${Boolean(supabaseUrl)}`,
-      requestId
-    });
-    selectedReference = searchResult.selectedReference;
-    referenceSelectionFailureReason = searchResult.failureReason;
-  } catch (error) {
-    console.error(`[admin] /image requestId=${requestId} step=search_request fail`, error);
-    referenceSelectionFailureReason = error instanceof Error ? error.message : "search_request_error";
-  }
-  console.info(`[admin] /image requestId=${requestId} step=search_reference_selected`, {
-    selectedReferenceUrl: selectedReference?.imageUrl ?? null,
-    selectedReferenceSourceType: selectedReference?.sourceType ?? null,
-    selectedReferenceSummaryCount: selectedReference?.summaryBullets.length ?? 0,
-    referenceSelectionFailureReason
+if (!searchConfig || !imageConfig || !supabaseUrl) {
+  return fail({
+    status: 500,
+    error: "Image generation environment variables are incomplete.",
+    step: "env",
+    detail: `PACKYAPI_SEARCH_BASE_URL=${Boolean(process.env.PACKYAPI_SEARCH_BASE_URL)} PACKYAPI_SEARCH_MODEL=${Boolean(process.env.PACKYAPI_SEARCH_MODEL)} PACKYAPI_SEARCH_KEY=${Boolean(process.env.PACKYAPI_SEARCH_KEY)} PACKYAPI_IMAGE_BASE_URL=${Boolean(process.env.PACKYAPI_IMAGE_BASE_URL)} PACKYAPI_IMAGE_MODEL=${Boolean(process.env.PACKYAPI_IMAGE_MODEL)} PACKYAPI_IMAGE_KEY=${Boolean(process.env.PACKYAPI_IMAGE_KEY)} supabaseUrl=${Boolean(supabaseUrl)}`,
+    requestId
+  });
+}
+
+const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
+
+let selectedReference: SelectedReference | null = null;
+let referenceSelectionFailureReason: string | null = null;
+
+try {
+  const searchResult = await searchReferenceImage({
+    config: searchConfig,
+    shoeLabel,
+    requestId
   });
 
+  selectedReference = searchResult.selectedReference;
+  referenceSelectionFailureReason = searchResult.failureReason;
+} catch (error) {
+  console.error(`[admin] /image requestId=${requestId} step=search_request fail`, error);
+  referenceSelectionFailureReason =
+    error instanceof Error ? error.message : "search_request_error";
+}
+
+console.info(`[admin] /image requestId=${requestId} step=search_reference_selected`, {
+  selectedReferenceUrl: selectedReference?.imageUrl ?? null,
+  selectedReferenceSourceType: selectedReference?.sourceType ?? null,
+  selectedReferenceSummaryCount: selectedReference?.summaryBullets.length ?? 0,
+  referenceSelectionFailureReason
+});
+  
   const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
   let selectedReference: SelectedReference | null = null;
   let referenceSelectionFailureReason: string | null = null;
