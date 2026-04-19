@@ -48,7 +48,7 @@ export function ShoeDetailClient({
 }) {
   const { translate } = useLocale();
   const router = useRouter();
-  const [imageActionLoading, setImageActionLoading] = useState<"generate" | "approve" | "reject" | null>(null);
+  const [imageActionLoading, setImageActionLoading] = useState<"find" | "approve" | "reject" | null>(null);
   const [imageActionError, setImageActionError] = useState<string | null>(null);
   const [imageActionSuccess, setImageActionSuccess] = useState<string | null>(null);
 
@@ -84,7 +84,7 @@ export function ShoeDetailClient({
   const reviewImage = imageState.pending?.public_url ?? imageState.approved?.public_url ?? shoe.image_url;
   const hasPendingImage = Boolean(imageState.pending);
 
-  async function runAdminImageAction(action: "generate" | "approve" | "reject") {
+  async function runAdminImageAction(action: "find" | "approve" | "reject") {
     setImageActionLoading(action);
     setImageActionError(null);
     setImageActionSuccess(null);
@@ -99,12 +99,12 @@ export function ShoeDetailClient({
         const errorText = [json?.error, json?.step ? `step=${json.step}` : null, json?.detail ? `detail=${json.detail}` : null]
           .filter(Boolean)
           .join(" | ");
-        throw new Error(errorText || json?.message || translate("Image generation failed"));
+        throw new Error(errorText || json?.message || translate("Image import failed"));
       }
       setImageActionSuccess(json?.message ?? translate("Image approved"));
       router.refresh();
     } catch (error) {
-      setImageActionError(error instanceof Error ? error.message : translate("Image generation failed"));
+      setImageActionError(error instanceof Error ? error.message : translate("Image import failed"));
     } finally {
       setImageActionLoading(null);
     }
@@ -179,12 +179,12 @@ export function ShoeDetailClient({
 
         {isAdmin && (
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <Button type="button" onClick={() => runAdminImageAction("generate")} disabled={imageActionLoading !== null}>
-              {imageActionLoading === "generate"
-                ? translate("Generating image...")
+            <Button type="button" onClick={() => runAdminImageAction("find")} disabled={imageActionLoading !== null}>
+              {imageActionLoading === "find"
+                ? translate("Searching images...")
                 : hasPendingImage
-                  ? translate("Regenerate image")
-                  : translate("Generate image")}
+                  ? translate("Search again")
+                  : translate("Find image")}
             </Button>
             {hasPendingImage && (
               <>
@@ -194,7 +194,7 @@ export function ShoeDetailClient({
                   onClick={() => runAdminImageAction("approve")}
                   disabled={imageActionLoading !== null}
                 >
-                  {translate("Confirm image")}
+                  {translate("Approve image")}
                 </Button>
                 <Button
                   type="button"
