@@ -92,6 +92,26 @@ type SelectedReference = {
   sourceType?: string;
 };
 
+type PackySearchConfig = {
+  baseUrl: string;
+  model: string;
+  apiKey: string;
+  baseUrlSource: "PACKYAPI_SEARCH_BASE_URL";
+  modelSource: "PACKYAPI_SEARCH_MODEL";
+  keySource: "PACKYAPI_SEARCH_KEY";
+  fallbackUsed: false;
+};
+
+type PackyImageConfig = {
+  baseUrl: string;
+  model: string;
+  apiKey: string;
+  baseUrlSource: "PACKYAPI_IMAGE_BASE_URL";
+  modelSource: "PACKYAPI_IMAGE_MODEL";
+  keySource: "PACKYAPI_IMAGE_KEY";
+  fallbackUsed: false;
+};
+
 function buildShoeImagePrompt(brand: string, shoeName: string, summaryBullets: string[]) {
   const modelLabel = `${brand} ${shoeName}`.trim();
   const basePrompt = SHOE_PROMPT_BASE_TEMPLATE.replace("[SHOE NAME]", modelLabel);
@@ -131,50 +151,66 @@ function buildPublicUrl(baseUrl: string, bucket: string, path: string) {
   return `${baseUrl}/storage/v1/object/public/${bucket}/${path}`;
 }
 
-function getImageProviderConfig(baseUrl: string, model: string, prompt: string, referenceInlineData?: { mimeType: string; data: string }) {
-  const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
-  const isGeminiGenerateContent = model.includes("gemini");
-  const providerEndpoint = isGeminiGenerateContent
-    ? `${normalizedBaseUrl}/v1beta/models/${model}:generateContent`
-    : `${normalizedBaseUrl}/v1/images/generations`;
-  const providerBody = isGeminiGenerateContent
-    ? {
-        contents: [
-          {
-            role: "user",
-            parts: referenceInlineData ? [{ text: prompt }, { inlineData: referenceInlineData }] : [{ text: prompt }]
-          }
-        ],
-        generationConfig: {
-          responseModalities: ["TEXT", "IMAGE"]
-        }
-      }
-    : {
-        model,
-        prompt,
-        size: "1024x1024"
-      };
+function getPackySearchConfig(): PackySearchConfig | null {
+  const baseUrl = process.env.PACKYAPI_SEARCH_BASE_URL;
+  const model = process.env.PACKYAPI_SEARCH_MODEL;
+  const apiKey = process.env.PACKYAPI_SEARCH_KEY;
+  if (!baseUrl || !model || !apiKey) return null;
   return {
-    providerEndpoint,
-    providerBody,
-    providerShape: isGeminiGenerateContent ? "gemini_generateContent" : "openai_images_generations"
+    baseUrl,
+    model,
+    apiKey,
+    baseUrlSource: "PACKYAPI_SEARCH_BASE_URL",
+    modelSource: "PACKYAPI_SEARCH_MODEL",
+    keySource: "PACKYAPI_SEARCH_KEY",
+    fallbackUsed: false
+  };
+}
+
+function getPackyImageConfig(): PackyImageConfig | null {
+  const baseUrl = process.env.PACKYAPI_IMAGE_BASE_URL;
+  const model = process.env.PACKYAPI_IMAGE_MODEL;
+  const apiKey = process.env.PACKYAPI_IMAGE_KEY;
+  if (!baseUrl || !model || !apiKey) return null;
+  return {
+    baseUrl,
+    model,
+    apiKey,
+    baseUrlSource: "PACKYAPI_IMAGE_BASE_URL",
+    modelSource: "PACKYAPI_IMAGE_MODEL",
+    keySource: "PACKYAPI_IMAGE_KEY",
+    fallbackUsed: false
+  };
+}
+
+function buildPackyImageRequest(config: PackyImageConfig, prompt: string, referenceInlineData?: { mimeType: string; data: string }) {
+  const endpoint = `${config.baseUrl.replace(/\/$/, "")}/v1beta/models/${config.model}:generateContent`;
+  return {
+    endpoint,
+    body: {
+      contents: [
+        {
+          role: "user",
+          parts: referenceInlineData ? [{ text: prompt }, { inlineData: referenceInlineData }] : [{ text: prompt }]
+        }
+      ],
+      generationConfig: {
+        responseModalities: ["TEXT", "IMAGE"]
+      }
+    }
   };
 }
 
 async function searchReferenceImage({
-  baseUrl,
-  model,
-  apiKey,
+  config,
   shoeLabel,
   requestId
 }: {
-  baseUrl: string;
-  model: string;
-  apiKey: string;
+  config: PackySearchConfig;
   shoeLabel: string;
   requestId: string;
 }): Promise<SelectedReference | null> {
-  const endpoint = `${baseUrl.replace(/\/$/, "")}/v1beta/models/${model}:generateContent`;
+  const endpoint = `${config.baseUrl.replace(/\/$/, "")}/v1beta/models/${config.model}:generateContent`;
   const searchPrompt = `You are selecting exactly ONE public reference image for generating a technical side-view shoe illustration.
 
 Target shoe model: "${shoeLabel}".
@@ -204,13 +240,21 @@ If no acceptable image is found, return:
   "selection_reason": "NO_ACCEPTABLE_REFERENCE"
 }`;
 
-  console.info(`[admin] /image requestId=${requestId} step=search_request start`, { endpoint, model, shoeLabel });
+  console.info(`[admin] /image requestId=${requestId} step=search_request config`, {
+    searchBaseUrlSource: config.baseUrlSource,
+    searchModelSource: config.modelSource,
+    searchKeySource: config.keySource,
+    searchFallbackUsed: config.fallbackUsed,
+    endpoint,
+    model: config.model,
+    shoeLabel
+  });
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${apiKey}`,
-      "x-goog-api-key": apiKey
+      authorization: `Bearer ${config.apiKey}`,
+      "x-goog-api-key": config.apiKey
     },
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: searchPrompt }] }],
@@ -387,31 +431,27 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
   console.info(`[admin] /image requestId=${requestId} step=shoe_load success`, shoe);
 
-  const searchBaseUrl = process.env.PACKYAPI_SEARCH_BASE_URL;
-  const searchModel = process.env.PACKYAPI_SEARCH_MODEL;
-  const searchKey = process.env.PACKYAPI_SEARCH_KEY;
-  const imageBaseUrl = process.env.PACKYAPI_IMAGE_BASE_URL;
-  const imageModel = process.env.PACKYAPI_IMAGE_MODEL;
-  const imageKey = process.env.PACKYAPI_IMAGE_KEY;
+  const searchConfig = getPackySearchConfig();
+  const imageConfig = getPackyImageConfig();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "shoe-images";
-  if (!searchBaseUrl || !searchModel || !searchKey || !imageBaseUrl || !imageModel || !imageKey || !supabaseUrl) {
+  if (!searchConfig || !imageConfig || !supabaseUrl) {
     return fail({
       status: 500,
       error: "Image generation environment variables are incomplete.",
       step: "env",
-      detail: `searchBaseUrl=${Boolean(searchBaseUrl)} searchModel=${Boolean(searchModel)} searchKey=${Boolean(searchKey)} imageBaseUrl=${Boolean(imageBaseUrl)} imageModel=${Boolean(imageModel)} imageKey=${Boolean(imageKey)} supabaseUrl=${Boolean(supabaseUrl)}`,
+      detail: `PACKYAPI_SEARCH_BASE_URL=${Boolean(process.env.PACKYAPI_SEARCH_BASE_URL)} PACKYAPI_SEARCH_MODEL=${Boolean(process.env.PACKYAPI_SEARCH_MODEL)} PACKYAPI_SEARCH_KEY=${Boolean(process.env.PACKYAPI_SEARCH_KEY)} PACKYAPI_IMAGE_BASE_URL=${Boolean(process.env.PACKYAPI_IMAGE_BASE_URL)} PACKYAPI_IMAGE_MODEL=${Boolean(process.env.PACKYAPI_IMAGE_MODEL)} PACKYAPI_IMAGE_KEY=${Boolean(process.env.PACKYAPI_IMAGE_KEY)} supabaseUrl=${Boolean(supabaseUrl)}`,
       requestId
     });
+  } catch (error) {
+    console.error(`[admin] /image requestId=${requestId} step=search_request fail`, error);
   }
 
   const shoeLabel = `${shoe.brand} ${shoe.shoe_name}`.trim();
   let selectedReference: SelectedReference | null = null;
   try {
     selectedReference = await searchReferenceImage({
-      baseUrl: searchBaseUrl,
-      model: searchModel,
-      apiKey: searchKey,
+      config: searchConfig,
       shoeLabel,
       requestId
     });
@@ -444,7 +484,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const prompt = buildShoeImagePrompt(shoe.brand, shoe.shoe_name, referenceSummary);
   console.info(`[admin] /image requestId=${requestId} step=prompt_built`, {
     prompt,
-    imageModel,
+    imageModel: imageConfig.model,
     bucket,
     searchUsed: Boolean(referenceInlineData),
     referenceImageUrl: selectedReference?.imageUrl ?? null
@@ -454,19 +494,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   let imageMimeType = "image/png";
   let providerBodyText = "";
   let generationFailureDetail = "";
-  const { providerEndpoint, providerBody, providerShape } = getImageProviderConfig(imageBaseUrl, imageModel, prompt, referenceInlineData);
+  const { endpoint: providerEndpoint, body: providerBody } = buildPackyImageRequest(imageConfig, prompt, referenceInlineData);
 
-  console.info(`[admin] /image requestId=${requestId} step=provider_request start`, {
+  console.info(`[admin] /image requestId=${requestId} step=provider_request config`, {
+    imageBaseUrlSource: imageConfig.baseUrlSource,
+    imageModelSource: imageConfig.modelSource,
+    imageKeySource: imageConfig.keySource,
+    imageFallbackUsed: imageConfig.fallbackUsed,
     providerEndpoint,
-    providerShape,
+    providerShape: "gemini_generateContent",
     searchUsed: Boolean(referenceInlineData)
   });
   const generationResponse = await fetch(providerEndpoint, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${imageKey}`,
-      "x-goog-api-key": imageKey
+      authorization: `Bearer ${imageConfig.apiKey}`,
+      "x-goog-api-key": imageConfig.apiKey
     },
     body: JSON.stringify(providerBody)
   });
@@ -552,9 +596,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       status: "rejected",
       provider: "PackyAPI",
       prompt,
-      provider_model: imageModel,
+      provider_model: imageConfig.model,
       search_provider: "PackyAPI",
-      search_model: searchModel,
+      search_model: searchConfig.model,
       search_used: Boolean(referenceInlineData),
       reference_summary: referenceSummary.join("; "),
       reference_image_url: selectedReference?.imageUrl ?? null,
@@ -620,9 +664,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     public_url: publicUrl,
     status: "pending",
     provider: "PackyAPI",
-    provider_model: imageModel,
+    provider_model: imageConfig.model,
     search_provider: "PackyAPI",
-    search_model: searchModel,
+    search_model: searchConfig.model,
     search_used: Boolean(referenceInlineData),
     reference_summary: referenceSummary.join("; "),
     reference_image_url: selectedReference?.imageUrl ?? null,
