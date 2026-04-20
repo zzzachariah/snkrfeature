@@ -1,6 +1,32 @@
 import { ComparePageClient } from "@/components/compare/compare-page-client";
 import { getShoes } from "@/lib/data/shoes";
 import { normalizeSearchText, rankShoeMatch } from "@/lib/search/shoe-search";
+import type { Metadata } from "next";
+import { absoluteUrl, DEFAULT_OG_IMAGE_URL } from "@/lib/seo";
+
+const title = "Compare basketball shoes | SNKR Feature";
+const description = "Data-driven basketball shoe specs & comparisons.";
+
+export const metadata: Metadata = {
+  title,
+  description,
+  alternates: {
+    canonical: absoluteUrl("/compare"),
+  },
+  openGraph: {
+    title,
+    description,
+    type: "website",
+    url: absoluteUrl("/compare"),
+    images: [{ url: DEFAULT_OG_IMAGE_URL }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: [DEFAULT_OG_IMAGE_URL],
+  },
+};
 
 export default async function ComparePage({
   searchParams

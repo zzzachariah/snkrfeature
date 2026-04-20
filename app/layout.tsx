@@ -7,13 +7,28 @@ import { LiquidPointer } from "@/components/theme/liquid-pointer";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { Analytics } from "@vercel/analytics/next";
+import { DEFAULT_OG_IMAGE_URL, HOME_DESCRIPTION, HOME_TITLE, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "SNKR Feature",
-    template: "%s • SNKR Feature",
+    default: HOME_TITLE,
+    template: "%s",
   },
-  description: "Compare sneaker specs, details, and drops in one clean workspace.",
+  description: HOME_DESCRIPTION,
+  openGraph: {
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    type: "website",
+    url: SITE_URL,
+    images: [{ url: DEFAULT_OG_IMAGE_URL }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE_URL],
+  },
   icons: {
     icon: "/icon.ico",
   },

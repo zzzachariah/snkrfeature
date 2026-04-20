@@ -6,6 +6,32 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getShoes } from "@/lib/data/shoes";
 import { normalizeSearchText, rankShoeMatch } from "@/lib/search/shoe-search";
+import type { Metadata } from "next";
+import { absoluteUrl, DEFAULT_OG_IMAGE_URL } from "@/lib/seo";
+
+const title = "Advanced sneaker search | SNKR Feature";
+const description = "Search basketball shoe specs, tags, tech, and player data.";
+
+export const metadata: Metadata = {
+  title,
+  description,
+  alternates: {
+    canonical: absoluteUrl("/search/advanced"),
+  },
+  openGraph: {
+    title,
+    description,
+    type: "website",
+    url: absoluteUrl("/search/advanced"),
+    images: [{ url: DEFAULT_OG_IMAGE_URL }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: [DEFAULT_OG_IMAGE_URL],
+  },
+};
 
 export default async function AdvancedSearchPage({
   searchParams

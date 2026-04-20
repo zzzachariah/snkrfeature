@@ -39,11 +39,13 @@ export function ShoeDetailClient({
   shoe,
   related,
   isAdmin,
+  isLoggedIn,
   imageState
 }: {
   shoe: Shoe;
   related: Shoe[];
   isAdmin: boolean;
+  isLoggedIn: boolean;
   imageState: ShoeDetailImageState;
 }) {
   const { translate } = useLocale();
@@ -112,6 +114,13 @@ export function ShoeDetailClient({
 
   return (
     <main className="container-shell space-y-6 py-8">
+      {!isLoggedIn ? (
+        <div className="flex justify-end">
+          <div className="max-w-lg rounded-2xl border border-red-500/50 bg-red-500/15 px-4 py-3 text-sm font-medium text-red-200">
+            {translate("Log in or sign up for the full SNKR Feature experience.")}
+          </div>
+        </div>
+      ) : null}
       <section className="surface-card premium-border rounded-3xl p-6 md:p-8">
         <p className="text-xs uppercase tracking-[0.2em] soft-text">
           <span data-field-key="brand">{shoe.brand}</span> • {shoe.release_year ?? "TBD"}
