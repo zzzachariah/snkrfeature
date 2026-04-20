@@ -5,7 +5,9 @@ import {
   createBulkJob,
   getActiveBulkJob,
   getBulkJobItemsSummary,
-  getLatestBulkJob
+  getLatestBulkJob,
+  listMissingBulkTargetShoes,
+  MAX_BULK_QUANTITY
 } from "@/lib/admin/bulk-image-jobs";
 
 export async function GET() {
@@ -15,10 +17,11 @@ export async function GET() {
   const { supabase } = auth;
 
   try {
-    const [stats, latestJob, activeJob] = await Promise.all([
+    const [stats, latestJob, activeJob, availableShoes] = await Promise.all([
       computeBulkImageStats(supabase),
       getLatestBulkJob(supabase),
-      getActiveBulkJob(supabase)
+      getActiveBulkJob(supabase),
+      listMissingBulkTargetShoes(supabase)
     ]);
 
     const items = latestJob ? await getBulkJobItemsSummary(supabase, latestJob.id) : [];
@@ -28,7 +31,9 @@ export async function GET() {
       stats,
       active_job: activeJob,
       latest_job: latestJob,
-      latest_items: items
+      latest_items: items,
+      available_shoes: availableShoes,
+      max_quantity: MAX_BULK_QUANTITY
     });
   } catch (error) {
     return NextResponse.json(
@@ -38,14 +43,33 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const auth = await requireAdminApi();
   if ("error" in auth) return auth.error;
 
   const { supabase, user } = auth;
 
+  let payload: { quantity?: unknown; selectedShoeIds?: unknown } = {};
   try {
-    const created = await createBulkJob({ supabase, userId: user.id });
+    payload = await request.json();
+  } catch {
+    payload = {};
+  }
+
+  const selectedShoeIds = Array.isArray(payload.selectedShoeIds)
+    ? payload.selectedShoeIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+    : [];
+
+  const parsedQuantity = typeof payload.quantity === "number" ? payload.quantity : Number(payload.quantity);
+  const quantity = Number.isFinite(parsedQuantity) ? parsedQuantity : undefined;
+
+  try {
+    const created = await createBulkJob({
+      supabase,
+      userId: user.id,
+      selectedShoeIds,
+      quantity
+    });
     const stats = await computeBulkImageStats(supabase);
 
     return NextResponse.json({
@@ -57,8 +81,8 @@ export async function POST() {
     });
   } catch (error) {
     return NextResponse.json(
-      { ok: false, error: "Failed to start bulk image import job.", detail: error instanceof Error ? error.message : "unknown_error" },
-      { status: 500 }
+      { ok: false, error: error instanceof Error ? error.message : "Failed to start bulk image import job." },
+      { status: 400 }
     );
   }
 }

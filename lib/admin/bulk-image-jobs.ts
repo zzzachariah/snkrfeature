@@ -3,6 +3,8 @@ import { importBestShoeImage } from "@/lib/admin/shoe-image-import";
 
 export type BulkJobStatus = "running" | "cancel_requested" | "cancelled" | "completed" | "failed";
 
+const MAX_BULK_QUANTITY = 200;
+
 type ShoeRow = {
   id: string;
   brand: string;
@@ -66,6 +68,47 @@ export async function computeBulkImageStats(supabase: SupabaseClient) {
   return { totalShoes, missingApprovedImages };
 }
 
+async function getMissingTargetShoes(supabase: SupabaseClient) {
+  const { data: shoes, error: shoesError } = await supabase
+    .from("shoes")
+    .select("id, brand, shoe_name, release_year")
+    .order("created_at", { ascending: true });
+
+  if (shoesError) throw new Error(shoesError.message);
+
+  const shoeRows = (shoes ?? []) as ShoeRow[];
+  const shoeIds = shoeRows.map((shoe) => shoe.id);
+  if (!shoeIds.length) return [] as ShoeRow[];
+
+  const { data: existing, error: existingError } = await supabase
+    .from("shoe_images")
+    .select("shoe_id, status")
+    .in("shoe_id", shoeIds)
+    .in("status", ["approved", "pending"]);
+
+  if (existingError) throw new Error(existingError.message);
+
+  const approved = new Set<string>();
+  const pending = new Set<string>();
+  for (const row of existing ?? []) {
+    if (row.status === "approved") approved.add(row.shoe_id);
+    if (row.status === "pending") pending.add(row.shoe_id);
+  }
+
+  return shoeRows.filter((shoe) => !approved.has(shoe.id) && !pending.has(shoe.id));
+}
+
+export async function listMissingBulkTargetShoes(supabase: SupabaseClient, limit = 250) {
+  const targets = await getMissingTargetShoes(supabase);
+  return targets.slice(0, Math.max(1, limit)).map((shoe) => ({
+    id: shoe.id,
+    label: `${shoe.brand} ${shoe.shoe_name}`.trim(),
+    brand: shoe.brand,
+    shoe_name: shoe.shoe_name,
+    release_year: shoe.release_year ?? null
+  }));
+}
+
 export async function getLatestBulkJob(supabase: SupabaseClient) {
   const { data, error } = await supabase.from("admin_bulk_image_jobs").select("*").order("started_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw new Error(error.message);
@@ -85,36 +128,34 @@ export async function getActiveBulkJob(supabase: SupabaseClient) {
   return (data as JobRow | null) ?? null;
 }
 
-export async function createBulkJob({ supabase, userId }: { supabase: SupabaseClient; userId: string }) {
+export async function createBulkJob({
+  supabase,
+  userId,
+  selectedShoeIds,
+  quantity
+}: {
+  supabase: SupabaseClient;
+  userId: string;
+  selectedShoeIds?: string[];
+  quantity?: number;
+}) {
   const running = await getActiveBulkJob(supabase);
   if (running) return { created: false as const, job: running };
 
-  const { data: shoes, error: shoesError } = await supabase
-    .from("shoes")
-    .select("id, brand, shoe_name, release_year")
-    .order("created_at", { ascending: true });
+  const allTargets = await getMissingTargetShoes(supabase);
 
-  if (shoesError) throw new Error(shoesError.message);
-
-  const shoeRows = (shoes ?? []) as ShoeRow[];
-  const shoeIds = shoeRows.map((shoe) => shoe.id);
-
-  const { data: existing, error: existingError } = await supabase
-    .from("shoe_images")
-    .select("shoe_id, status")
-    .in("shoe_id", shoeIds)
-    .in("status", ["approved", "pending"]);
-
-  if (existingError) throw new Error(existingError.message);
-
-  const approved = new Set<string>();
-  const pending = new Set<string>();
-  for (const row of existing ?? []) {
-    if (row.status === "approved") approved.add(row.shoe_id);
-    if (row.status === "pending") pending.add(row.shoe_id);
+  const selectedSet = new Set((selectedShoeIds ?? []).filter(Boolean));
+  let targets: ShoeRow[];
+  if (selectedSet.size > 0) {
+    targets = allTargets.filter((shoe) => selectedSet.has(shoe.id));
+  } else if (typeof quantity === "number") {
+    if (!Number.isInteger(quantity) || quantity <= 0 || quantity > MAX_BULK_QUANTITY) {
+      throw new Error(`Quantity must be an integer between 1 and ${MAX_BULK_QUANTITY}.`);
+    }
+    targets = allTargets.slice(0, quantity);
+  } else {
+    targets = allTargets;
   }
-
-  const targets = shoeRows.filter((shoe) => !approved.has(shoe.id) && !pending.has(shoe.id));
 
   const { data: job, error: jobError } = await supabase
     .from("admin_bulk_image_jobs")
@@ -159,26 +200,39 @@ export async function requestBulkJobCancel({ supabase, userId }: { supabase: Sup
   const active = await getActiveBulkJob(supabase);
   if (!active) return { ok: false as const, message: "No active bulk job" };
 
-  if (active.status === "cancel_requested") return { ok: true as const, message: "Stopping...", job: active };
-
   const nowIso = new Date().toISOString();
-  const { error } = await supabase
-    .from("admin_bulk_image_jobs")
-    .update({
-      status: "cancel_requested",
-      cancel_requested_at: nowIso,
-      updated_at: nowIso,
-      failure_summary: [{ message: `Cancel requested by admin ${userId} at ${nowIso}` }]
-    })
-    .eq("id", active.id)
-    .eq("status", "running");
+  if (active.status === "running") {
+    const { error } = await supabase
+      .from("admin_bulk_image_jobs")
+      .update({
+        status: "cancel_requested",
+        cancel_requested_at: nowIso,
+        updated_at: nowIso,
+        failure_summary: [{ message: `Cancel requested by admin ${userId} at ${nowIso}` }]
+      })
+      .eq("id", active.id)
+      .eq("status", "running");
 
-  if (error) throw new Error(error.message);
-  return { ok: true as const, message: "Stopping...", job: await getLatestBulkJob(supabase) };
+    if (error) throw new Error(error.message);
+  }
+
+  const latest = await getLatestBulkJob(supabase);
+  if (!latest) return { ok: false as const, message: "No active bulk job" };
+
+  await forceCancelBulkJob(supabase, latest.id);
+  return { ok: true as const, message: "Stopped", job: await getLatestBulkJob(supabase) };
 }
 
-async function setJobCancelled(supabase: SupabaseClient, jobId: string) {
+async function forceCancelBulkJob(supabase: SupabaseClient, jobId: string) {
   const nowIso = new Date().toISOString();
+
+  const { error: resetError } = await supabase
+    .from("admin_bulk_image_job_items")
+    .update({ status: "pending", updated_at: nowIso })
+    .eq("job_id", jobId)
+    .eq("status", "processing");
+  if (resetError) throw new Error(resetError.message);
+
   const { error } = await supabase
     .from("admin_bulk_image_jobs")
     .update({
@@ -190,12 +244,13 @@ async function setJobCancelled(supabase: SupabaseClient, jobId: string) {
       updated_at: nowIso
     })
     .eq("id", jobId)
-    .eq("status", "cancel_requested");
+    .in("status", ["running", "cancel_requested"]);
+
   if (error) throw new Error(error.message);
 }
 
 export async function syncJobCounters(supabase: SupabaseClient, jobId: string) {
-  const { data: job } = await supabase.from("admin_bulk_image_jobs").select("status").eq("id", jobId).single();
+  const { data: job } = await supabase.from("admin_bulk_image_jobs").select("status,cancelled_at,completed_at").eq("id", jobId).single();
 
   const { data: items, error } = await supabase.from("admin_bulk_image_job_items").select("status").eq("job_id", jobId);
   if (error) throw new Error(error.message);
@@ -219,7 +274,16 @@ export async function syncJobCounters(supabase: SupabaseClient, jobId: string) {
   }
 
   const isDone = counts.pending === 0 && counts.processing === 0;
-  const status: BulkJobStatus = job?.status === "cancel_requested" ? (isDone ? "cancelled" : "cancel_requested") : isDone ? "completed" : "running";
+  const nowIso = new Date().toISOString();
+
+  let status: BulkJobStatus;
+  if (job?.status === "cancelled") {
+    status = "cancelled";
+  } else if (job?.status === "cancel_requested") {
+    status = isDone ? "cancelled" : "cancel_requested";
+  } else {
+    status = isDone ? "completed" : "running";
+  }
 
   const { error: updateError } = await supabase
     .from("admin_bulk_image_jobs")
@@ -229,11 +293,11 @@ export async function syncJobCounters(supabase: SupabaseClient, jobId: string) {
       skip_count: counts.skipped,
       failure_count: counts.failed,
       status,
-      completed_at: isDone ? new Date().toISOString() : null,
-      cancelled_at: status === "cancelled" ? new Date().toISOString() : null,
+      completed_at: status === "completed" || status === "cancelled" ? (job?.completed_at ?? nowIso) : null,
+      cancelled_at: status === "cancelled" ? (job?.cancelled_at ?? nowIso) : null,
       current_shoe_id: null,
       current_shoe_label: null,
-      updated_at: new Date().toISOString()
+      updated_at: nowIso
     })
     .eq("id", jobId);
 
@@ -258,7 +322,7 @@ export async function processBulkJobTick({
   if (!active) return { hasRunningJob: false as const, job: await getLatestBulkJob(supabase) };
 
   if (active.status === "cancel_requested") {
-    await setJobCancelled(supabase, active.id);
+    await forceCancelBulkJob(supabase, active.id);
     return { hasRunningJob: false as const, job: await getLatestBulkJob(supabase) };
   }
 
@@ -294,13 +358,13 @@ export async function processBulkJobTick({
     .eq("id", active.id);
 
   const { data: jobStateNow } = await supabase.from("admin_bulk_image_jobs").select("status").eq("id", active.id).single();
-  if (jobStateNow?.status === "cancel_requested") {
+  if (jobStateNow?.status === "cancel_requested" || jobStateNow?.status === "cancelled") {
     await supabase
       .from("admin_bulk_image_job_items")
       .update({ status: "pending", updated_at: new Date().toISOString() })
       .eq("id", nextItem.id)
       .eq("status", "processing");
-    await setJobCancelled(supabase, active.id);
+    await forceCancelBulkJob(supabase, active.id);
     return { hasRunningJob: false as const, job: await getLatestBulkJob(supabase) };
   }
 
@@ -404,3 +468,4 @@ export async function getBulkJobItemsSummary(supabase: SupabaseClient, jobId: st
 
 export type BulkJobRecord = JobRow;
 export type BulkJobItemRecord = ItemRow;
+export { MAX_BULK_QUANTITY };
