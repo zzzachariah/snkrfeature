@@ -28,7 +28,16 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const isPublicPage = pathname === "/" || pathname === "/login" || pathname === "/signup" || pathname === "/register";
+  const isPublicPage =
+    pathname === "/" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/register" ||
+    pathname === "/compare" ||
+    pathname === "/search/advanced" ||
+    pathname.startsWith("/shoes/");
   const isApiRoute = pathname.startsWith("/api/");
 
   if (!user && !isPublicPage && !isApiRoute) {
