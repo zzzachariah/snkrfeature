@@ -30,6 +30,8 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isPublicPage =
     pathname === "/" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
     pathname === "/login" ||
     pathname === "/signup" ||
     pathname === "/register" ||
