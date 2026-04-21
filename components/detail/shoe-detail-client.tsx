@@ -224,7 +224,7 @@ export function ShoeDetailClient({
 
       <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="p-4">
-          <p className="text-xs uppercase tracking-wide soft-text">前掌中底科技</p>
+          <p className="text-xs uppercase tracking-wide soft-text">{translate("Forefoot midsole tech")}</p>
           {shoe.spec.forefoot_midsole_tech ? (
             <p data-field-key="forefoot_midsole_tech" className="mt-2 font-medium">
               {shoe.spec.forefoot_midsole_tech}
@@ -237,7 +237,7 @@ export function ShoeDetailClient({
         </Card>
 
         <Card className="p-4">
-          <p className="text-xs uppercase tracking-wide soft-text">后掌中底科技</p>
+          <p className="text-xs uppercase tracking-wide soft-text">{translate("Heel midsole tech")}</p>
           {shoe.spec.heel_midsole_tech ? (
             <p data-field-key="heel_midsole_tech" className="mt-2 font-medium">
               {shoe.spec.heel_midsole_tech}
