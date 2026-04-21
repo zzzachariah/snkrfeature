@@ -55,17 +55,32 @@ function BrowseButton({ label, href }: { label: string; href: Route }) {
   );
 }
 
-export function HomeHero({ shoesCount, brandsCount }: { shoesCount: number; brandsCount: number }) {
+export function HomeHero({
+  shoesCount,
+  brandsCount,
+  active = true
+}: {
+  shoesCount: number;
+  brandsCount: number;
+  active?: boolean;
+}) {
   const { translate } = useLocale();
   const [up, setUp] = useState(false);
-  const rafRef = useRef<number | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    rafRef.current = window.setTimeout(() => setUp(true), 80);
+    if (!active) {
+      setUp(false);
+      return;
+    }
+    timerRef.current = window.setTimeout(() => setUp(true), 80);
     return () => {
-      if (rafRef.current) clearTimeout(rafRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
     };
-  }, []);
+  }, [active]);
 
   const shoes = useCountUp(shoesCount, 900, up);
   const brands = useCountUp(brandsCount, 700, up);
@@ -84,7 +99,7 @@ export function HomeHero({ shoesCount, brandsCount }: { shoesCount: number; bran
   ];
 
   return (
-    <section className="relative overflow-hidden px-0 py-16 md:py-20">
+    <section className="relative flex h-full w-full flex-col justify-center overflow-hidden px-0 py-12 md:py-16">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -132,8 +147,8 @@ export function HomeHero({ shoesCount, brandsCount }: { shoesCount: number; bran
           )}
         </p>
 
-        <div className="flex flex-wrap gap-3" style={{ marginBottom: 80, ...reveal(370) }}>
-          <BrowseButton label={translate("Browse the index")} href="/search/advanced" />
+        <div className="flex flex-wrap gap-3" style={{ marginBottom: 64, ...reveal(370) }}>
+          <BrowseButton label={translate("Go to compare")} href="/compare" />
           <Link
             href="/submit"
             className="inline-flex items-center rounded-[9px] border border-[rgb(var(--glass-stroke-soft)/0.55)] bg-transparent px-6 py-3 text-[0.875rem] font-medium tracking-[-0.01em] text-[rgb(var(--subtext))] transition-[border-color,color] duration-[180ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-[rgb(var(--text)/0.4)] hover:text-[rgb(var(--text))]"
