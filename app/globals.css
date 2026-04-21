@@ -358,3 +358,47 @@ body {
   background-clip: text;
   color: transparent;
 }
+
+@keyframes sneaker-draw {
+  0%   { stroke-dashoffset: 520; opacity: 0.25; }
+  20%  { opacity: 1; }
+  65%  { stroke-dashoffset: 0; opacity: 1; }
+  85%  { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0.25; }
+}
+
+@keyframes sneaker-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+@keyframes sneaker-ground {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -40; }
+}
+
+.sneaker-draw {
+  stroke-dasharray: 520;
+  stroke-dashoffset: 520;
+  animation: sneaker-draw 2.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.sneaker-bob {
+  animation: sneaker-bob 1.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  transform-origin: center;
+}
+
+.sneaker-ground {
+  animation: sneaker-ground 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sneaker-draw,
+  .sneaker-bob,
+  .sneaker-ground {
+    animation: none;
+  }
+  .sneaker-draw {
+    stroke-dashoffset: 0;
+  }
+}

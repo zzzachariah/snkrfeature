@@ -1,18 +1,11 @@
-import { BrandLoader } from "@/components/ui/brand-loader";
+import { SneakerLoader } from "@/components/ui/sneaker-loader";
 
 export default function ShoeDetailLoading() {
   return (
-    <main className="container-shell space-y-4 py-8">
-      <div className="surface-card premium-border rounded-3xl p-6">
-        <BrandLoader label="Loading shoe detail" compact />
+    <main className="container-shell py-16">
+      <div className="surface-card premium-border rounded-3xl p-10 flex items-center justify-center min-h-[320px]">
+        <SneakerLoader label="Loading shoe detail" />
       </div>
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="skeleton h-24 rounded-xl" />
-        <div className="skeleton h-24 rounded-xl" />
-        <div className="skeleton h-24 rounded-xl" />
-        <div className="skeleton h-24 rounded-xl" />
-      </div>
-      <div className="skeleton h-[320px] rounded-2xl" />
     </main>
   );
 }

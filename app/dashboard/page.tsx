@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
-import { BrandLoader } from "@/components/ui/brand-loader";
+import { SneakerLoader } from "@/components/ui/sneaker-loader";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/components/i18n/locale-provider";
@@ -410,7 +410,7 @@ export default function DashboardPage() {
           </ul>
         </aside>
 
-        <section className="space-y-4">{loading ? <Card className="p-10"><BrandLoader label="Loading dashboard data" /></Card> : renderTabContent()}</section>
+        <section className="space-y-4">{loading ? <Card className="p-10"><SneakerLoader label="Loading dashboard data" /></Card> : renderTabContent()}</section>
       </div>
     </main>
   );

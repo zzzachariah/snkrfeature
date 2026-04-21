@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { BrandLoader } from "@/components/ui/brand-loader";
+import { SneakerLoader } from "@/components/ui/sneaker-loader";
 import { Modal } from "@/components/ui/modal";
 
 export type Locale = "en" | "zh";
@@ -461,7 +461,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       </Modal>
       {isTranslating ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[rgb(var(--bg)/0.78)] backdrop-blur-sm" aria-live="polite" aria-busy="true">
-          <BrandLoader label={translate("Translating...")} />
+          <SneakerLoader label={translate("Translating...")} />
         </div>
       ) : null}
     </LocaleContext.Provider>
