@@ -133,7 +133,7 @@ export function AccountMenu({ className }: { className?: string }) {
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
-          "inline-flex h-10 w-[11rem] items-center justify-between gap-2 truncate rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.62)] bg-[rgb(var(--surface)/0.78)] px-3 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--accent)/0.72)] hover:bg-[rgb(var(--accent)/0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring)/0.65)]",
+          "inline-flex h-8 w-[9.5rem] items-center justify-between gap-2 truncate rounded-lg border-none bg-[rgb(var(--text))] px-3 text-[0.75rem] font-bold tracking-[-0.01em] text-[rgb(var(--bg))] transition hover:shadow-[0_4px_14px_rgb(var(--shadow)/0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--text)/0.3)]",
           className
         )}
       >
@@ -157,7 +157,7 @@ export function AccountMenu({ className }: { className?: string }) {
                   href="/login"
                   role="menuitem"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.09)]"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--text)/0.07)]"
                 >
                   <LogIn className="h-4 w-4" />
                   {translate("Log in")}
@@ -166,7 +166,7 @@ export function AccountMenu({ className }: { className?: string }) {
                   href="/signup"
                   role="menuitem"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.09)]"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--text)/0.07)]"
                 >
                   <UserPlus className="h-4 w-4" />
                   {translate("Sign up")}
@@ -178,7 +178,7 @@ export function AccountMenu({ className }: { className?: string }) {
                   href="/dashboard"
                   role="menuitem"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.09)]"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--text)/0.07)]"
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   {translate("Dashboard")}
@@ -189,7 +189,7 @@ export function AccountMenu({ className }: { className?: string }) {
                     href="/admin"
                     role="menuitem"
                     onClick={() => setOpen(false)}
-                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.09)]"
+                    className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--text)/0.07)]"
                   >
                     <Shield className="h-4 w-4" />
                     {translate("Admin")}
@@ -200,7 +200,7 @@ export function AccountMenu({ className }: { className?: string }) {
                   type="button"
                   role="menuitem"
                   onClick={logout}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--accent)/0.09)]"
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-[rgb(var(--text))] transition hover:bg-[rgb(var(--text)/0.07)]"
                 >
                   <LogOut className="h-4 w-4" />
                   {translate("Log out")}
