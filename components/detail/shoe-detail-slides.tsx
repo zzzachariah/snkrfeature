@@ -432,46 +432,50 @@ function PerformanceSlide({
 }: Props & { active: boolean }) {
   const { translate } = useLocale();
   return (
-    <div className={`flex h-full flex-col gap-6 py-10 ${slideEntranceClass(active)}`}>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-4">
-          <p className="text-xs uppercase tracking-wide soft-text">{translate("Forefoot midsole tech")}</p>
+    <div className={`flex h-full min-h-0 flex-row items-stretch gap-2 py-4 md:gap-4 md:py-6 ${slideEntranceClass(active)}`}>
+      <div className="flex min-h-0 w-1/2 flex-col gap-2 md:gap-3">
+        <Card className="flex min-h-0 flex-1 flex-col justify-center p-2.5 md:p-4">
+          <p className="text-[0.6rem] uppercase tracking-wide soft-text md:text-xs">
+            {translate("Forefoot midsole tech")}
+          </p>
           {shoe.spec.forefoot_midsole_tech ? (
-            <p data-field-key="forefoot_midsole_tech" className="mt-2 font-medium">
+            <p data-field-key="forefoot_midsole_tech" className="mt-1 text-sm font-medium md:mt-2 md:text-base">
               {shoe.spec.forefoot_midsole_tech}
             </p>
           ) : (
-            <p data-field-key="forefoot_midsole_tech" className="mt-2 font-medium">
+            <p data-field-key="forefoot_midsole_tech" className="mt-1 text-sm font-medium md:mt-2 md:text-base">
               {translate("Not yet added")}
             </p>
           )}
         </Card>
 
-        <Card className="p-4">
-          <p className="text-xs uppercase tracking-wide soft-text">{translate("Heel midsole tech")}</p>
+        <Card className="flex min-h-0 flex-1 flex-col justify-center p-2.5 md:p-4">
+          <p className="text-[0.6rem] uppercase tracking-wide soft-text md:text-xs">
+            {translate("Heel midsole tech")}
+          </p>
           {shoe.spec.heel_midsole_tech ? (
-            <p data-field-key="heel_midsole_tech" className="mt-2 font-medium">
+            <p data-field-key="heel_midsole_tech" className="mt-1 text-sm font-medium md:mt-2 md:text-base">
               {shoe.spec.heel_midsole_tech}
             </p>
           ) : (
-            <p data-field-key="heel_midsole_tech" className="mt-2 font-medium">
+            <p data-field-key="heel_midsole_tech" className="mt-1 text-sm font-medium md:mt-2 md:text-base">
               {translate("Not yet added")}
             </p>
           )}
         </Card>
 
         {Object.entries(extraTechCards).map(([k, data]) => (
-          <Card key={k} className="p-4">
-            <p className="text-xs uppercase tracking-wide soft-text">{translate(k)}</p>
+          <Card key={k} className="flex min-h-0 flex-1 flex-col justify-center p-2.5 md:p-4">
+            <p className="text-[0.6rem] uppercase tracking-wide soft-text md:text-xs">{translate(k)}</p>
             {data.value ? (
               <DynamicTranslatedText
                 as="p"
-                className="mt-2 font-medium"
+                className="mt-1 text-sm font-medium md:mt-2 md:text-base"
                 text={data.value}
                 contentType="technology"
               />
             ) : (
-              <p data-field-key={data.field} className="mt-2 font-medium">
+              <p data-field-key={data.field} className="mt-1 text-sm font-medium md:mt-2 md:text-base">
                 {translate("Not yet added")}
               </p>
             )}
@@ -479,10 +483,10 @@ function PerformanceSlide({
         ))}
       </div>
 
-      <Card className="flex flex-1 flex-col p-5">
-        <p className="t-eyebrow mb-2">{translate("Analysis")}</p>
-        <h2 className="text-lg font-semibold tracking-[-0.02em]">{translate("Performance profile")}</h2>
-        <div className="mt-4 flex flex-1 items-center justify-center">
+      <Card className="flex min-h-0 w-1/2 flex-col p-3 md:p-5">
+        <p className="t-eyebrow mb-1 text-[0.6rem] md:mb-2 md:text-xs">{translate("Analysis")}</p>
+        <h2 className="text-sm font-semibold tracking-[-0.02em] md:text-lg">{translate("Performance profile")}</h2>
+        <div className="mt-2 flex min-h-0 flex-1 items-center justify-center md:mt-4">
           <PerformanceRadar axes={radarAxes} />
         </div>
       </Card>
