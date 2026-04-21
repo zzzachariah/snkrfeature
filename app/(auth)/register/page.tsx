@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BrandLoader } from "@/components/ui/brand-loader";
+import { SneakerLoader } from "@/components/ui/sneaker-loader";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,7 +56,7 @@ export default function RegisterPage() {
         <div><label className="mb-1 block text-xs soft-text">{translate("Password")}</label><Input value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} placeholder={translate("At least 8 characters")} type="password" required /></div>
         <TurnstileWidget onToken={setTurnstileToken} />
         <Button type="submit" className="w-full" disabled={submitting}>{submitting ? translate("Creating account...") : translate("Create account")}</Button>
-        {submitting && <BrandLoader compact label="Setting up your profile" />}
+        {submitting && <SneakerLoader compact label="Setting up your profile" />}
         {message && <FeedbackMessage message={message} isError={error} />}
         <p className="text-xs soft-text">{translate("Already have an account?")} <Link href="/login" className="text-[rgb(var(--accent))] hover:underline">{translate("Log in")}</Link></p>
       </form>

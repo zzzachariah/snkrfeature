@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { BrandLoader } from "@/components/ui/brand-loader";
+import { SneakerLoader } from "@/components/ui/sneaker-loader";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -180,7 +180,7 @@ export default function SignupPage() {
           {submitting ? translate("Creating account...") : translate("Create account")}
         </Button>
 
-        {submitting && <BrandLoader compact label="Creating your account" />}
+        {submitting && <SneakerLoader compact label="Creating your account" />}
         {message && <FeedbackMessage message={message} isError={error} />}
 
         <p className="text-xs soft-text">

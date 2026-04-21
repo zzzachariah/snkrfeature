@@ -9,8 +9,17 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { AccountMenu } from "@/components/layout/account-menu";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { createClient } from "@/lib/supabase/client";
+import { NAV_ORDER } from "@/lib/nav-order";
 
 type NavHref = "/" | "/compare" | "/submit" | "/dashboard" | "/admin" | "/search/advanced";
+
+const NAV_LABELS: Record<(typeof NAV_ORDER)[number], string> = {
+  "/": "Home",
+  "/compare": "Compare",
+  "/submit": "Submit",
+  "/dashboard": "Dashboard",
+  "/admin": "Admin"
+};
 
 export function Navbar() {
   const pathname = usePathname();
@@ -66,15 +75,10 @@ export function Navbar() {
   }, [langOpen]);
 
   const navItems = useMemo(() => {
-    const base: Array<{ href: NavHref; label: string }> = [
-      { href: "/", label: "Home" },
-      { href: "/compare", label: "Compare" },
-      { href: "/submit", label: "Submit" },
-      { href: "/dashboard", label: "Dashboard" }
-    ];
-
-    if (isAdmin) base.push({ href: "/admin", label: "Admin" });
-    return base;
+    return NAV_ORDER.filter((href) => href !== "/admin" || isAdmin).map((href) => ({
+      href: href as NavHref,
+      label: NAV_LABELS[href]
+    }));
   }, [isAdmin]);
 
   const iconBtn =

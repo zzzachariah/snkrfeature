@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { BrandLoader } from "@/components/ui/brand-loader";
+import { SneakerLoader } from "@/components/ui/sneaker-loader";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -165,7 +165,7 @@ export default function LoginPage() {
           {submitting ? translate("Signing in...") : translate("Sign in")}
         </Button>
 
-        {submitting && <BrandLoader compact label="Authenticating" />}
+        {submitting && <SneakerLoader compact label="Authenticating" />}
         {message && <FeedbackMessage message={message} isError={error} />}
 
         <p className="text-xs soft-text">

@@ -1,17 +1,11 @@
-import { BrandLoader } from "@/components/ui/brand-loader";
+import { SneakerLoader } from "@/components/ui/sneaker-loader";
 
 export default function AdvancedSearchLoading() {
   return (
-    <main className="container-shell space-y-4 py-8">
-      <div className="surface-card premium-border rounded-3xl p-6">
-        <BrandLoader label="Loading advanced search" compact />
+    <main className="container-shell py-16">
+      <div className="surface-card premium-border rounded-3xl p-10 flex items-center justify-center min-h-[320px]">
+        <SneakerLoader label="Loading advanced search" />
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        <div className="skeleton h-20 rounded-xl" />
-        <div className="skeleton h-20 rounded-xl" />
-        <div className="skeleton h-20 rounded-xl" />
-      </div>
-      <div className="skeleton h-64 rounded-2xl" />
     </main>
   );
 }
