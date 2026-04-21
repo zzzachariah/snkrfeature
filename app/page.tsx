@@ -31,7 +31,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const brands = new Set(shoes.map((s) => s.brand)).size;
 
   return (
-    <main className="container-shell space-y-8 py-8">
+    <main className="container-shell space-y-16 py-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

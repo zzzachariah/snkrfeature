@@ -12,10 +12,10 @@ type PerformanceIndicatorProps = {
 };
 
 function getToneClass(tier: string) {
-  if (tier === "Weak" || tier === "Below Average") return "bg-[rgb(var(--muted)/0.72)]";
-  if (tier === "Decent" || tier === "Solid") return "bg-[rgb(var(--ring)/0.52)]";
-  if (tier === "Good" || tier === "Very Good") return "bg-[rgb(var(--accent)/0.72)]";
-  return "bg-[rgb(var(--accent)/0.9)]";
+  if (tier === "Weak" || tier === "Below Average") return "bg-[rgb(var(--subtext)/0.45)]";
+  if (tier === "Decent" || tier === "Solid") return "bg-[rgb(var(--subtext)/0.7)]";
+  if (tier === "Good" || tier === "Very Good") return "bg-[rgb(var(--text)/0.75)]";
+  return "bg-[rgb(var(--text))]";
 }
 
 export function PerformanceIndicator({ label, score, tier, rawText }: PerformanceIndicatorProps) {

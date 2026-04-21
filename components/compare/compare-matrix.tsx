@@ -156,7 +156,7 @@ export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
                 : "border-[rgb(var(--muted)/0.5)] bg-[rgb(var(--bg-elev)/0.55)] soft-text hover:border-[rgb(var(--ring)/0.35)]"
             }`}
           >
-            <span className={`h-2 w-2 rounded-full transition ${highlightDiffs ? "bg-[rgb(var(--accent))]" : "bg-[rgb(var(--muted))]"}`} />
+            <span className={`h-2 w-2 rounded-full transition ${highlightDiffs ? "bg-[rgb(var(--text))]" : "bg-[rgb(var(--muted))]"}`} />
             {translate("Highlight differences")}
           </button>
         </div>
@@ -176,11 +176,11 @@ export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
           onClick={() => setHighlightDiffs((prev) => !prev)}
           className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition ${
             highlightDiffs
-              ? "border-[rgb(var(--ring)/0.55)] bg-[rgb(var(--accent)/0.12)] text-[rgb(var(--text))] shadow-[inset_0_0_0_1px_rgb(var(--accent)/0.18)]"
-              : "border-[rgb(var(--muted)/0.5)] bg-[rgb(var(--bg-elev)/0.55)] soft-text hover:border-[rgb(var(--ring)/0.35)]"
+              ? "border-[rgb(var(--text)/0.55)] bg-[rgb(var(--text)/0.1)] text-[rgb(var(--text))]"
+              : "border-[rgb(var(--muted)/0.5)] bg-[rgb(var(--surface)/0.55)] soft-text hover:border-[rgb(var(--text)/0.35)]"
           }`}
         >
-          <span className={`h-2 w-2 rounded-full transition ${highlightDiffs ? "bg-[rgb(var(--accent))]" : "bg-[rgb(var(--muted))]"}`} />
+          <span className={`h-2 w-2 rounded-full transition ${highlightDiffs ? "bg-[rgb(var(--text))]" : "bg-[rgb(var(--muted))]"}`} />
           {translate("Highlight differences")}
         </button>
 
@@ -191,7 +191,7 @@ export function CompareMatrix({ shoes }: { shoes: Shoe[] }) {
           <button
             type="button"
             onClick={() => setCompareIds([], [])}
-            className="rounded-lg border border-[rgb(var(--muted)/0.5)] bg-[rgb(var(--bg-elev)/0.45)] px-2.5 py-1.5 text-xs soft-text transition hover:border-[rgb(var(--ring)/0.45)] hover:text-[rgb(var(--text))]"
+            className="rounded-lg border border-[rgb(var(--muted)/0.5)] bg-[rgb(var(--surface)/0.6)] px-2.5 py-1.5 text-xs soft-text transition hover:border-[rgb(var(--text)/0.4)] hover:text-[rgb(var(--text))]"
           >
             {translate("Clear all shoes")}
           </button>

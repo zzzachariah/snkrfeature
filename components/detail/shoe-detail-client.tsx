@@ -121,16 +121,16 @@ export function ShoeDetailClient({
           </div>
         </div>
       ) : null}
-      <section className="surface-card premium-border rounded-3xl p-6 md:p-8">
-        <p className="text-xs uppercase tracking-[0.2em] soft-text">
-          <span data-field-key="brand">{shoe.brand}</span> • {shoe.release_year ?? "TBD"}
+      <section className="rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.48)] bg-[rgb(var(--bg-elev)/0.96)] p-6 md:p-8">
+        <p className="t-eyebrow">
+          <span data-field-key="brand">{shoe.brand}</span> · {shoe.release_year ?? "TBD"}
         </p>
 
         <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
             <h1
               data-field-key="shoe_name"
-              className="text-3xl font-semibold tracking-[0.015em] text-[rgb(var(--text))] md:text-4xl"
+              className="t-display-sm text-[rgb(var(--text))]"
             >
               {shoe.shoe_name}
             </h1>
@@ -167,7 +167,7 @@ export function ShoeDetailClient({
         </div>
       </section>
 
-      <section className="surface-card premium-border flex flex-col items-center gap-4 rounded-3xl p-6 md:p-8">
+      <section className="flex flex-col items-center gap-4 rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.22)] bg-[rgb(var(--surface))] p-10 shadow-cinematic md:p-16">
         <ShoeImage
           src={reviewImage}
           alt={`${shoe.brand} ${shoe.shoe_name}`}
@@ -270,7 +270,8 @@ export function ShoeDetailClient({
 
       <section className="grid gap-4 md:grid-cols-2">
         <Card className="p-5">
-          <h2 className="text-lg font-semibold">{translate("Performance profile")}</h2>
+          <p className="t-eyebrow mb-2">{translate("Analysis")}</p>
+          <h2 className="text-lg font-semibold tracking-[-0.02em]">{translate("Performance profile")}</h2>
           <div className="mt-3 space-y-2.5">
             <PerformanceIndicator
               label="Cushioning Feel"
@@ -312,7 +313,8 @@ export function ShoeDetailClient({
         </Card>
 
         <Card className="p-5">
-          <h2 className="text-lg font-semibold">{translate("Story & provenance")}</h2>
+          <p className="t-eyebrow mb-2">{translate("Context")}</p>
+          <h2 className="text-lg font-semibold tracking-[-0.02em]">{translate("Story & provenance")}</h2>
           {hasStory ? (
             <div className="mt-2 space-y-2">
               {storyTitle ? (
@@ -330,7 +332,7 @@ export function ShoeDetailClient({
           ) : (
             <>
               <p className="mt-2 text-sm soft-text">{translate("No editorial story yet.")}</p>
-              <div className="mt-4 rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.66)] p-3 text-xs soft-text">
+              <div className="mt-4 rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--surface)/0.6)] p-3 text-xs soft-text">
                 {translate(
                   "Source/evidence: Seed dataset + community validation pipeline. Admin review required before promotion to official records."
                 )}
@@ -344,8 +346,8 @@ export function ShoeDetailClient({
 
       <Card className="p-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{translate("Related shoes")}</h2>
-          <Link href="/" className="inline-flex items-center gap-1 text-sm soft-text">
+          <h2 className="text-lg font-semibold tracking-[-0.02em]">{translate("Related shoes")}</h2>
+          <Link href="/" className="inline-flex items-center gap-1 text-sm soft-text transition hover:text-[rgb(var(--text))]">
             {translate("Back to database")} <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
@@ -356,7 +358,7 @@ export function ShoeDetailClient({
               key={item.id}
               href={`/shoes/${item.slug}`}
               data-field-key="shoe_name"
-              className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3 hover:bg-[rgb(var(--accent)/0.08)]"
+              className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--surface)/0.6)] p-3 transition hover:border-[rgb(var(--text)/0.35)] hover:bg-[rgb(var(--text)/0.04)]"
             >
               {item.shoe_name}
             </Link>

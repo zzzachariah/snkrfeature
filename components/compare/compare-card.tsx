@@ -300,7 +300,7 @@ export function CompareCard({
                   key={`${shoe.id}-${field.key}`}
                   className={`rounded-lg border px-2.5 py-2 transition ${
                     highlightDiffs && field.differs
-                      ? "border-[rgb(var(--ring)/0.52)] bg-[rgb(var(--accent)/0.11)]"
+                      ? "border-[rgb(var(--text)/0.45)] bg-[rgb(var(--text)/0.08)]"
                       : "border-[rgb(var(--muted)/0.34)] bg-[rgb(var(--bg-elev)/0.44)]"
                   }`}
                 >
@@ -325,7 +325,7 @@ export function CompareCard({
       <div className="mt-3 pt-1">
         <Link
           href={`/shoes/${shoe.slug}`}
-          className="interactive-soft inline-flex w-full items-center justify-center rounded-lg border border-[rgb(var(--ring)/0.4)] bg-[rgb(var(--accent)/0.88)] px-3 py-2 text-xs font-medium text-white transition hover:bg-[rgb(var(--accent))]"
+          className="inline-flex w-full items-center justify-center rounded-lg border border-[rgb(var(--text))] bg-[rgb(var(--text))] px-3 py-2 text-xs font-bold tracking-[-0.01em] text-[rgb(var(--bg))] transition hover:shadow-[0_4px_14px_rgb(var(--shadow)/0.3)]"
         >
           {translate("View shoe")}
         </Link>

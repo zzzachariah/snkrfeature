@@ -52,16 +52,25 @@ export function ComparePageClient({
   }
 
   return (
-    <main className="container-shell space-y-6 py-8">
-      <section className="surface-card premium-border rounded-3xl p-6">
-        <h1 className="text-3xl font-semibold">{translate("Compare sneakers")}</h1>
-        <p className="mt-2 text-sm soft-text">{translate("Share this comparison via URL query params:")} <code>?ids=1,2,3</code></p>
+    <main className="container-shell space-y-10 py-10 pb-24">
+      <section className="text-center py-10 md:py-14">
+        <p className="t-eyebrow mb-3">{translate("Head to Head")}</p>
+        <h1
+          className="font-extrabold tracking-[-0.04em] leading-[1]"
+          style={{ fontSize: "clamp(2.8rem,5.5vw,5rem)" }}
+        >
+          {translate("Compare")}
+        </h1>
+        <p className="mt-4 text-[0.88rem] tracking-[-0.005em] soft-text">
+          {translate("Share this comparison via URL query params:")} <code className="rounded bg-[rgb(var(--muted)/0.4)] px-1.5 py-0.5 text-[0.75rem]">?ids=1,2,3</code>
+        </p>
       </section>
 
-      <section className="surface-card premium-border rounded-3xl p-5 md:p-6">
+      <section className="rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.48)] bg-[rgb(var(--bg-elev)/0.96)] p-6 md:p-7">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-xl font-semibold">{translate("Search to add")}</h2>
+            <p className="t-eyebrow">{translate("Add more shoes")}</p>
+            <h2 className="mt-1 text-xl font-semibold tracking-[-0.02em]">{translate("Search to add")}</h2>
             <p className="mt-1 text-sm soft-text">{translate("Find more shoes by keyword and filters, then add them directly to this comparison.")}</p>
           </div>
           <Link href={`/compare?ids=${selected.map((s) => s.id).join(",")}&showAdd=${shouldShowAddPanel ? "0" : "1"}`} className="w-full md:w-auto">
@@ -83,14 +92,14 @@ export function ComparePageClient({
               </div>
               <div>
                 <label className="mb-1 block text-xs soft-text">{translate("Brand")}</label>
-                <select name="brand" defaultValue={rawBrand ?? ""} className="w-full rounded-xl border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.95)] px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--ring)/0.4)] focus:border-[rgb(var(--ring)/0.85)] focus:outline-none focus:ring-4 focus:ring-[rgb(var(--ring)/0.18)]">
+                <select name="brand" defaultValue={rawBrand ?? ""} className="w-full rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.55)] bg-[rgb(var(--surface)/0.7)] px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--text)/0.35)] focus:border-[rgb(var(--text)/0.5)] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--text)/0.12)]">
                   <option value="">{translate("All brands")}</option>
                   {brands.map((b) => <option key={b} value={b}>{b}</option>)}
                 </select>
               </div>
               <div>
                 <label className="mb-1 block text-xs soft-text">{translate("Category")}</label>
-                <select name="category" defaultValue={rawCategory ?? ""} className="w-full rounded-xl border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.95)] px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--ring)/0.4)] focus:border-[rgb(var(--ring)/0.85)] focus:outline-none focus:ring-4 focus:ring-[rgb(var(--ring)/0.18)]">
+                <select name="category" defaultValue={rawCategory ?? ""} className="w-full rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.55)] bg-[rgb(var(--surface)/0.7)] px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--text)/0.35)] focus:border-[rgb(var(--text)/0.5)] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--text)/0.12)]">
                   <option value="">{translate("All categories")}</option>
                   {categories.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -116,7 +125,7 @@ export function ComparePageClient({
                 <Card key={shoe.id} className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-xs soft-text">
+                      <p className="text-[0.67rem] uppercase tracking-[0.22em] soft-text">
                         {shoe.brand}
                         {shoe.category ? (
                           <>
@@ -125,7 +134,7 @@ export function ComparePageClient({
                           </>
                         ) : null}
                       </p>
-                      <p className="mt-1 truncate font-semibold">{shoe.shoe_name}</p>
+                      <p className="mt-1 truncate font-semibold tracking-[-0.015em]">{shoe.shoe_name}</p>
                     </div>
                     <ShoeImage
                       src={shoe.image_url}
@@ -146,7 +155,7 @@ export function ComparePageClient({
                   <div className="mt-4">
                     <a
                       href={buildCompareHref(shoe.id)}
-                      className="interactive-soft inline-flex items-center gap-1.5 rounded-xl border border-[rgb(var(--accent)/0.4)] bg-[rgb(var(--accent)/0.9)] px-3 py-1.5 text-xs font-medium text-white shadow-[0_10px_24px_rgb(var(--accent)/0.28)] transition hover:bg-[rgb(var(--accent))]"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[rgb(var(--text))] bg-[rgb(var(--text))] px-3 py-1.5 text-xs font-bold tracking-[-0.01em] text-[rgb(var(--bg))] transition hover:shadow-[0_4px_14px_rgb(var(--shadow)/0.3)]"
                     >
                       <Plus className="h-3.5 w-3.5" /> {translate("Add to compare")}
                     </a>
