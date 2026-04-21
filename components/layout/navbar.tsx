@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Check, ChevronDown, Menu, Search, X } from "lucide-react";
+import { Check, Languages, Menu, Search, X } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { AccountMenu } from "@/components/layout/account-menu";
@@ -77,14 +77,19 @@ export function Navbar() {
     return base;
   }, [isAdmin]);
 
-  const navHeight = scrolled ? "h-[54px]" : "h-16";
+  const iconBtn =
+    "relative inline-flex h-8 w-8 items-center justify-center rounded-full text-[rgb(var(--subtext))] transition-[background-color,color] duration-[200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[rgb(var(--text)/0.08)] hover:text-[rgb(var(--text))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--text)/0.25)]";
 
   return (
-    <header className="sticky top-3 z-40 px-2 md:px-4" data-no-translate="true">
-      <div
-        className={`container-shell relative flex ${navHeight} items-center gap-2 rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.6)] bg-[rgb(var(--bg-elev)/0.88)] text-[rgb(var(--text))] shadow-[0_16px_40px_rgb(var(--shadow)/0.16)] backdrop-blur-[20px] backdrop-saturate-[180%] transition-[height,box-shadow] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] md:gap-3`}
-        style={scrolled ? { boxShadow: "0 8px 28px rgb(var(--shadow)/0.22)" } : undefined}
-      >
+    <header
+      className={`sticky top-0 z-40 transition-[background-color,backdrop-filter,border-color] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        scrolled
+          ? "border-b border-[rgb(var(--glass-stroke-soft)/0.4)] bg-[rgb(var(--bg)/0.72)] backdrop-blur-[16px] backdrop-saturate-[180%]"
+          : "border-b border-transparent bg-transparent"
+      }`}
+      data-no-translate="true"
+    >
+      <div className="container-shell relative flex h-16 items-center">
         <Link
           href="/"
           className="max-w-[7.6rem] truncate text-[0.9rem] font-bold tracking-[-0.02em] sm:max-w-[9.5rem] md:max-w-none"
@@ -92,51 +97,57 @@ export function Navbar() {
           snkrfeature
         </Link>
 
-        <nav className="ml-1 hidden items-center gap-[2px] rounded-[10px] border border-[rgb(var(--glass-stroke-soft)/0.32)] bg-[rgb(var(--surface)/0.55)] p-1 md:flex">
+        <nav className="pointer-events-auto absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex">
           {navItems.map((item) => {
             const active = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative inline-flex items-center rounded-lg px-3 py-[5px] text-[0.825rem] font-medium transition-colors duration-[200ms] ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--text)/0.25)] ${
+                className={`group relative inline-flex flex-col items-center px-3 py-2 text-[0.825rem] font-medium transition-colors duration-[200ms] ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-none ${
                   active
-                    ? "bg-[rgb(var(--text)/0.09)] text-[rgb(var(--text))]"
+                    ? "text-[rgb(var(--text))]"
                     : "text-[rgb(var(--subtext))] hover:text-[rgb(var(--text))]"
                 }`}
               >
                 {translate(item.label)}
                 <span
                   aria-hidden
-                  className="absolute bottom-[2px] left-1/2 h-[2px] -translate-x-1/2 rounded-sm bg-[rgb(var(--text))] transition-[width,opacity] duration-[280ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-                  style={{ width: active ? 14 : 0, opacity: active ? 1 : 0 }}
+                  className="mt-1.5 h-[2px] rounded-sm transition-[width,background-color] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:bg-[rgb(var(--text)/0.4)]"
+                  style={{
+                    width: active ? 22 : 4,
+                    background: active
+                      ? "rgb(var(--text)/0.8)"
+                      : "rgb(var(--muted)/0.55)"
+                  }}
                 />
               </Link>
             );
           })}
         </nav>
 
-        <div className="ml-auto hidden items-center gap-2 md:flex">
+        <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
           <Link
             href="/search/advanced"
-            className="inline-flex h-8 items-center gap-2 rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--surface)/0.6)] px-3 text-[0.75rem] font-medium tracking-[-0.01em] text-[rgb(var(--subtext))] transition-[border-color,color,background-color,box-shadow] duration-[200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-[rgb(var(--text)/0.4)] hover:bg-[rgb(var(--surface)/0.85)] hover:text-[rgb(var(--text))]"
+            className={`${iconBtn} hidden md:inline-flex`}
+            aria-label={translate("Advanced Search")}
+            title={translate("Advanced Search")}
           >
-            <Search className="h-3.5 w-3.5" />
-            <span>{translate("Advanced Search")}</span>
+            <Search className="h-4 w-4" />
           </Link>
 
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
+          <div className="relative hidden md:block" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               onClick={() => setLangOpen((prev) => !prev)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--surface)/0.6)] px-2.5 text-[0.75rem] font-medium text-[rgb(var(--subtext))] transition hover:border-[rgb(var(--text)/0.4)] hover:text-[rgb(var(--text))]"
+              className={iconBtn}
               aria-haspopup="menu"
               aria-expanded={langOpen}
               aria-label={translate("Language")}
+              title={locale === "en" ? "English" : "中文"}
               data-translation-lock="true"
             >
-              <span data-translation-lock="true">{locale === "en" ? "Eng" : "简"}</span>
-              <ChevronDown className="h-3.5 w-3.5" />
+              <Languages className="h-4 w-4" />
             </button>
             {langOpen && (
               <div className="nav-dropdown-panel absolute right-0 top-[calc(100%+0.4rem)] z-50 w-[9rem] rounded-xl p-1">
@@ -165,13 +176,12 @@ export function Navbar() {
               </div>
             )}
           </div>
-        </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 md:ml-0">
           <ThemeToggle />
-          <AccountMenu className="w-[8.25rem] px-2.5 text-xs sm:w-[9.5rem] sm:px-3 sm:text-sm md:w-[11rem]" />
+          <AccountMenu />
+
           <button
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.55)] bg-[rgb(var(--surface)/0.6)] text-[rgb(var(--text))] transition hover:border-[rgb(var(--text)/0.45)] md:hidden"
+            className={`${iconBtn} md:hidden`}
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label={translate("Toggle mobile menu")}
