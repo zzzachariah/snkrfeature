@@ -1,0 +1,150 @@
+"use client";
+
+import { Plus, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { Shoe } from "@/lib/types";
+import { Badge } from "@/components/ui/badge";
+import { ShoeImage } from "@/components/shoe/shoe-image";
+import { useLocale } from "@/components/i18n/locale-provider";
+import { DynamicTranslatedText } from "@/components/i18n/dynamic-translated-text";
+
+type Props = {
+  shoes: Shoe[];
+  onRemove: (id: string) => void;
+  onAdd: () => void;
+  canAdd: boolean;
+};
+
+function gridTemplate(count: number, hasAddGhost: boolean) {
+  if (count === 1 && hasAddGhost) return "grid-cols-1 md:grid-cols-2";
+  if (count === 1) return "grid-cols-1";
+  if (count === 2) return "grid-cols-1 md:grid-cols-[1fr_52px_1fr]";
+  if (count === 3) return "grid-cols-1 md:grid-cols-3";
+  if (count === 4) return "grid-cols-2 md:grid-cols-4";
+  return "grid-cols-2 md:grid-cols-3 lg:grid-cols-5";
+}
+
+export function ComparePlinths({ shoes, onRemove, onAdd, canAdd }: Props) {
+  const { translate } = useLocale();
+  const count = shoes.length;
+  const hideDescriptor = count >= 4;
+  const tagLimit = count >= 4 ? 2 : count >= 3 ? 3 : 4;
+  const showAddGhost = count === 1 && canAdd;
+  const gridClass = gridTemplate(count, showAddGhost);
+
+  const plinthProps = (shoe: Shoe) => ({
+    shoe,
+    hideDescriptor,
+    tagLimit,
+    onRemove,
+    translateLabel: translate
+  });
+
+  return (
+    <div className={`mb-16 grid items-start gap-x-6 gap-y-10 ${gridClass}`}>
+      {count === 2 ? (
+        <>
+          <ShoePlinth {...plinthProps(shoes[0])} />
+          <div className="hidden flex-col items-center justify-center pt-24 opacity-50 md:flex">
+            <div
+              className="w-px"
+              style={{ height: 90, background: "linear-gradient(to bottom, transparent, rgb(var(--muted)/0.55))" }}
+            />
+            <span className="my-3 text-sm font-medium tracking-[0.12em] soft-text">/</span>
+            <div
+              className="w-px"
+              style={{ height: 90, background: "linear-gradient(to bottom, rgb(var(--muted)/0.55), transparent)" }}
+            />
+          </div>
+          <ShoePlinth {...plinthProps(shoes[1])} />
+        </>
+      ) : (
+        shoes.map((shoe) => <ShoePlinth key={shoe.id} {...plinthProps(shoe)} />)
+      )}
+      {showAddGhost ? <AddShoeGhost onClick={onAdd} label={translate("Add shoe")} /> : null}
+    </div>
+  );
+}
+
+function ShoePlinth({
+  shoe,
+  hideDescriptor,
+  tagLimit,
+  onRemove,
+  translateLabel
+}: {
+  shoe: Shoe;
+  hideDescriptor: boolean;
+  tagLimit: number;
+  onRemove: (id: string) => void;
+  translateLabel: (value: string) => string;
+}) {
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      className="relative"
+    >
+      <button
+        type="button"
+        onClick={() => onRemove(shoe.id)}
+        aria-label={translateLabel("Remove shoe from compare")}
+        className="absolute right-1 top-1 z-10 rounded-lg border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.7)] p-1.5 soft-text transition hover:border-[rgb(var(--text)/0.45)] hover:text-[rgb(var(--text))]"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+
+      <div className="mb-5 flex min-h-[200px] items-center justify-center rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.28)] bg-[rgb(var(--surface))] px-6 py-10 shadow-[0_40px_80px_rgb(var(--shadow)/0.45)] md:min-h-[240px] md:px-10 md:py-14">
+        <ShoeImage
+          src={shoe.image_url}
+          alt={shoe.shoe_name}
+          fallbackLabel={translateLabel("No image")}
+          variant="compare"
+          className="w-full max-w-[18rem]"
+        />
+      </div>
+
+      <p className="t-eyebrow mb-1">
+        {shoe.brand}
+        {shoe.release_year ? (
+          <span className="ml-2 text-[rgb(var(--subtext))]">· {shoe.release_year}</span>
+        ) : null}
+      </p>
+      <h2 className="t-display-sm mb-3">{shoe.shoe_name}</h2>
+
+      {!hideDescriptor && shoe.spec.playstyle_summary ? (
+        <DynamicTranslatedText
+          as="p"
+          className="mb-4 max-w-[340px] text-[0.82rem] leading-[1.5] soft-text"
+          text={shoe.spec.playstyle_summary}
+          contentType="descriptive"
+        />
+      ) : null}
+
+      <div className="flex flex-wrap gap-1.5">
+        {(shoe.spec.tags ?? []).slice(0, tagLimit).map((tag) => (
+          <Badge key={tag}>
+            <DynamicTranslatedText as="span" text={tag} contentType="descriptive" />
+          </Badge>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function AddShoeGhost({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.3)] px-6 py-10 soft-text transition hover:border-[rgb(var(--text)/0.45)] hover:text-[rgb(var(--text))]"
+    >
+      <span className="flex h-12 w-12 items-center justify-center rounded-full border border-[rgb(var(--muted)/0.5)] bg-[rgb(var(--bg-elev)/0.6)] transition group-hover:border-[rgb(var(--text)/0.45)]">
+        <Plus className="h-5 w-5" />
+      </span>
+      <span className="text-sm font-medium tracking-[-0.01em]">{label}</span>
+    </button>
+  );
+}

@@ -1,178 +1,174 @@
 "use client";
 
-import { useMemo } from "react";
-import Link from "next/link";
-import { Plus, Search } from "lucide-react";
-import { CompareMatrix } from "@/components/compare/compare-matrix";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Route } from "next";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Plus } from "lucide-react";
 import { Shoe } from "@/lib/types";
 import { useLocale } from "@/components/i18n/locale-provider";
-import { DynamicTranslatedText } from "@/components/i18n/dynamic-translated-text";
-import { ShoeImage } from "@/components/shoe/shoe-image";
+import { ComparePlinths } from "@/components/compare/compare-plinths";
+import { CompareRadar } from "@/components/compare/compare-radar";
+import { CompareDiffRows } from "@/components/compare/compare-diff-rows";
+import { CompareSpecTable } from "@/components/compare/compare-spec-table";
+import { AddShoeDialog } from "@/components/compare/add-shoe-dialog";
+
+const MAX_SHOES = 5;
 
 type Props = {
   selected: Shoe[];
-  searchResults: Shoe[];
-  rawQ?: string;
-  rawBrand?: string;
-  rawCategory?: string;
-  rawPlayer?: string;
-  rawTech?: string;
-  brands: string[];
-  categories: string[];
-  shouldShowAddPanel: boolean;
+  allShoes: Shoe[];
 };
 
-export function ComparePageClient({
-  selected,
-  searchResults,
-  rawQ,
-  rawBrand,
-  rawCategory,
-  rawPlayer,
-  rawTech,
-  brands,
-  categories,
-  shouldShowAddPanel
-}: Props) {
+export function ComparePageClient({ selected, allShoes }: Props) {
   const { translate } = useLocale();
-  const hasActiveSearch = Boolean(rawQ || rawBrand || rawCategory || rawPlayer || rawTech);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [localShoes, setLocalShoes] = useState<Shoe[]>(selected);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  const displayedSuggestions = useMemo(() => {
-    if (hasActiveSearch) return searchResults.slice(0, 18);
-    const shuffled = [...searchResults].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 2);
-  }, [hasActiveSearch, searchResults]);
+  useEffect(() => {
+    setLocalShoes(selected);
+  }, [selected]);
 
-  function buildCompareHref(nextId: string) {
-    return `/compare?ids=${Array.from(new Set([...selected.map((shoe) => shoe.id), nextId])).join(",")}`;
-  }
+  const selectedIds = useMemo(() => new Set(localShoes.map((s) => s.id)), [localShoes]);
+  const canAdd = localShoes.length < MAX_SHOES;
+
+  const setCompareIds = useCallback(
+    (nextShoes: Shoe[]) => {
+      setLocalShoes(nextShoes);
+      const params = new URLSearchParams(searchParams.toString());
+      const ids = nextShoes.map((s) => s.id);
+      if (ids.length) {
+        params.set("ids", ids.join(","));
+      } else {
+        params.delete("ids");
+      }
+      const next = (params.toString() ? `${pathname}?${params.toString()}` : pathname) as Route;
+      router.push(next, { scroll: false });
+      router.refresh();
+    },
+    [pathname, router, searchParams]
+  );
+
+  const onRemove = (id: string) => {
+    setCompareIds(localShoes.filter((s) => s.id !== id));
+  };
+
+  const onPick = (id: string) => {
+    const picked = allShoes.find((s) => s.id === id);
+    if (!picked || selectedIds.has(id) || localShoes.length >= MAX_SHOES) return;
+    setCompareIds([...localShoes, picked]);
+    setDialogOpen(false);
+  };
+
+  const onClearAll = () => setCompareIds([]);
 
   return (
-    <main className="container-shell space-y-10 py-10 pb-24">
-      <section className="text-center py-10 md:py-14">
+    <main className="container-shell pb-24">
+      <section className="py-16 text-center md:py-20">
         <p className="t-eyebrow mb-3">{translate("Head to Head")}</p>
         <h1
-          className="font-extrabold tracking-[-0.04em] leading-[1]"
-          style={{ fontSize: "clamp(2.8rem,5.5vw,5rem)" }}
+          className="font-extrabold leading-[1] tracking-[-0.04em]"
+          style={{ fontSize: "clamp(2.8rem, 5.5vw, 5rem)" }}
         >
           {translate("Compare")}
         </h1>
-        <p className="mt-4 text-[0.88rem] tracking-[-0.005em] soft-text">
-          {translate("Share this comparison via URL query params:")} <code className="rounded bg-[rgb(var(--muted)/0.4)] px-1.5 py-0.5 text-[0.75rem]">?ids=1,2,3</code>
-        </p>
-      </section>
-
-      <section className="rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.48)] bg-[rgb(var(--bg-elev)/0.96)] p-6 md:p-7">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="t-eyebrow">{translate("Add more shoes")}</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-[-0.02em]">{translate("Search to add")}</h2>
-            <p className="mt-1 text-sm soft-text">{translate("Find more shoes by keyword and filters, then add them directly to this comparison.")}</p>
-          </div>
-          <Link href={`/compare?ids=${selected.map((s) => s.id).join(",")}&showAdd=${shouldShowAddPanel ? "0" : "1"}`} className="w-full md:w-auto">
-            <Button variant={shouldShowAddPanel ? "secondary" : "primary"} className="inline-flex w-full items-center justify-center gap-1.5 md:w-auto">
-              <Search className="h-4 w-4" />
-              {shouldShowAddPanel ? translate("Hide search") : translate("Open search")}
-            </Button>
-          </Link>
-        </div>
-
-        {shouldShowAddPanel && (
-          <div className="mt-4 space-y-4">
-            <form action="/compare" method="GET" className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-              <input type="hidden" name="ids" value={selected.map((s) => s.id).join(",")} />
-              <input type="hidden" name="showAdd" value="1" />
-              <div className="md:col-span-2 xl:col-span-5">
-                <label className="mb-1 block text-xs soft-text">{translate("Keywords")}</label>
-                <Input name="q" defaultValue={rawQ ?? ""} placeholder={translate("Name, tags, tech, notes...")} />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs soft-text">{translate("Brand")}</label>
-                <select name="brand" defaultValue={rawBrand ?? ""} className="w-full rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.55)] bg-[rgb(var(--surface)/0.7)] px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--text)/0.35)] focus:border-[rgb(var(--text)/0.5)] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--text)/0.12)]">
-                  <option value="">{translate("All brands")}</option>
-                  {brands.map((b) => <option key={b} value={b}>{b}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs soft-text">{translate("Category")}</label>
-                <select name="category" defaultValue={rawCategory ?? ""} className="w-full rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.55)] bg-[rgb(var(--surface)/0.7)] px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--text)/0.35)] focus:border-[rgb(var(--text)/0.5)] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--text)/0.12)]">
-                  <option value="">{translate("All categories")}</option>
-                  {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs soft-text">{translate("Player")}</label>
-                <Input name="player" defaultValue={rawPlayer ?? ""} placeholder={translate("e.g. LeBron")} />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs soft-text">{translate("Tech")}</label>
-                <Input name="tech" defaultValue={rawTech ?? ""} placeholder={translate("e.g. Zoom, plate")} />
-              </div>
-              <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-end">
-                <Button type="submit" className="inline-flex w-full items-center justify-center gap-1.5 sm:w-auto"><Search className="h-4 w-4" /> {translate("Search")}</Button>
-                <Link href={`/compare?ids=${selected.map((s) => s.id).join(",")}&showAdd=1`} className="w-full sm:w-auto">
-                  <Button type="button" variant="secondary" className="w-full sm:w-auto">{translate("Reset")}</Button>
-                </Link>
-              </div>
-            </form>
-
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {displayedSuggestions.map((shoe) => (
-                <Card key={shoe.id} className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-[0.67rem] uppercase tracking-[0.22em] soft-text">
-                        {shoe.brand}
-                        {shoe.category ? (
-                          <>
-                            {" • "}
-                            <DynamicTranslatedText as="span" text={shoe.category} contentType="descriptive" />
-                          </>
-                        ) : null}
-                      </p>
-                      <p className="mt-1 truncate font-semibold tracking-[-0.015em]">{shoe.shoe_name}</p>
-                    </div>
-                    <ShoeImage
-                      src={shoe.image_url}
-                      alt={shoe.shoe_name}
-                      fallbackLabel={translate("No image")}
-                      variant="suggestion"
-                      className="shrink-0"
-                    />
-                  </div>
-                  <p className="mt-1 text-xs soft-text">{shoe.player ?? translate("No player tag")}</p>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {(shoe.spec.tags ?? []).slice(0, 2).map((tag) => (
-                      <Badge key={tag}>
-                        <DynamicTranslatedText as="span" text={tag} contentType="descriptive" />
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="mt-4">
-                    <a
-                      href={buildCompareHref(shoe.id)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[rgb(var(--text))] bg-[rgb(var(--text))] px-3 py-1.5 text-xs font-bold tracking-[-0.01em] text-[rgb(var(--bg))] transition hover:shadow-[0_4px_14px_rgb(var(--shadow)/0.3)]"
-                    >
-                      <Plus className="h-3.5 w-3.5" /> {translate("Add to compare")}
-                    </a>
-                  </div>
-                </Card>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+          {localShoes.length ? (
+            <p className="text-[0.88rem] tracking-[-0.005em] soft-text">
+              {localShoes.map((shoe, i) => (
+                <span key={shoe.id}>
+                  <span className="text-[rgb(var(--text)/0.9)]">{shoe.shoe_name}</span>
+                  {i < localShoes.length - 1 ? <span className="mx-2 opacity-40">/</span> : null}
+                </span>
               ))}
-            </div>
-            {displayedSuggestions.length === 0 && (
-              <Card className="p-5 text-center">
-                <p className="font-medium">{translate("No shoes found")}</p>
-                <p className="mt-1 text-xs soft-text">{translate("Try broader keywords or remove one filter.")}</p>
-              </Card>
-            )}
-          </div>
-        )}
+            </p>
+          ) : (
+            <p className="text-[0.88rem] tracking-[-0.005em] soft-text">
+              {translate("Pick up to 5 shoes to compare.")}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => setDialogOpen(true)}
+            disabled={!canAdd}
+            className="inline-flex items-center gap-1 rounded-md border border-[rgb(var(--glass-stroke-soft)/0.4)] px-2.5 py-1 text-[0.75rem] soft-text transition hover:border-[rgb(var(--text)/0.4)] hover:text-[rgb(var(--text))] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[rgb(var(--glass-stroke-soft)/0.4)] disabled:hover:text-[rgb(var(--subtext))]"
+          >
+            <Plus className="h-3.5 w-3.5" /> {translate("Add shoe")}
+          </button>
+          {localShoes.length > 0 ? (
+            <button
+              type="button"
+              onClick={onClearAll}
+              className="rounded-md border border-transparent px-2 py-1 text-[0.72rem] soft-text transition hover:text-[rgb(var(--text))]"
+            >
+              {translate("Clear all")}
+            </button>
+          ) : null}
+        </div>
       </section>
-      <CompareMatrix shoes={selected} />
+
+      {localShoes.length === 0 ? (
+        <EmptyState onOpenAdd={() => setDialogOpen(true)} translate={translate} />
+      ) : (
+        <>
+          <ComparePlinths
+            shoes={localShoes}
+            onRemove={onRemove}
+            onAdd={() => setDialogOpen(true)}
+            canAdd={canAdd}
+          />
+
+          <div
+            className="mb-16 h-px"
+            style={{
+              background: "linear-gradient(to right, transparent, rgb(var(--muted) / 0.4), transparent)"
+            }}
+          />
+
+          <section className="mb-16 grid items-start gap-12 lg:grid-cols-2 lg:gap-14">
+            <div>
+              <p className="t-eyebrow mb-5 text-center">{translate("Performance Profile")}</p>
+              <CompareRadar shoes={localShoes} />
+            </div>
+            <div>
+              <CompareDiffRows shoes={localShoes} />
+            </div>
+          </section>
+
+          <CompareSpecTable shoes={localShoes} />
+        </>
+      )}
+
+      <AddShoeDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        shoes={allShoes}
+        selectedIds={selectedIds}
+        onPick={onPick}
+      />
     </main>
+  );
+}
+
+function EmptyState({ onOpenAdd, translate }: { onOpenAdd: () => void; translate: (value: string) => string }) {
+  return (
+    <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-[rgb(var(--muted)/0.6)] bg-[rgb(var(--bg-elev)/0.36)] px-8 py-14 text-center">
+      <p className="t-eyebrow mb-3">{translate("Nothing to compare yet")}</p>
+      <h2 className="mb-2 text-2xl font-semibold tracking-[-0.02em]">
+        {translate("Build your head-to-head")}
+      </h2>
+      <p className="mb-6 text-sm soft-text">
+        {translate("Add up to five shoes and see their radar, diff, and full spec sheet side by side.")}
+      </p>
+      <button
+        type="button"
+        onClick={onOpenAdd}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-[rgb(var(--text))] bg-[rgb(var(--text))] px-4 py-2 text-sm font-semibold text-[rgb(var(--bg))] transition hover:shadow-[0_8px_24px_rgb(var(--shadow)/0.3)]"
+      >
+        <Plus className="h-4 w-4" /> {translate("Add shoe")}
+      </button>
+    </div>
   );
 }
