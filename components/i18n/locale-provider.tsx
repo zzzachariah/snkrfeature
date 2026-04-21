@@ -16,6 +16,16 @@ const UI_TRANSLATIONS_ZH: Record<string, string> = {
   "machine translation may contain some inaccuracies. thank you for your understanding. loading may also take a little time.":
     "机器翻译可能出现一些问题，敬请谅解。另外，加载可能会花一点时间。",
   "integrated basketball sneaker feature platform": "综合篮球鞋性能平台",
+  "basketball sneaker database": "球鞋配置信息库",
+  "a living index": "实时更新的",
+  "of every pair": "球鞋信息",
+  "worth playing in.": "数据库",
+  "every basketball sneaker worth playing in — reviewed, compared, and indexed by the community.": "查看、对比、上传球鞋",
+  "go to compare": "前往对比界面",
+  "submission pipeline": "审核流程",
+  "submit a shoe": "上传球鞋",
+  "pick up to 5 shoes to compare.": "选至多五双鞋对比",
+  "add shoe": "添加球鞋",
   "compare, discuss, and choose your ideal basketball sneaker on snkrfeature": "在 SNKRFEATURE 比较、讨论并选择你理想的篮球鞋",
   "if you want to contribute to our community, please submit corrections, upload a new shoe, and discuss!":
     "如果你想为社区做贡献，欢迎提交更正、上传新鞋并参与讨论！",
