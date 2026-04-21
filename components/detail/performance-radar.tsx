@@ -16,8 +16,8 @@ type Props = {
 
 const VIEW = 320;
 const CENTER = VIEW / 2;
-const MAX_RADIUS = 104;
-const LABEL_RADIUS = 138;
+const MAX_RADIUS = 92;
+const LABEL_RADIUS = 128;
 
 function polar(radius: number, angleRad: number) {
   const x = Number((CENTER + radius * Math.sin(angleRad)).toFixed(3));
@@ -134,33 +134,26 @@ function AxisLabel({
   const topPct = Number(((y / VIEW) * 100).toFixed(3));
   const clamped = Math.max(0, Math.min(100, Math.round(axis.score)));
 
-  const isLeft = Math.sin(theta) < -0.2;
-  const isRight = Math.sin(theta) > 0.2;
-  const align = isLeft ? "items-end text-right" : isRight ? "items-start text-left" : "items-center text-center";
-  const translateX = isLeft ? "-100%" : isRight ? "0" : "-50%";
-
   return (
     <div
-      className={`absolute flex flex-col gap-0.5 ${align}`}
+      className="absolute flex w-[28%] flex-col items-center gap-0.5 text-center leading-tight"
       style={{
         left: `${leftPct}%`,
         top: `${topPct}%`,
-        transform: `translate(${translateX}, -50%)`
+        transform: "translate(-50%, -50%)"
       }}
       title={axis.rawText?.trim() ? axis.rawText : undefined}
     >
-      <p className="text-[0.55rem] font-semibold uppercase tracking-[0.18em] soft-text">
+      <p className="text-[0.5rem] font-semibold uppercase tracking-[0.14em] soft-text md:text-[0.55rem]">
         {translate(axis.label)}
       </p>
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-base font-semibold text-[rgb(var(--text))]">{clamped}</span>
-        <DynamicTranslatedText
-          as="span"
-          className="text-[0.65rem] soft-text"
-          text={axis.tier}
-          contentType="descriptive"
-        />
-      </div>
+      <span className="text-sm font-semibold text-[rgb(var(--text))] md:text-base">{clamped}</span>
+      <DynamicTranslatedText
+        as="span"
+        className="hidden text-[0.65rem] soft-text md:inline"
+        text={axis.tier}
+        contentType="descriptive"
+      />
     </div>
   );
 }
