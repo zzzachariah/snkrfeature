@@ -1,4 +1,5 @@
-import { HomeSlides } from "@/components/home/home-slides";
+import { HomeTable } from "@/components/home/home-table";
+import { HomeHero } from "@/components/home/home-hero";
 import { getShoes } from "@/lib/data/shoes";
 import type { Metadata } from "next";
 import { absoluteUrl, DEFAULT_OG_IMAGE_URL, HOME_DESCRIPTION, HOME_TITLE } from "@/lib/seo";
@@ -30,7 +31,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const brands = new Set(shoes.map((s) => s.brand)).size;
 
   return (
-    <main>
+    <main className="container-shell space-y-16 py-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -47,12 +48,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           }),
         }}
       />
-      <HomeSlides
-        shoes={shoes}
-        shoesCount={shoes.length}
-        brandsCount={brands}
-        initialQuery={q ?? ""}
-      />
+      <HomeHero shoesCount={shoes.length} brandsCount={brands} />
+
+      <HomeTable shoes={shoes} initialQuery={q ?? ""} />
     </main>
   );
 }

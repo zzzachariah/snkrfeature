@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpDown, ChevronDown, SearchX, X } from "lucide-react";
 import { Shoe } from "@/lib/types";
@@ -13,17 +13,7 @@ import { ShoeImage } from "@/components/shoe/shoe-image";
 
 type SortKey = "shoe_name" | "brand" | "release_year";
 
-export function HomeTable({
-  shoes,
-  initialQuery = "",
-  active = true,
-  scrollContainerAttr = false
-}: {
-  shoes: Shoe[];
-  initialQuery?: string;
-  active?: boolean;
-  scrollContainerAttr?: boolean;
-}) {
+export function HomeTable({ shoes, initialQuery = "" }: { shoes: Shoe[]; initialQuery?: string }) {
   const { translate } = useLocale();
   const [searchDraft, setSearchDraft] = useState(initialQuery);
   const [query, setQuery] = useState(initialQuery);
@@ -31,13 +21,6 @@ export function HomeTable({
   const [sortKey, setSortKey] = useState<SortKey>("release_year");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selected, setSelected] = useState<string[]>([]);
-  const [revealed, setRevealed] = useState(active);
-
-  useEffect(() => {
-    if (!active) return;
-    const t = window.setTimeout(() => setRevealed(true), 60);
-    return () => window.clearTimeout(t);
-  }, [active]);
 
   const filtered = useMemo(() => {
     const scored = shoes
@@ -77,20 +60,9 @@ export function HomeTable({
     setQuery("");
   }
 
-  const revealStyle = (delay: number): React.CSSProperties => ({
-    opacity: revealed ? 1 : 0,
-    transform: revealed ? "none" : "translateY(14px)",
-    transition:
-      "opacity 520ms cubic-bezier(0.22,1,0.36,1),transform 520ms cubic-bezier(0.22,1,0.36,1)",
-    transitionDelay: `${delay}ms`
-  });
-
   return (
-    <section className="flex h-full min-h-0 flex-col gap-5">
-      <div
-        className="flex flex-wrap items-end justify-between gap-4"
-        style={revealStyle(0)}
-      >
+    <section className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="t-eyebrow mb-2">{translate("The Database")}</p>
           <h2 className="t-display-sm">{translate("Every pair, indexed.")}</h2>
@@ -138,14 +110,8 @@ export function HomeTable({
         </form>
       </div>
 
-      <div
-        className="flex-1 min-h-0 overflow-hidden rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.32)] bg-[rgb(var(--bg-elev)/0.5)]"
-        style={revealStyle(120)}
-      >
-        <div
-          className="h-full overflow-auto"
-          {...(scrollContainerAttr ? { "data-home-scroll-container": "true" } : {})}
-        >
+      <div className="overflow-hidden rounded-xl border border-[rgb(var(--glass-stroke-soft)/0.32)] bg-[rgb(var(--bg-elev)/0.5)]">
+        <div className="max-h-[560px] overflow-auto">
           <table className="w-full table-fixed text-left text-sm">
             <colgroup>
               <col className="w-[60px]" />
@@ -220,13 +186,9 @@ export function HomeTable({
                 <motion.tr
                   key={shoe.id}
                   initial={{ opacity: 0, y: 6 }}
-                  animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
-                  transition={{
-                    duration: 0.34,
-                    delay: revealed ? 0.18 + Math.min(i, 12) * 0.028 : 0,
-                    ease: [0.22, 1, 0.36, 1]
-                  }}
-                  className="border-t border-[rgb(var(--muted)/0.15)] transition-colors duration-[160ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[rgb(var(--text)/0.035)]"
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.012, ease: [0.22, 1, 0.36, 1] }}
+                  className="border-t border-[rgb(var(--muted)/0.15)] transition hover:bg-[rgb(var(--text)/0.035)]"
                 >
                   <td className="px-3 py-3 text-center align-middle">
                     <input
@@ -266,10 +228,7 @@ export function HomeTable({
           </table>
         </div>
       </div>
-      <p
-        className="text-center text-[0.72rem] tracking-[0.02em] soft-text"
-        style={revealStyle(320)}
-      >
+      <p className="text-center text-[0.72rem] tracking-[0.02em] soft-text">
         {translate("Showing")} {filtered.length} {translate("of")} {shoes.length}
       </p>
       {selected.length > 1 && (

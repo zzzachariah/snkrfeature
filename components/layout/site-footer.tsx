@@ -14,9 +14,8 @@ export function SiteFooter() {
   const [infoOpen, setInfoOpen] = useState(false);
 
   const isAuthPath = /^\/(login|signup|register)(\/|$)/.test(pathname);
-  const isHomePath = pathname === "/";
 
-  if (isAuthPath || isHomePath) {
+  if (isAuthPath) {
     return null;
   }
 
