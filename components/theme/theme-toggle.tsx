@@ -53,7 +53,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       type="button"
       onClick={cycleTheme}
       className={cn(
-        "inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--surface)/0.6)] text-[rgb(var(--subtext))] transition hover:border-[rgb(var(--text)/0.4)] hover:text-[rgb(var(--text))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--text)/0.25)]",
+        "inline-flex h-8 w-8 items-center justify-center rounded-full text-[rgb(var(--subtext))] transition-[background-color,color] duration-[200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[rgb(var(--text)/0.08)] hover:text-[rgb(var(--text))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--text)/0.25)]",
         className
       )}
       aria-label={`${translate("Theme")}: ${translatedTheme}. ${translate("Click to cycle theme.")}`}

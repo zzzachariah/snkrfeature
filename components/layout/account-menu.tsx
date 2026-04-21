@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, LayoutDashboard, LogIn, Shield, UserPlus } from "lucide-react";
+import { LogOut, LayoutDashboard, LogIn, Shield, UserCircle, UserPlus } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
@@ -132,13 +132,21 @@ export function AccountMenu({ className }: { className?: string }) {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label={signedIn ? label : translate("Account")}
+        title={signedIn ? label : translate("Account")}
         className={cn(
-          "inline-flex h-8 w-[9.5rem] items-center justify-between gap-2 truncate rounded-lg border-none bg-[rgb(var(--text))] px-3 text-[0.75rem] font-bold tracking-[-0.01em] text-[rgb(var(--bg))] transition hover:shadow-[0_4px_14px_rgb(var(--shadow)/0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--text)/0.3)]",
+          "relative inline-flex h-8 w-8 items-center justify-center rounded-full text-[rgb(var(--subtext))] transition-[background-color,color] duration-[200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[rgb(var(--text)/0.08)] hover:text-[rgb(var(--text))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--text)/0.25)]",
           className
         )}
       >
-        <span className="truncate" data-user-identity="true">{signedIn ? label : translate("Account")}</span>
-        <ChevronDown className="h-4 w-4 shrink-0" />
+        <UserCircle className="h-[18px] w-[18px]" />
+        <span className="sr-only" data-user-identity="true">{signedIn ? label : translate("Account")}</span>
+        {signedIn ? (
+          <span
+            aria-hidden
+            className="absolute bottom-[4px] right-[4px] h-1.5 w-1.5 rounded-full bg-[rgb(var(--text))] ring-2 ring-[rgb(var(--bg))]"
+          />
+        ) : null}
       </button>
 
       <AnimatePresence>
