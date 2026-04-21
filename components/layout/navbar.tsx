@@ -106,12 +106,11 @@ export function Navbar() {
                 }`}
               >
                 {translate(item.label)}
-                {active ? (
-                  <span
-                    aria-hidden
-                    className="absolute bottom-[2px] left-1/2 h-[2px] w-[14px] -translate-x-1/2 rounded-sm bg-[rgb(var(--text))]"
-                  />
-                ) : null}
+                <span
+                  aria-hidden
+                  className="absolute bottom-[2px] left-1/2 h-[2px] -translate-x-1/2 rounded-sm bg-[rgb(var(--text))] transition-[width,opacity] duration-[280ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  style={{ width: active ? 14 : 0, opacity: active ? 1 : 0 }}
+                />
               </Link>
             );
           })}
@@ -120,13 +119,10 @@ export function Navbar() {
         <div className="ml-auto hidden items-center gap-2 md:flex">
           <Link
             href="/search/advanced"
-            className="inline-flex h-8 items-center gap-3 rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--surface)/0.6)] px-3 text-[0.75rem] tracking-[-0.01em] text-[rgb(var(--subtext))] transition hover:border-[rgb(var(--text)/0.4)] hover:text-[rgb(var(--text))]"
+            className="inline-flex h-8 items-center gap-2 rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.5)] bg-[rgb(var(--surface)/0.6)] px-3 text-[0.75rem] font-medium tracking-[-0.01em] text-[rgb(var(--subtext))] transition-[border-color,color,background-color,box-shadow] duration-[200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-[rgb(var(--text)/0.4)] hover:bg-[rgb(var(--surface)/0.85)] hover:text-[rgb(var(--text))]"
           >
-            <span className="inline-flex items-center gap-1">
-              <span className="font-mono text-[0.7rem]">⌘K</span>
-              <span>{translate("Search")}</span>
-            </span>
             <Search className="h-3.5 w-3.5" />
+            <span>{translate("Advanced Search")}</span>
           </Link>
 
           <div className="relative" onClick={(e) => e.stopPropagation()}>
