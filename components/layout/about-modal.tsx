@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { X } from "lucide-react";
 import { useLocale } from "@/components/i18n/locale-provider";
 
@@ -11,16 +12,23 @@ type Props = {
 export function AboutModal({ open, onClose }: Props) {
   const { translate } = useLocale();
 
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   if (!open) return null;
 
   return (
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-[rgb(var(--glass-overlay)/0.72)] p-4 backdrop-blur-sm"
-      onClick={onClose}
     >
       <div
         className="surface-card premium-border relative w-full max-w-2xl rounded-3xl p-5 shadow-[0_30px_72px_rgb(var(--glass-shadow)/0.42)] md:p-6"
-        onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
