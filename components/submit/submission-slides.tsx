@@ -1,0 +1,510 @@
+"use client";
+
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { TurnstileWidget } from "@/components/ui/turnstile";
+import { useLocale } from "@/components/i18n/locale-provider";
+
+const EASE = "cubic-bezier(0.22,1,0.36,1)";
+const SLIDE_TRANSITION_MS = 720;
+const SCROLL_DELTA_THRESHOLD = 14;
+const TOUCH_DELTA_THRESHOLD = 48;
+const TOTAL = 4;
+
+export type SubmissionSlidesHandle = {
+  goTo: (index: number) => void;
+};
+
+type FieldDef = {
+  name: string;
+  label: string;
+  required?: boolean;
+  type?: "text" | "number";
+};
+
+const IDENTITY_FIELDS: FieldDef[] = [
+  { name: "shoe_name", label: "Shoe name", required: true },
+  { name: "brand", label: "Brand", required: true },
+  { name: "model", label: "Model / version" },
+  { name: "release_year", label: "Release year", type: "number" }
+];
+
+const TECH_FIELDS: FieldDef[] = [
+  { name: "forefoot_midsole_tech", label: "Forefoot midsole tech" },
+  { name: "heel_midsole_tech", label: "Heel midsole tech" },
+  { name: "outsole_tech", label: "Outsole tech" },
+  { name: "upper_tech", label: "Upper tech" }
+];
+
+const FEEL_FIELDS: FieldDef[] = [
+  { name: "cushioning_feel", label: "Cushioning feel" },
+  { name: "court_feel", label: "Court feel" },
+  { name: "bounce", label: "Bounce" },
+  { name: "stability", label: "Stability" },
+  { name: "traction", label: "Traction" },
+  { name: "fit", label: "Fit / containment" }
+];
+
+type Props = {
+  mode: "new_shoe" | "correction";
+  targetShoeLabel?: string;
+  initialValues: Record<string, string | number | null | undefined>;
+  token: string;
+  onToken: (token: string) => void;
+  isSubmitting: boolean;
+  message: string;
+  isError: boolean;
+};
+
+function trySelfScroll(el: HTMLElement | null, deltaY: number): boolean {
+  if (!el) return false;
+  if (el.scrollHeight <= el.clientHeight) return false;
+  const atTop = el.scrollTop <= 0;
+  const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+  if (deltaY > 0 && !atBottom) return true;
+  if (deltaY < 0 && !atTop) return true;
+  return false;
+}
+
+export const SubmissionSlides = forwardRef<SubmissionSlidesHandle, Props>(function SubmissionSlides(
+  { mode, targetShoeLabel, initialValues, token, onToken, isSubmitting, message, isError },
+  ref
+) {
+  const { translate } = useLocale();
+  const [slide, setSlide] = useState(0);
+  const slideRef = useRef(0);
+  const animatingRef = useRef(false);
+
+  useEffect(() => {
+    slideRef.current = slide;
+  }, [slide]);
+
+  const goTo = useCallback((next: number) => {
+    if (animatingRef.current) return;
+    if (next < 0 || next >= TOTAL) return;
+    if (next === slideRef.current) return;
+    animatingRef.current = true;
+    setSlide(next);
+    window.setTimeout(() => {
+      animatingRef.current = false;
+    }, SLIDE_TRANSITION_MS);
+  }, []);
+
+  useImperativeHandle(ref, () => ({ goTo }), [goTo]);
+
+  // Wheel
+  useEffect(() => {
+    let lastFire = 0;
+    const onWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement | null;
+
+      if (target?.tagName === "TEXTAREA" && trySelfScroll(target, e.deltaY)) return;
+
+      const sc = target?.closest("[data-submission-scroll-container]") as HTMLElement | null;
+      if (sc && trySelfScroll(sc, e.deltaY)) return;
+
+      const now = Date.now();
+      if (now - lastFire < 80) return;
+      if (Math.abs(e.deltaY) < SCROLL_DELTA_THRESHOLD) return;
+      e.preventDefault();
+      lastFire = now;
+      if (e.deltaY > 0) goTo(slideRef.current + 1);
+      else goTo(slideRef.current - 1);
+    };
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [goTo]);
+
+  // Keyboard — skip when typing in form fields
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "ArrowDown" || e.key === "PageDown") {
+        e.preventDefault();
+        goTo(slideRef.current + 1);
+      } else if (e.key === "ArrowUp" || e.key === "PageUp") {
+        e.preventDefault();
+        goTo(slideRef.current - 1);
+      } else if (e.key === "Home") {
+        goTo(0);
+      } else if (e.key === "End") {
+        goTo(TOTAL - 1);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goTo]);
+
+  // Touch — skip when starting on form fields
+  useEffect(() => {
+    let startY = 0;
+    let blockNav = false;
+    const onStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement | null;
+      blockNav = !!target?.closest("input, textarea, select, button");
+      startY = e.touches[0]?.clientY ?? 0;
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (blockNav) return;
+      const endY = e.changedTouches[0]?.clientY ?? 0;
+      const dy = startY - endY;
+      if (Math.abs(dy) < TOUCH_DELTA_THRESHOLD) return;
+      if (dy > 0) goTo(slideRef.current + 1);
+      else goTo(slideRef.current - 1);
+    };
+    window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchend", onEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onStart);
+      window.removeEventListener("touchend", onEnd);
+    };
+  }, [goTo]);
+
+  // Body scroll lock
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  const labels = [translate("Identity"), translate("Tech"), translate("Feel"), translate("Story")];
+  const slideHeight = "calc(100dvh - 64px)";
+
+  function valueOf(name: string) {
+    const v = initialValues[name];
+    return v == null ? "" : String(v);
+  }
+
+  return (
+    <div className="relative" style={{ height: slideHeight, overflow: "hidden" }}>
+      <div
+        className="flex flex-col"
+        style={{
+          transform: `translate3d(0, calc(${-slide} * ${slideHeight}), 0)`,
+          transition: `transform ${SLIDE_TRANSITION_MS}ms ${EASE}`,
+          willChange: "transform",
+          backfaceVisibility: "hidden"
+        }}
+      >
+        {/* Slide 0: Identity */}
+        <div className="shrink-0 overflow-hidden" style={{ height: slideHeight }}>
+          <div className="container-shell flex h-full flex-col justify-center py-6 md:py-10">
+            <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+              <SlideHeader
+                eyebrow={translate("Step 1 of 4")}
+                title={mode === "correction" ? translate("Submit correction") : translate("Submit sneaker information")}
+                description={
+                  mode === "correction"
+                    ? `${translate("You're submitting a correction for")} ${targetShoeLabel ?? translate("an existing published shoe")}. ${translate("This goes to the same review queue and approval will update the existing record.")}`
+                    : translate("Let's start with what shoe this is.")
+                }
+              />
+              <FieldGrid fields={IDENTITY_FIELDS} valueOf={valueOf} translate={translate} cols={2} />
+              <SlideNav
+                slide={slide}
+                total={TOTAL}
+                goTo={goTo}
+                translate={translate}
+                isSubmitting={isSubmitting}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Slide 1: Tech */}
+        <div className="shrink-0 overflow-hidden" style={{ height: slideHeight }}>
+          <div className="container-shell flex h-full flex-col justify-center py-6 md:py-10">
+            <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+              <SlideHeader
+                eyebrow={translate("Step 2 of 4")}
+                title={translate("Tech")}
+                description={translate("Materials and construction details. All optional.")}
+              />
+              <FieldGrid fields={TECH_FIELDS} valueOf={valueOf} translate={translate} cols={2} />
+              <SlideNav
+                slide={slide}
+                total={TOTAL}
+                goTo={goTo}
+                translate={translate}
+                isSubmitting={isSubmitting}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Slide 2: Feel */}
+        <div className="shrink-0 overflow-hidden" style={{ height: slideHeight }}>
+          <div className="container-shell flex h-full flex-col justify-center py-6 md:py-10">
+            <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+              <SlideHeader
+                eyebrow={translate("Step 3 of 4")}
+                title={translate("Feel")}
+                description={translate("Subjective performance qualities, in your own words.")}
+              />
+              <FieldGrid fields={FEEL_FIELDS} valueOf={valueOf} translate={translate} cols={3} />
+              <SlideNav
+                slide={slide}
+                total={TOTAL}
+                goTo={goTo}
+                translate={translate}
+                isSubmitting={isSubmitting}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Slide 3: Story + Submit */}
+        <div className="shrink-0 overflow-hidden" style={{ height: slideHeight }}>
+          <div className="container-shell flex h-full flex-col py-6 md:py-10">
+            <div
+              className="mx-auto flex w-full min-h-0 max-w-3xl flex-1 flex-col gap-5 overflow-y-auto pr-1"
+              data-submission-scroll-container
+            >
+              <SlideHeader
+                eyebrow={translate("Step 4 of 4")}
+                title={translate("Story")}
+                description={translate("Add story + raw notes + verification, then submit.")}
+              />
+              <div>
+                <label className="mb-1 block text-xs soft-text">{translate("Story title")}</label>
+                <Input
+                  name="story_title"
+                  defaultValue={valueOf("story_title")}
+                  placeholder={translate("Short headline for the story.")}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs soft-text">{translate("Story / background notes")}</label>
+                <textarea
+                  name="story_notes"
+                  defaultValue={valueOf("story_notes")}
+                  className="min-h-24 w-full rounded-xl border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.78)] p-3 text-sm text-[rgb(var(--text))] outline-none transition focus:border-[rgb(var(--ring)/0.8)] focus:ring-4 focus:ring-[rgb(var(--ring)/0.16)]"
+                  placeholder={translate("Release context, design intent, notable versions, community notes.")}
+                />
+              </div>
+              <div>
+                <label className="mb-1 flex items-center gap-2 text-xs soft-text">
+                  <span
+                    aria-hidden
+                    className="inline-block h-1.5 w-1.5 rounded-full bg-[rgb(var(--accent))]"
+                  />
+                  {translate("Raw notes (required)")}
+                </label>
+                <textarea
+                  name="raw_text"
+                  defaultValue={valueOf("raw_text")}
+                  className="min-h-32 w-full rounded-xl border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.78)] p-3 text-sm text-[rgb(var(--text))] outline-none transition focus:border-[rgb(var(--ring)/0.8)] focus:ring-4 focus:ring-[rgb(var(--ring)/0.16)]"
+                  placeholder={translate("Paste your full performance observations and source snippets...")}
+                />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs soft-text">{translate("Tags (comma separated)")}</label>
+                  <Input
+                    name="tags"
+                    defaultValue={valueOf("tags")}
+                    placeholder={translate("Tags (comma separated)")}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs soft-text">{translate("Source links (comma separated)")}</label>
+                  <Input
+                    name="source_links"
+                    defaultValue={valueOf("source_links")}
+                    placeholder={translate("Source links (comma separated)")}
+                  />
+                </div>
+              </div>
+              <div className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.5)] p-3">
+                <TurnstileWidget onToken={onToken} />
+              </div>
+              <div className="flex flex-col items-stretch gap-3 pt-1 sm:flex-row sm:items-center">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => goTo(slide - 1)}
+                  className="w-full sm:w-auto"
+                >
+                  {translate("Back")}
+                </Button>
+                <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
+                  {isSubmitting ? translate("Submitting...") : translate("Submit for review")}
+                </Button>
+                {message && isError && <p className="text-xs text-red-400">{message}</p>}
+                {!token && (
+                  <p className="text-[11px] soft-text">{translate("Complete verification above to enable submit.")}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right-side dot indicator */}
+      <div
+        className="pointer-events-none absolute right-5 top-1/2 z-10 hidden -translate-y-1/2 flex-col items-center gap-2 md:flex"
+        aria-hidden
+      >
+        <span
+          key={slide}
+          className="mb-1 select-none text-[0.55rem] font-medium uppercase tracking-[0.22em]"
+          style={{
+            color: "rgb(var(--subtext)/0.55)",
+            writingMode: "vertical-rl",
+            textOrientation: "mixed",
+            animation: `slideLabelInSubmit 380ms ${EASE}`
+          }}
+        >
+          {labels[slide]}
+        </span>
+        {Array.from({ length: TOTAL }).map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => goTo(i)}
+            aria-label={`Slide ${i + 1}: ${labels[i]}`}
+            className="pointer-events-auto rounded-sm border-none p-0 outline-none"
+            style={{
+              width: 4,
+              height: slide === i ? 22 : 4,
+              background: slide === i ? "rgb(var(--text)/0.8)" : "rgb(var(--muted)/0.55)",
+              boxShadow: slide === i ? "0 0 0 4px rgb(var(--text)/0.08)" : "none",
+              transition: `height 320ms ${EASE},background 220ms ${EASE},box-shadow 320ms ${EASE}`,
+              cursor: "pointer"
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Scroll-down chevron, hidden on the final slide */}
+      <button
+        type="button"
+        onClick={() => goTo(slide + 1)}
+        aria-label={translate("Scroll to next slide")}
+        className="absolute left-1/2 z-10 -translate-x-1/2 items-center justify-center rounded-full border border-[rgb(var(--glass-stroke-soft)/0.45)] bg-[rgb(var(--bg-elev)/0.7)] text-[rgb(var(--subtext))] shadow-[0_4px_14px_rgb(var(--shadow)/0.18)] backdrop-blur-[12px] transition-[opacity,transform,color] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:text-[rgb(var(--text))]"
+        style={{
+          bottom: 32,
+          width: 36,
+          height: 36,
+          display: slide < TOTAL - 1 ? "inline-flex" : "none",
+          opacity: slide < TOTAL - 1 ? 1 : 0,
+          transform: `translateX(-50%) translateY(${slide < TOTAL - 1 ? "0" : "8px"})`
+        }}
+      >
+        <ChevronDown
+          className="h-4 w-4"
+          style={{ animation: "scrollHintSubmit 1.8s ease-in-out infinite" }}
+        />
+      </button>
+
+      <style>{`
+        @keyframes scrollHintSubmit {
+          0%, 100% { transform: translateY(0); opacity: 0.7; }
+          50% { transform: translateY(3px); opacity: 1; }
+        }
+        @keyframes slideLabelInSubmit {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+});
+
+function SlideHeader({
+  eyebrow,
+  title,
+  description
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="space-y-2 text-center">
+      <p className="t-eyebrow">{eyebrow}</p>
+      <h1
+        className="font-extrabold leading-[1] tracking-[-0.04em]"
+        style={{ fontSize: "clamp(1.8rem, 3.6vw, 2.8rem)" }}
+      >
+        {title}
+      </h1>
+      <p className="text-sm soft-text">{description}</p>
+    </div>
+  );
+}
+
+function FieldGrid({
+  fields,
+  valueOf,
+  translate,
+  cols
+}: {
+  fields: FieldDef[];
+  valueOf: (name: string) => string;
+  translate: (s: string) => string;
+  cols: 1 | 2 | 3;
+}) {
+  const colsClass = cols === 3 ? "md:grid-cols-3" : cols === 2 ? "md:grid-cols-2" : "";
+  return (
+    <div className={`grid gap-4 ${colsClass}`}>
+      {fields.map((f) => (
+        <div key={f.name}>
+          <label className="mb-1 flex items-center gap-2 text-xs soft-text">
+            {f.required && (
+              <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-[rgb(var(--accent))]" />
+            )}
+            {translate(f.label)}
+          </label>
+          <Input
+            name={f.name}
+            type={f.type ?? "text"}
+            placeholder={translate(f.label)}
+            defaultValue={valueOf(f.name)}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SlideNav({
+  slide,
+  total,
+  goTo,
+  translate,
+  isSubmitting
+}: {
+  slide: number;
+  total: number;
+  goTo: (i: number) => void;
+  translate: (s: string) => string;
+  isSubmitting: boolean;
+}) {
+  const isFirst = slide === 0;
+  const isLast = slide === total - 1;
+  return (
+    <div className="flex items-center justify-between gap-3 pt-2">
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={() => goTo(slide - 1)}
+        disabled={isFirst}
+        className={isFirst ? "invisible" : ""}
+      >
+        {translate("Back")}
+      </Button>
+      {!isLast && (
+        <Button type="button" onClick={() => goTo(slide + 1)} disabled={isSubmitting}>
+          {translate("Next")}
+        </Button>
+      )}
+    </div>
+  );
+}

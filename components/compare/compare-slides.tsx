@@ -175,10 +175,12 @@ export function CompareSlides({ shoes, canAdd, canSave, onAdd, onSave, onRemove,
 
         {/* Slide 2: Tech Specifications */}
         <div className="shrink-0 overflow-hidden" style={{ height: slideHeight }}>
-          <div className="container-shell flex h-full flex-col py-6 md:py-10">
-            <p className="t-eyebrow mb-5 text-center">{translate("Tech Specifications")}</p>
-            <div className="min-h-0 flex-1 overflow-y-auto" data-compare-scroll-container>
-              <CompareSpecTable shoes={shoes} active={slide === 2} />
+          <div className="container-shell flex h-full flex-col justify-center py-6 md:py-10">
+            <div className="flex min-h-0 flex-col">
+              <p className="t-eyebrow mb-5 shrink-0 text-center">{translate("Tech Specifications")}</p>
+              <div className="min-h-0 flex-1 overflow-y-auto" data-compare-scroll-container>
+                <CompareSpecTable shoes={shoes} active={slide === 2} />
+              </div>
             </div>
           </div>
         </div>

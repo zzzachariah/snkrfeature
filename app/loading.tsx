@@ -1,11 +1,5 @@
-import { SneakerLoader } from "@/components/ui/sneaker-loader";
+import { PageLoader } from "@/components/ui/page-loader";
 
 export default function Loading() {
-  return (
-    <main className="container-shell py-16">
-      <div className="surface-card premium-border rounded-3xl p-10 flex items-center justify-center min-h-[320px]">
-        <SneakerLoader label="Loading" />
-      </div>
-    </main>
-  );
+  return <PageLoader label="Loading" />;
 }

@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Check, Languages, Menu, Search, X } from "lucide-react";
+import { Check, Languages, Menu, Search, Sparkles, X } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { AccountMenu } from "@/components/layout/account-menu";
+import { AboutModal } from "@/components/layout/about-modal";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { createClient } from "@/lib/supabase/client";
 import { NAV_ORDER } from "@/lib/nav-order";
@@ -26,6 +27,7 @@ export function Navbar() {
   const { locale, requestLocaleChange, translate } = useLocale();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -182,6 +184,15 @@ export function Navbar() {
           </div>
 
           <ThemeToggle />
+          <button
+            type="button"
+            onClick={() => setAboutOpen(true)}
+            className={`${iconBtn} hidden md:inline-flex`}
+            aria-label={translate("About")}
+            title={translate("About")}
+          >
+            <Sparkles className="h-4 w-4" />
+          </button>
           <AccountMenu />
 
           <button
@@ -242,8 +253,20 @@ export function Navbar() {
           >
             <Search className="h-4 w-4" /> {translate("Advanced Search")}
           </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setMobileOpen(false);
+              setAboutOpen(true);
+            }}
+            className="inline-flex items-center gap-2 rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.55)] bg-[rgb(var(--surface)/0.55)] px-3 py-2 text-left transition hover:border-[rgb(var(--text)/0.4)] hover:bg-[rgb(var(--text)/0.05)]"
+          >
+            <Sparkles className="h-4 w-4" /> {translate("About")}
+          </button>
         </nav>
       </div>
+
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </header>
   );
 }
