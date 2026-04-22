@@ -320,7 +320,7 @@ export function HomeTable({
                   <Row
                     key={shoe.id}
                     {...motionProps}
-                    className="row-accent border-t border-[rgb(var(--muted)/0.15)] transition-colors duration-[160ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[rgb(var(--text)/0.035)]"
+                    className="border-t border-[rgb(var(--muted)/0.15)] transition-colors duration-[160ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[rgb(var(--text)/0.035)]"
                   >
                     <td className="px-3 py-3 text-center align-middle">
                       <input

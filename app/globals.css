@@ -640,25 +640,6 @@ body {
   padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
 }
 
-/* Row left-edge accent — used by home table hover */
-.row-accent {
-  position: relative;
-}
-.row-accent::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 4px;
-  bottom: 4px;
-  width: 2px;
-  background: rgb(var(--text) / 0.55);
-  transform: scaleY(0);
-  transform-origin: center;
-  transition: transform 220ms var(--ease);
-  pointer-events: none;
-}
-.row-accent:hover::before { transform: scaleY(1); }
-
 /* Chevron bounce — spec table accordion */
 @keyframes chevronBounce {
   0%   { transform: rotate(0deg) scale(1); }
