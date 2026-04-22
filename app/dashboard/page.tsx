@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Eye, EyeOff, MessageCircle, ThumbsUp, ThumbsDown, Upload, GitCompare, Settings as SettingsIcon, LayoutGrid } from "lucide-react";
+import { Eye, EyeOff, MessageCircle, ThumbsUp, ThumbsDown, Upload, GitCompare, Settings as SettingsIcon, LayoutGrid, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,7 +74,8 @@ export default function DashboardPage() {
   const [likedComments, setLikedComments] = useState<DashboardComment[]>([]);
   const [dislikedComments, setDislikedComments] = useState<DashboardComment[]>([]);
   const [submissions, setSubmissions] = useState<Array<{ id: string; status: string; created_at: string }>>([]);
-  const [savedCompares, setSavedCompares] = useState<Array<{ id: string; title: string; created_at: string }>>([]);
+  const [savedCompares, setSavedCompares] = useState<Array<{ id: string; title: string; shoe_ids: string[]; created_at: string }>>([]);
+  const [deletingCompareId, setDeletingCompareId] = useState<string | null>(null);
   const [settingsMessage, setSettingsMessage] = useState("");
   const [settingsError, setSettingsError] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
@@ -111,7 +113,7 @@ export default function DashboardPage() {
           sb.from("profiles").select("username, role").eq("id", session.user.id).maybeSingle(),
           sb.from("comments").select("id, content, created_at, shoe_id, shoes(slug, shoe_name)").eq("user_id", session.user.id).order("created_at", { ascending: false }).limit(50),
           sb.from("user_submissions").select("id, status, created_at").eq("user_id", session.user.id).order("created_at", { ascending: false }).limit(20),
-          sb.from("saved_comparisons").select("id, title, created_at").eq("user_id", session.user.id).order("created_at", { ascending: false }).limit(20),
+          sb.from("saved_comparisons").select("id, title, shoe_ids, created_at").eq("user_id", session.user.id).order("created_at", { ascending: false }).limit(20),
           sb.from("comment_votes").select("comment_id, vote_type").eq("user_id", session.user.id)
         ]);
         if (process.env.NODE_ENV !== "production") console.info("[dashboard] profile fetch end", { profile: profileRes.data, error: profileRes.error });
@@ -196,7 +198,15 @@ export default function DashboardPage() {
         setLikedComments(await fetchVotedComments(likedIds));
         setDislikedComments(await fetchVotedComments(dislikedIds));
         setSubmissions((submissionsRes.data ?? []) as Array<{ id: string; status: string; created_at: string }>);
-        setSavedCompares((compareRes.data ?? []) as Array<{ id: string; title: string; created_at: string }>);
+        const rawCompares = (compareRes.data ?? []) as Array<{ id: string; title: string; shoe_ids: unknown; created_at: string }>;
+        setSavedCompares(
+          rawCompares.map((row) => ({
+            id: row.id,
+            title: row.title,
+            created_at: row.created_at,
+            shoe_ids: Array.isArray(row.shoe_ids) ? (row.shoe_ids as unknown[]).filter((v): v is string => typeof v === "string") : []
+          }))
+        );
         setLoading(false);
         if (process.env.NODE_ENV !== "production") console.info("[dashboard] user load end", { authenticated: true, userId: session.user.id });
       } catch (error) {
@@ -227,6 +237,24 @@ export default function DashboardPage() {
     }
 
     setSettingsMessage("Profile settings saved successfully.");
+  }
+
+  async function deleteSavedCompare(id: string) {
+    if (deletingCompareId) return;
+    setDeletingCompareId(id);
+    try {
+      const response = await fetch("/api/comparisons", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+      });
+      const data = await response.json().catch(() => ({ ok: false }));
+      if (response.ok && data.ok) {
+        setSavedCompares((prev) => prev.filter((row) => row.id !== id));
+      }
+    } finally {
+      setDeletingCompareId(null);
+    }
   }
 
   async function changePassword() {
@@ -413,16 +441,45 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold tracking-[-0.015em]">{translate("Saved compares")}</h2>
             <motion.div initial="initial" animate="animate" variants={listContainer} className="mt-4 space-y-3">
               {savedCompares.length === 0 && <p className="text-sm soft-text">{translate("No saved comparisons yet.")}</p>}
-              {savedCompares.map((item) => (
-                <motion.div
-                  key={item.id}
-                  variants={listItem}
-                  className="premium-hover-lift rounded-2xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.6)] p-4 text-sm backdrop-blur-md"
-                >
-                  <p className="font-medium">{item.title}</p>
-                  <p className="mt-1 text-xs soft-text">{new Date(item.created_at).toLocaleString()}</p>
-                </motion.div>
-              ))}
+              {savedCompares.map((item) => {
+                const openHref = (item.shoe_ids.length ? `/compare?ids=${item.shoe_ids.join(",")}` : "/compare") as Route;
+                const deleting = deletingCompareId === item.id;
+                return (
+                  <motion.div
+                    key={item.id}
+                    variants={listItem}
+                    className="premium-hover-lift rounded-2xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.6)] p-4 text-sm backdrop-blur-md"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{item.title}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs soft-text">
+                          <span>{new Date(item.created_at).toLocaleString()}</span>
+                          <span aria-hidden>·</span>
+                          <span>{item.shoe_ids.length} {item.shoe_ids.length === 1 ? translate("shoe") : translate("shoes")}</span>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Link
+                          href={openHref}
+                          className="rounded-lg border border-[rgb(var(--muted)/0.5)] px-3 py-1.5 text-xs font-medium soft-text transition hover:border-[rgb(var(--text)/0.45)] hover:text-[rgb(var(--text))]"
+                        >
+                          {translate("Open")}
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => deleteSavedCompare(item.id)}
+                          disabled={deleting}
+                          aria-label={translate("Delete")}
+                          className="rounded-lg border border-[rgb(var(--muted)/0.5)] p-2 soft-text transition hover:border-[rgb(var(--text)/0.45)] hover:text-[rgb(var(--text))] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </motion.div>
           </Card>
         );

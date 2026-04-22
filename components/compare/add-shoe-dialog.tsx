@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Search, X } from "lucide-react";
+import { Check, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Shoe } from "@/lib/types";
@@ -18,19 +18,30 @@ type Props = {
   onClose: () => void;
   shoes: Shoe[];
   selectedIds: Set<string>;
-  onPick: (id: string) => void;
+  remainingSlots: number;
+  onConfirm: (ids: string[]) => void;
 };
 
-export function AddShoeDialog({ open, onClose, shoes, selectedIds, onPick }: Props) {
+export function AddShoeDialog({ open, onClose, shoes, selectedIds, remainingSlots, onConfirm }: Props) {
   const { translate } = useLocale();
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("");
   const [category, setCategory] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (open) {
+      setPendingIds(new Set());
+      setQuery("");
+      setBrand("");
+      setCategory("");
+    }
+  }, [open]);
 
   const brands = useMemo(() => Array.from(new Set(shoes.map((s) => s.brand).filter(Boolean))).sort(), [shoes]);
   const categories = useMemo(
@@ -58,6 +69,26 @@ export function AddShoeDialog({ open, onClose, shoes, selectedIds, onPick }: Pro
 
   if (!mounted || !open) return null;
 
+  const pendingCount = pendingIds.size;
+  const atCap = pendingCount >= remainingSlots;
+
+  function togglePending(id: string) {
+    setPendingIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < remainingSlots) {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function handleConfirm() {
+    if (pendingCount === 0) return;
+    onConfirm(Array.from(pendingIds));
+  }
+
   return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-end justify-center bg-[rgb(var(--glass-overlay)/0.55)] p-4 md:items-center"
@@ -66,13 +97,16 @@ export function AddShoeDialog({ open, onClose, shoes, selectedIds, onPick }: Pro
       <div
         role="dialog"
         aria-modal
-        className="surface-card premium-border w-full max-w-2xl overflow-hidden rounded-3xl shadow-[0_30px_72px_rgb(var(--glass-shadow)/0.42)]"
+        className="surface-card premium-border flex w-full max-w-2xl flex-col overflow-hidden rounded-3xl shadow-[0_30px_72px_rgb(var(--glass-shadow)/0.42)]"
         onClick={(e) => e.stopPropagation()}
       >
             <div className="flex items-start justify-between gap-3 px-6 pt-6">
               <div>
                 <p className="t-eyebrow">{translate("Add to compare")}</p>
-                <h2 className="mt-1 text-xl font-semibold tracking-[-0.02em]">{translate("Pick a shoe")}</h2>
+                <h2 className="mt-1 text-xl font-semibold tracking-[-0.02em]">{translate("Pick shoes")}</h2>
+                <p className="mt-1 text-xs soft-text">
+                  {translate("Select up to")} {remainingSlots} {remainingSlots === 1 ? translate("more shoe") : translate("more shoes")}.
+                </p>
               </div>
               <button
                 type="button"
@@ -121,7 +155,7 @@ export function AddShoeDialog({ open, onClose, shoes, selectedIds, onPick }: Pro
               </select>
             </div>
 
-            <div className="mt-4 max-h-[60vh] overflow-y-auto px-6 pb-6">
+            <div className="mt-4 max-h-[55vh] flex-1 overflow-y-auto px-6 pb-4">
               {results.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.35)] py-8 text-center">
                   <p className="text-sm font-medium">{translate("No shoes found")}</p>
@@ -131,49 +165,90 @@ export function AddShoeDialog({ open, onClose, shoes, selectedIds, onPick }: Pro
                 </div>
               ) : (
                 <ul className="divide-y divide-[rgb(var(--muted)/0.18)]">
-                  {results.map((shoe) => (
-                    <li key={shoe.id}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onPick(shoe.id);
-                        }}
-                        className="group flex w-full items-center gap-3 py-3 text-left transition hover:bg-[rgb(var(--surface)/0.4)]"
-                      >
-                        <ShoeImage
-                          src={shoe.image_url}
-                          alt={shoe.shoe_name}
-                          fallbackLabel={translate("No image")}
-                          variant="suggestion"
-                          className="shrink-0"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="t-eyebrow">
-                            {shoe.brand}
-                            {shoe.category ? (
-                              <>
-                                {" · "}
-                                <DynamicTranslatedText as="span" text={shoe.category} contentType="descriptive" />
-                              </>
-                            ) : null}
-                          </p>
-                          <p className="mt-1 truncate text-sm font-semibold tracking-[-0.01em]">{shoe.shoe_name}</p>
-                          <div className="mt-1.5 flex flex-wrap gap-1.5">
-                            {(shoe.spec.tags ?? []).slice(0, 3).map((tag) => (
-                              <Badge key={tag}>
-                                <DynamicTranslatedText as="span" text={tag} contentType="descriptive" />
-                              </Badge>
-                            ))}
+                  {results.map((shoe) => {
+                    const checked = pendingIds.has(shoe.id);
+                    const disabled = !checked && atCap;
+                    return (
+                      <li key={shoe.id}>
+                        <button
+                          type="button"
+                          onClick={() => togglePending(shoe.id)}
+                          aria-pressed={checked}
+                          disabled={disabled}
+                          className={`group flex w-full items-center gap-3 py-3 text-left transition ${
+                            disabled ? "cursor-not-allowed opacity-40" : "hover:bg-[rgb(var(--surface)/0.4)]"
+                          }`}
+                        >
+                          <ShoeImage
+                            src={shoe.image_url}
+                            alt={shoe.shoe_name}
+                            fallbackLabel={translate("No image")}
+                            variant="suggestion"
+                            className="shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="t-eyebrow">
+                              {shoe.brand}
+                              {shoe.category ? (
+                                <>
+                                  {" · "}
+                                  <DynamicTranslatedText as="span" text={shoe.category} contentType="descriptive" />
+                                </>
+                              ) : null}
+                            </p>
+                            <p className="mt-1 truncate text-sm font-semibold tracking-[-0.01em]">{shoe.shoe_name}</p>
+                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                              {(shoe.spec.tags ?? []).slice(0, 3).map((tag) => (
+                                <Badge key={tag}>
+                                  <DynamicTranslatedText as="span" text={tag} contentType="descriptive" />
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                        <span className="shrink-0 rounded-lg border border-[rgb(var(--muted)/0.5)] bg-[rgb(var(--surface)/0.6)] p-2 soft-text transition group-hover:border-[rgb(var(--text)/0.45)] group-hover:text-[rgb(var(--text))]">
-                          <Plus className="h-4 w-4" />
-                        </span>
-                      </button>
-                    </li>
-                  ))}
+                          <span
+                            aria-hidden
+                            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition ${
+                              checked
+                                ? "border-[rgb(var(--text))] bg-[rgb(var(--text))] text-[rgb(var(--bg))]"
+                                : "border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--surface)/0.6)] soft-text group-hover:border-[rgb(var(--text)/0.45)]"
+                            }`}
+                          >
+                            {checked ? <Check className="h-3.5 w-3.5" /> : null}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-t border-[rgb(var(--muted)/0.25)] bg-[rgb(var(--bg-elev)/0.55)] px-6 py-4">
+              <p className="text-xs soft-text">
+                {pendingCount > 0
+                  ? `${pendingCount} ${pendingCount === 1 ? translate("shoe selected") : translate("shoes selected")}`
+                  : translate("No shoes selected yet")}
+                {atCap ? <span className="ml-2 text-[rgb(var(--text)/0.7)]">· {translate("max reached")}</span> : null}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-lg border border-[rgb(var(--muted)/0.5)] px-3 py-1.5 text-xs soft-text transition hover:border-[rgb(var(--text)/0.45)] hover:text-[rgb(var(--text))]"
+                >
+                  {translate("Cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={pendingCount === 0}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[rgb(var(--text))] bg-[rgb(var(--text))] px-3 py-1.5 text-xs font-semibold text-[rgb(var(--bg))] transition hover:shadow-[0_8px_24px_rgb(var(--shadow)/0.3)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none"
+                >
+                  {pendingCount > 0
+                    ? `${translate("Add")} ${pendingCount} ${pendingCount === 1 ? translate("shoe") : translate("shoes")}`
+                    : translate("Add shoes")}
+                </button>
+              </div>
             </div>
       </div>
     </div>,
