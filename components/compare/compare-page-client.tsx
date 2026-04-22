@@ -3,14 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Route } from "next";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Bookmark, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Shoe } from "@/lib/types";
 import { useLocale } from "@/components/i18n/locale-provider";
-import { ComparePlinths } from "@/components/compare/compare-plinths";
-import { CompareRadar } from "@/components/compare/compare-radar";
-import { CompareDiffRows } from "@/components/compare/compare-diff-rows";
-import { CompareSpecTable } from "@/components/compare/compare-spec-table";
-import { CompareSectionNav } from "@/components/compare/compare-section-nav";
+import { CompareSlides } from "@/components/compare/compare-slides";
 import { AddShoeDialog } from "@/components/compare/add-shoe-dialog";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
@@ -48,11 +44,6 @@ export function ComparePageClient({ selected, allShoes }: Props) {
   useEffect(() => {
     setLocalShoes(selected);
   }, [selected]);
-
-  useEffect(() => {
-    document.documentElement.classList.add("compare-snap-root");
-    return () => document.documentElement.classList.remove("compare-snap-root");
-  }, []);
 
   const setCompareIds = useCallback(
     (nextShoes: Shoe[]) => {
@@ -187,96 +178,33 @@ export function ComparePageClient({ selected, allShoes }: Props) {
   }
 
   return (
-    <main className="container-shell pb-24">
-      <section id="compare-top" className="py-16 text-center md:py-20">
-        <p className="t-eyebrow mb-3">{translate("Head to Head")}</p>
-        <h1
-          className="font-extrabold leading-[1] tracking-[-0.04em]"
-          style={{ fontSize: "clamp(2.8rem, 5.5vw, 5rem)" }}
-        >
-          {translate("Compare")}
-        </h1>
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
-          {localShoes.length ? (
-            <p className="text-[0.88rem] tracking-[-0.005em] soft-text">
-              {localShoes.map((shoe, i) => (
-                <span key={shoe.id}>
-                  <span className="text-[rgb(var(--text)/0.9)]">{shoe.shoe_name}</span>
-                  {i < localShoes.length - 1 ? <span className="mx-2 opacity-40">/</span> : null}
-                </span>
-              ))}
-            </p>
-          ) : (
-            <p className="text-[0.88rem] tracking-[-0.005em] soft-text">
+    <main>
+      {localShoes.length === 0 ? (
+        <div className="container-shell pb-24">
+          <section className="py-16 text-center md:py-20">
+            <p className="t-eyebrow mb-3">{translate("Head to Head")}</p>
+            <h1
+              className="font-extrabold leading-[1] tracking-[-0.04em]"
+              style={{ fontSize: "clamp(2.8rem, 5.5vw, 5rem)" }}
+            >
+              {translate("Compare")}
+            </h1>
+            <p className="mt-4 text-[0.88rem] tracking-[-0.005em] soft-text">
               {translate("Pick up to 5 shoes to compare.")}
             </p>
-          )}
-          <button
-            type="button"
-            onClick={() => setDialogOpen(true)}
-            disabled={!canAdd}
-            className="inline-flex items-center gap-1 rounded-md border border-[rgb(var(--glass-stroke-soft)/0.4)] px-2.5 py-1 text-[0.75rem] soft-text transition hover:border-[rgb(var(--text)/0.4)] hover:text-[rgb(var(--text))] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[rgb(var(--glass-stroke-soft)/0.4)] disabled:hover:text-[rgb(var(--subtext))]"
-          >
-            <Plus className="h-3.5 w-3.5" /> {translate("Add shoe")}
-          </button>
-          {canSave ? (
-            <button
-              type="button"
-              onClick={openSaveModal}
-              className="inline-flex items-center gap-1 rounded-md border border-[rgb(var(--glass-stroke-soft)/0.4)] px-2.5 py-1 text-[0.75rem] soft-text transition hover:border-[rgb(var(--text)/0.4)] hover:text-[rgb(var(--text))]"
-            >
-              <Bookmark className="h-3.5 w-3.5" /> {translate("Save compare")}
-            </button>
-          ) : null}
-          {localShoes.length > 0 ? (
-            <button
-              type="button"
-              onClick={onClearAll}
-              className="rounded-md border border-transparent px-2 py-1 text-[0.72rem] soft-text transition hover:text-[rgb(var(--text))]"
-            >
-              {translate("Clear all")}
-            </button>
-          ) : null}
-        </div>
-      </section>
-
-      {localShoes.length === 0 ? (
-        <EmptyState onOpenAdd={() => setDialogOpen(true)} translate={translate} />
-      ) : (
-        <>
-          <div id="compare-lineup">
-            <ComparePlinths
-              shoes={localShoes}
-              onRemove={onRemove}
-              onAdd={() => setDialogOpen(true)}
-              canAdd={canAdd}
-            />
-          </div>
-
-          <div
-            className="mb-16 h-px"
-            style={{
-              background: "linear-gradient(to right, transparent, rgb(var(--muted) / 0.4), transparent)"
-            }}
-          />
-
-          <section
-            id="compare-perf"
-            className="compare-snap-stop mb-16 grid items-start gap-12 scroll-mt-20 lg:grid-cols-2 lg:gap-14"
-          >
-            <div>
-              <p className="t-eyebrow mb-5 text-center">{translate("Performance Profile")}</p>
-              <CompareRadar shoes={localShoes} />
-            </div>
-            <div>
-              <CompareDiffRows shoes={localShoes} />
-            </div>
           </section>
-
-          <CompareSpecTable shoes={localShoes} />
-
-          <CompareSectionNav />
-        </>
+          <EmptyState onOpenAdd={() => setDialogOpen(true)} translate={translate} />
+        </div>
+      ) : (
+        <CompareSlides
+          shoes={localShoes}
+          canAdd={canAdd}
+          canSave={canSave}
+          onAdd={() => setDialogOpen(true)}
+          onSave={openSaveModal}
+          onRemove={onRemove}
+          onClear={onClearAll}
+        />
       )}
 
       <AddShoeDialog
