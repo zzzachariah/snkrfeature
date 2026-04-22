@@ -194,67 +194,82 @@ export const SubmissionSlides = forwardRef<SubmissionSlidesHandle, Props>(functi
       >
         {/* Slide 0: Identity */}
         <div className="shrink-0 overflow-hidden" style={{ height: slideHeight }}>
-          <div className="container-shell flex h-full flex-col justify-center py-6 md:py-10">
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-              <SlideHeader
-                eyebrow={translate("Step 1 of 4")}
-                title={mode === "correction" ? translate("Submit correction") : translate("Submit sneaker information")}
-                description={
-                  mode === "correction"
-                    ? `${translate("You're submitting a correction for")} ${targetShoeLabel ?? translate("an existing published shoe")}. ${translate("This goes to the same review queue and approval will update the existing record.")}`
-                    : translate("Let's start with what shoe this is.")
-                }
-              />
-              <FieldGrid fields={IDENTITY_FIELDS} valueOf={valueOf} translate={translate} cols={2} />
-              <SlideNav
-                slide={slide}
-                total={TOTAL}
-                goTo={goTo}
-                translate={translate}
-                isSubmitting={isSubmitting}
-              />
+          <div
+            className="container-shell h-full overflow-y-auto py-6 md:py-10"
+            data-submission-scroll-container
+          >
+            <div className="flex min-h-full flex-col justify-center">
+              <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+                <SlideHeader
+                  eyebrow={translate("Step 1 of 4")}
+                  title={mode === "correction" ? translate("Submit correction") : translate("Submit sneaker information")}
+                  description={
+                    mode === "correction"
+                      ? `${translate("You're submitting a correction for")} ${targetShoeLabel ?? translate("an existing published shoe")}. ${translate("This goes to the same review queue and approval will update the existing record.")}`
+                      : translate("Let's start with what shoe this is.")
+                  }
+                />
+                <FieldGrid fields={IDENTITY_FIELDS} valueOf={valueOf} translate={translate} cols={2} />
+                <SlideNav
+                  slide={slide}
+                  total={TOTAL}
+                  goTo={goTo}
+                  translate={translate}
+                  isSubmitting={isSubmitting}
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Slide 1: Tech */}
         <div className="shrink-0 overflow-hidden" style={{ height: slideHeight }}>
-          <div className="container-shell flex h-full flex-col justify-center py-6 md:py-10">
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-              <SlideHeader
-                eyebrow={translate("Step 2 of 4")}
-                title={translate("Tech")}
-                description={translate("Materials and construction details. All optional.")}
-              />
-              <FieldGrid fields={TECH_FIELDS} valueOf={valueOf} translate={translate} cols={2} />
-              <SlideNav
-                slide={slide}
-                total={TOTAL}
-                goTo={goTo}
-                translate={translate}
-                isSubmitting={isSubmitting}
-              />
+          <div
+            className="container-shell h-full overflow-y-auto py-6 md:py-10"
+            data-submission-scroll-container
+          >
+            <div className="flex min-h-full flex-col justify-center">
+              <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+                <SlideHeader
+                  eyebrow={translate("Step 2 of 4")}
+                  title={translate("Tech")}
+                  description={translate("Materials and construction details. All optional.")}
+                />
+                <FieldGrid fields={TECH_FIELDS} valueOf={valueOf} translate={translate} cols={2} />
+                <SlideNav
+                  slide={slide}
+                  total={TOTAL}
+                  goTo={goTo}
+                  translate={translate}
+                  isSubmitting={isSubmitting}
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Slide 2: Feel */}
         <div className="shrink-0 overflow-hidden" style={{ height: slideHeight }}>
-          <div className="container-shell flex h-full flex-col justify-center py-6 md:py-10">
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-              <SlideHeader
-                eyebrow={translate("Step 3 of 4")}
-                title={translate("Feel")}
-                description={translate("Subjective performance qualities, in your own words.")}
-              />
-              <FieldGrid fields={FEEL_FIELDS} valueOf={valueOf} translate={translate} cols={3} />
-              <SlideNav
-                slide={slide}
-                total={TOTAL}
-                goTo={goTo}
-                translate={translate}
-                isSubmitting={isSubmitting}
-              />
+          <div
+            className="container-shell h-full overflow-y-auto py-6 md:py-10"
+            data-submission-scroll-container
+          >
+            <div className="flex min-h-full flex-col justify-center">
+              <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+                <SlideHeader
+                  eyebrow={translate("Step 3 of 4")}
+                  title={translate("Feel")}
+                  description={translate("Subjective performance qualities, in your own words.")}
+                />
+                <FieldGrid fields={FEEL_FIELDS} valueOf={valueOf} translate={translate} cols={3} />
+                <SlideNav
+                  slide={slide}
+                  total={TOTAL}
+                  goTo={goTo}
+                  translate={translate}
+                  isSubmitting={isSubmitting}
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -220,19 +220,24 @@ export function DashboardSlides(props: Props) {
       >
         {/* Slide 0: Overview */}
         <div className="shrink-0 overflow-hidden" style={{ height: slideHeight }}>
-          <div className="container-shell flex h-full flex-col justify-center py-6 md:py-10">
-            <div className="mx-auto w-full max-w-4xl">
-              <OverviewSlide
-                loading={props.loading}
-                signedIn={props.signedIn}
-                username={props.username}
-                email={props.email}
-                role={props.role}
-                commentsCount={props.comments.length}
-                likedCount={props.likedComments.length}
-                dislikedCount={props.dislikedComments.length}
-                translate={translate}
-              />
+          <div
+            className="container-shell h-full overflow-y-auto py-6 md:py-10"
+            data-dashboard-scroll-container
+          >
+            <div className="flex min-h-full flex-col justify-center">
+              <div className="mx-auto w-full max-w-4xl">
+                <OverviewSlide
+                  loading={props.loading}
+                  signedIn={props.signedIn}
+                  username={props.username}
+                  email={props.email}
+                  role={props.role}
+                  commentsCount={props.comments.length}
+                  likedCount={props.likedComments.length}
+                  dislikedCount={props.dislikedComments.length}
+                  translate={translate}
+                />
+              </div>
             </div>
           </div>
         </div>
