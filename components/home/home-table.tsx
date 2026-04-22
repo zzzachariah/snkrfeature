@@ -169,16 +169,23 @@ export function HomeTable({
             )}
             {filtered.map((shoe, i) => {
               const checked = selected.includes(shoe.id);
+              const animated = i < 8;
+              const Row = animated ? motion.li : "li";
+              const motionProps = animated
+                ? {
+                    initial: { opacity: 0, y: 6 },
+                    animate: revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 },
+                    transition: {
+                      duration: 0.34,
+                      delay: revealed ? 0.18 + i * 0.028 : 0,
+                      ease: [0.22, 1, 0.36, 1] as [number, number, number, number]
+                    }
+                  }
+                : {};
               return (
-                <motion.li
+                <Row
                   key={shoe.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
-                  transition={{
-                    duration: 0.34,
-                    delay: revealed ? 0.18 + Math.min(i, 12) * 0.028 : 0,
-                    ease: [0.22, 1, 0.36, 1]
-                  }}
+                  {...motionProps}
                   className="relative flex items-center gap-3 px-3 py-3"
                 >
                   <label className="flex shrink-0 items-center">
@@ -219,7 +226,7 @@ export function HomeTable({
                       ) : null}
                     </span>
                   </Link>
-                </motion.li>
+                </Row>
               );
             })}
           </ul>
@@ -295,52 +302,61 @@ export function HomeTable({
                   </td>
                 </tr>
               )}
-              {filtered.map((shoe, i) => (
-                <motion.tr
-                  key={shoe.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
-                  transition={{
-                    duration: 0.34,
-                    delay: revealed ? 0.18 + Math.min(i, 12) * 0.028 : 0,
-                    ease: [0.22, 1, 0.36, 1]
-                  }}
-                  className="row-accent border-t border-[rgb(var(--muted)/0.15)] transition-colors duration-[160ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[rgb(var(--text)/0.035)]"
-                >
-                  <td className="px-3 py-3 text-center align-middle">
-                    <input
-                      className="h-4 w-4 accent-[rgb(var(--text))]"
-                      type="checkbox"
-                      checked={selected.includes(shoe.id)}
-                      onChange={(e) =>
-                        setSelected((p) =>
-                          e.target.checked ? [...p, shoe.id] : p.filter((id) => id !== shoe.id)
-                        )
+              {filtered.map((shoe, i) => {
+                const animated = i < 8;
+                const Row = animated ? motion.tr : "tr";
+                const motionProps = animated
+                  ? {
+                      initial: { opacity: 0, y: 6 },
+                      animate: revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 },
+                      transition: {
+                        duration: 0.34,
+                        delay: revealed ? 0.18 + i * 0.028 : 0,
+                        ease: [0.22, 1, 0.36, 1] as [number, number, number, number]
                       }
-                    />
-                  </td>
-                  <td className="px-2 py-3 text-center align-middle">
-                    <ShoeImage
-                      src={shoe.image_url}
-                      alt={shoe.shoe_name}
-                      fallbackLabel={translate("No image")}
-                      variant="thumbnail"
-                    />
-                  </td>
-                  <td data-field-key="shoe_name" className="px-4 py-3">
-                    <Link
-                      href={`/shoes/${shoe.slug}`}
-                      className="font-semibold tracking-[-0.01em] transition hover:opacity-80"
-                    >
-                      {shoe.shoe_name}
-                    </Link>
-                  </td>
-                  <td data-field-key="brand" className="px-4 py-3 text-[0.78rem] soft-text">
-                    {shoe.brand}
-                  </td>
-                  <td className="px-4 py-3 text-[0.78rem] soft-text">{shoe.release_year ?? "—"}</td>
-                </motion.tr>
-              ))}
+                    }
+                  : {};
+                return (
+                  <Row
+                    key={shoe.id}
+                    {...motionProps}
+                    className="row-accent border-t border-[rgb(var(--muted)/0.15)] transition-colors duration-[160ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[rgb(var(--text)/0.035)]"
+                  >
+                    <td className="px-3 py-3 text-center align-middle">
+                      <input
+                        className="h-4 w-4 accent-[rgb(var(--text))]"
+                        type="checkbox"
+                        checked={selected.includes(shoe.id)}
+                        onChange={(e) =>
+                          setSelected((p) =>
+                            e.target.checked ? [...p, shoe.id] : p.filter((id) => id !== shoe.id)
+                          )
+                        }
+                      />
+                    </td>
+                    <td className="px-2 py-3 text-center align-middle">
+                      <ShoeImage
+                        src={shoe.image_url}
+                        alt={shoe.shoe_name}
+                        fallbackLabel={translate("No image")}
+                        variant="thumbnail"
+                      />
+                    </td>
+                    <td data-field-key="shoe_name" className="px-4 py-3">
+                      <Link
+                        href={`/shoes/${shoe.slug}`}
+                        className="font-semibold tracking-[-0.01em] transition hover:opacity-80"
+                      >
+                        {shoe.shoe_name}
+                      </Link>
+                    </td>
+                    <td data-field-key="brand" className="px-4 py-3 text-[0.78rem] soft-text">
+                      {shoe.brand}
+                    </td>
+                    <td className="px-4 py-3 text-[0.78rem] soft-text">{shoe.release_year ?? "—"}</td>
+                  </Row>
+                );
+              })}
             </tbody>
           </table>
         </div>
