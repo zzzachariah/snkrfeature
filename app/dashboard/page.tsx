@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Eye, EyeOff, MessageCircle, ThumbsUp, ThumbsDown, Upload, GitCompare, Settings as SettingsIcon, LayoutGrid, Trash2 } from "lucide-react";
@@ -441,7 +442,7 @@ export default function DashboardPage() {
             <motion.div initial="initial" animate="animate" variants={listContainer} className="mt-4 space-y-3">
               {savedCompares.length === 0 && <p className="text-sm soft-text">{translate("No saved comparisons yet.")}</p>}
               {savedCompares.map((item) => {
-                const openHref = item.shoe_ids.length ? `/compare?ids=${item.shoe_ids.join(",")}` : "/compare";
+                const openHref = (item.shoe_ids.length ? `/compare?ids=${item.shoe_ids.join(",")}` : "/compare") as Route;
                 const deleting = deletingCompareId === item.id;
                 return (
                   <motion.div
