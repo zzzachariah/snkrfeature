@@ -22,7 +22,10 @@ export function CompareSpecTable({ shoes }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    wrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const timeout = setTimeout(() => {
+      wrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 260);
+    return () => clearTimeout(timeout);
   }, [open]);
 
   if (!shoes.length) return null;
@@ -42,7 +45,7 @@ export function CompareSpecTable({ shoes }: Props) {
     <div
       ref={wrapperRef}
       id="compare-specs"
-      className="compare-snap-stop scroll-mt-20 rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.3)] bg-[rgb(var(--bg-elev)/0.45)]"
+      className="compare-snap-stop-end rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.3)] bg-[rgb(var(--bg-elev)/0.45)]"
     >
       <button
         type="button"
