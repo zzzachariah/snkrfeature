@@ -64,5 +64,9 @@ export function TurnstileWidget({ onToken }: Props) {
     );
   }
 
-  return <div id={id} className="min-h-[66px]" />;
+  return (
+    <div className="flex min-h-[66px] justify-center md:justify-start">
+      <div id={id} />
+    </div>
+  );
 }

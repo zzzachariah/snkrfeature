@@ -19,6 +19,16 @@ export const FloatingInput = React.forwardRef<HTMLInputElement, Props>(
       typeof value === "string" ? value : typeof value === "number" ? String(value) : internalValue;
     const filled = effectiveValue.length > 0;
 
+    const labelRef = React.useRef<HTMLLabelElement | null>(null);
+
+    const triggerPulse = () => {
+      const el = labelRef.current;
+      if (!el) return;
+      el.classList.remove("label-pulse");
+      void el.offsetWidth;
+      el.classList.add("label-pulse");
+    };
+
     return (
       <div className="float-wrap relative" data-filled={filled}>
         <input
@@ -26,6 +36,7 @@ export const FloatingInput = React.forwardRef<HTMLInputElement, Props>(
           id={inputId}
           value={value}
           defaultValue={defaultValue}
+          onFocus={triggerPulse}
           onChange={(event) => {
             if (typeof value !== "string") {
               setInternalValue(event.target.value);
@@ -38,7 +49,7 @@ export const FloatingInput = React.forwardRef<HTMLInputElement, Props>(
           )}
           {...rest}
         />
-        <label htmlFor={inputId} className="float-label">
+        <label ref={labelRef} htmlFor={inputId} className="float-label">
           {label}
         </label>
       </div>

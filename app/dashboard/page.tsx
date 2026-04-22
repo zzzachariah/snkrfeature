@@ -327,16 +327,26 @@ export default function DashboardPage() {
   }
 
   function StatTile({ label, value }: { label: string; value: number }) {
+    const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      e.currentTarget.style.setProperty("--mx", `${x}%`);
+      e.currentTarget.style.setProperty("--my", `${y}%`);
+    };
     return (
       <motion.div
         variants={listItem}
-        className="premium-hover-lift group relative overflow-hidden rounded-2xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.65)] p-5 backdrop-blur-md"
+        onPointerMove={onPointerMove}
+        className="premium-hover-lift cursor-spotlight group relative overflow-hidden rounded-2xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.65)] p-5 backdrop-blur-md"
       >
-        <p className="auth-eyebrow">{translate(label)}</p>
-        <p className="mt-3 text-4xl font-semibold tracking-[-0.03em] text-[rgb(var(--text))]">
-          <AnimatedCounter value={value} />
-        </p>
-        <div className="pointer-events-none absolute inset-x-5 bottom-4 h-px bg-gradient-to-r from-transparent via-[rgb(var(--text)/0.18)] to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+        <div className="relative z-10">
+          <p className="auth-eyebrow">{translate(label)}</p>
+          <p className="mt-3 text-4xl font-semibold tracking-[-0.03em] text-[rgb(var(--text))]">
+            <AnimatedCounter value={value} />
+          </p>
+        </div>
+        <div className="pointer-events-none absolute inset-x-5 bottom-4 z-10 h-px bg-gradient-to-r from-transparent via-[rgb(var(--text)/0.18)] to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
       </motion.div>
     );
   }
@@ -359,22 +369,25 @@ export default function DashboardPage() {
             variants={listContainer}
             className="space-y-5"
           >
-            <motion.div variants={listItem} className="glass-card p-6 md:p-7">
-              <p className="auth-eyebrow">{translate("overview")}</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em]">
-                {loading
-                  ? translate("Loading account...")
-                  : `${translate("Welcome back")}, `}
-                {!loading && (
-                  <span className="brand-shimmer">{username || translate("user")}</span>
+            <motion.div variants={listItem} className="glass-card relative overflow-hidden p-6 md:p-7">
+              <div aria-hidden className="mesh-bg opacity-70" />
+              <div className="relative z-10">
+                <p className="auth-eyebrow">{translate("overview")}</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em]">
+                  {loading
+                    ? translate("Loading account...")
+                    : `${translate("Welcome back")}, `}
+                  {!loading && (
+                    <span className="brand-shimmer">{username || translate("user")}</span>
+                  )}
+                </h2>
+                <p className="mt-1 text-sm soft-text">{email}</p>
+                {!loading && role === "admin" && (
+                  <p className="mt-2 inline-flex items-center rounded-full border border-[rgb(var(--muted)/0.6)] bg-[rgb(var(--bg-elev)/0.7)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.22em] text-[rgb(var(--text))]">
+                    {translate("Admin account")}
+                  </p>
                 )}
-              </h2>
-              <p className="mt-1 text-sm soft-text">{email}</p>
-              {!loading && role === "admin" && (
-                <p className="mt-2 inline-flex items-center rounded-full border border-[rgb(var(--muted)/0.6)] bg-[rgb(var(--bg-elev)/0.7)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.22em] text-[rgb(var(--text))]">
-                  {translate("Admin account")}
-                </p>
-              )}
+              </div>
             </motion.div>
 
             <motion.div variants={listContainer} className="grid gap-4 md:grid-cols-3">
@@ -577,7 +590,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, ease }}
-          className="glass-card h-max p-4 lg:sticky lg:top-24"
+          className="glass-card h-max p-3 lg:sticky lg:top-24 lg:p-4"
         >
           <div className="mb-3 flex items-center justify-between px-1">
             <h2 className="text-sm font-semibold tracking-[0.01em]">{translate("User center")}</h2>
@@ -587,28 +600,28 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
-          <ul className="grid grid-cols-2 gap-1.5 text-sm sm:grid-cols-3 lg:grid-cols-1">
+          <ul className="chip-scroll flex snap-x gap-2 overflow-x-auto pb-1 pr-1 text-sm lg:grid lg:grid-cols-1 lg:gap-1.5 lg:overflow-x-visible lg:pb-0 lg:pr-0">
             {tabs.map((tab) => {
               const Icon = tabIcons[tab];
               const active = activeTab === tab;
               return (
-                <li key={tab} className="relative">
+                <li key={tab} className="relative shrink-0 snap-start lg:shrink-0">
                   <button
                     type="button"
                     onClick={() => setActiveTab(tab)}
-                    className={`relative z-10 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors duration-200 ${
+                    className={`relative z-10 flex w-full items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-left transition-colors duration-200 lg:whitespace-normal ${
                       active ? "text-[rgb(var(--text))]" : "soft-text hover:text-[rgb(var(--text))]"
                     }`}
                   >
                     {active && (
                       <motion.span
                         layoutId="dashboard-tab-pill"
-                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                        className="absolute inset-0 -z-10 rounded-xl border border-[rgb(var(--text)/0.22)] bg-[rgb(var(--text)/0.06)]"
+                        transition={{ type: "spring", stiffness: 520, damping: 36 }}
+                        className="absolute inset-0 -z-10 rounded-xl border border-[rgb(var(--text)/0.22)] bg-[rgb(var(--text)/0.06)] shadow-[inset_0_1px_0_rgb(var(--glass-highlight)/0.35)]"
                       />
                     )}
                     <Icon className="h-4 w-4 shrink-0 opacity-80" />
-                    <span className="truncate">{translate(tab)}</span>
+                    <span className="lg:truncate">{translate(tab)}</span>
                   </button>
                 </li>
               );

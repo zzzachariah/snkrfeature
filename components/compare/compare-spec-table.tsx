@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Shoe } from "@/lib/types";
@@ -17,6 +17,7 @@ type Props = {
 export function CompareSpecTable({ shoes }: Props) {
   const { translate } = useLocale();
   const [open, setOpen] = useState(false);
+  const hasOpenedRef = useRef(false);
 
   if (!shoes.length) return null;
 
@@ -25,6 +26,11 @@ export function CompareSpecTable({ shoes }: Props) {
     const distinct = new Set(values.map((v) => (v ?? "").trim().toLowerCase()));
     return { ...row, values, differs: distinct.size > 1 };
   });
+
+  const firstOpen = open && !hasOpenedRef.current;
+  if (firstOpen) {
+    hasOpenedRef.current = true;
+  }
 
   return (
     <div className="rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.3)] bg-[rgb(var(--bg-elev)/0.45)]">
@@ -35,7 +41,11 @@ export function CompareSpecTable({ shoes }: Props) {
         aria-expanded={open}
       >
         <p className="t-eyebrow">{translate("Tech Specifications")}</p>
-        <ChevronDown className={`h-4 w-4 soft-text transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        <ChevronDown
+          className={`h-4 w-4 soft-text transition-transform duration-[320ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+            open ? "rotate-180" : ""
+          }`}
+        />
       </button>
 
       <AnimatePresence initial={false}>
@@ -49,9 +59,9 @@ export function CompareSpecTable({ shoes }: Props) {
             className="overflow-hidden"
           >
             {shoes.length === 2 ? (
-              <PairedLayout rows={rows} shoes={shoes} translate={translate} />
+              <PairedLayout rows={rows} shoes={shoes} translate={translate} firstOpen={firstOpen} />
             ) : (
-              <ColumnLayout rows={rows} shoes={shoes} translate={translate} />
+              <ColumnLayout rows={rows} shoes={shoes} translate={translate} firstOpen={firstOpen} />
             )}
           </motion.div>
         ) : null}
@@ -63,15 +73,25 @@ export function CompareSpecTable({ shoes }: Props) {
 function PairedLayout({
   rows,
   shoes,
-  translate
+  translate,
+  firstOpen
 }: {
   rows: Array<{ key: string; label: string; values: Array<string | null>; differs: boolean }>;
   shoes: Shoe[];
   translate: (value: string) => string;
+  firstOpen: boolean;
 }) {
   return (
     <div>
-      <div className="grid grid-cols-3 gap-4 border-b border-[rgb(var(--muted)/0.18)] bg-[rgb(var(--surface)/0.4)] px-6 py-3">
+      {/* Mobile header (<md) — single row with both shoe names */}
+      <div className="grid grid-cols-2 gap-3 border-b border-[rgb(var(--muted)/0.18)] bg-[rgb(var(--surface)/0.4)] px-4 py-3 md:hidden">
+        <span className="truncate text-[0.7rem] font-semibold text-[rgb(var(--text)/0.85)]">{shoes[0].shoe_name}</span>
+        <span className="truncate text-right text-[0.7rem] font-semibold text-[rgb(var(--text)/0.85)]">
+          {shoes[1].shoe_name}
+        </span>
+      </div>
+      {/* Desktop header (md+) */}
+      <div className="hidden grid-cols-3 gap-4 border-b border-[rgb(var(--muted)/0.18)] bg-[rgb(var(--surface)/0.4)] px-6 py-3 md:grid">
         <span className="text-[0.7rem] font-semibold text-[rgb(var(--text)/0.85)]">{shoes[0].shoe_name}</span>
         <span className="t-eyebrow text-center">{translate("Spec")}</span>
         <span className="text-right text-[0.7rem] font-semibold text-[rgb(var(--text)/0.85)]">
@@ -81,15 +101,28 @@ function PairedLayout({
       {rows.map((row, i) => (
         <div
           key={row.key}
-          className={`grid grid-cols-3 items-center gap-4 px-6 py-3 ${
-            i < rows.length - 1 ? "border-b border-[rgb(var(--muted)/0.14)]" : ""
-          } ${row.differs ? "border-l-2 border-l-[rgb(var(--text)/0.35)] bg-[rgb(var(--text)/0.02)]" : ""}`}
+          className={`${i < rows.length - 1 ? "border-b border-[rgb(var(--muted)/0.14)]" : ""} ${
+            row.differs ? "border-l-2 border-l-[rgb(var(--text)/0.35)] bg-[rgb(var(--text)/0.02)]" : ""
+          } ${firstOpen && row.differs ? "accent-pulse" : ""}`}
         >
-          <SpecValue value={row.values[0]} align="left" />
-          <span className="text-center text-[0.62rem] uppercase tracking-[0.12em] text-[rgb(var(--subtext)/0.8)]">
-            {translate(row.label)}
-          </span>
-          <SpecValue value={row.values[1]} align="right" />
+          {/* Mobile stacked layout (<md) */}
+          <div className="flex flex-col gap-2 px-4 py-3 md:hidden">
+            <span className="text-[0.6rem] uppercase tracking-[0.16em] text-[rgb(var(--subtext)/0.85)]">
+              {translate(row.label)}
+            </span>
+            <div className="grid grid-cols-2 gap-3">
+              <SpecValue value={row.values[0]} align="left" />
+              <SpecValue value={row.values[1]} align="right" />
+            </div>
+          </div>
+          {/* Desktop paired layout (md+) */}
+          <div className="hidden grid-cols-3 items-center gap-4 px-6 py-3 md:grid">
+            <SpecValue value={row.values[0]} align="left" />
+            <span className="text-center text-[0.62rem] uppercase tracking-[0.12em] text-[rgb(var(--subtext)/0.8)]">
+              {translate(row.label)}
+            </span>
+            <SpecValue value={row.values[1]} align="right" />
+          </div>
         </div>
       ))}
     </div>
@@ -99,11 +132,13 @@ function PairedLayout({
 function ColumnLayout({
   rows,
   shoes,
-  translate
+  translate,
+  firstOpen
 }: {
   rows: Array<{ key: string; label: string; values: Array<string | null>; differs: boolean }>;
   shoes: Shoe[];
   translate: (value: string) => string;
+  firstOpen: boolean;
 }) {
   const cols = `minmax(140px,1fr) repeat(${shoes.length}, minmax(140px,1fr))`;
   return (
@@ -125,7 +160,9 @@ function ColumnLayout({
             key={row.key}
             className={`grid items-center gap-4 px-6 py-3 ${
               i < rows.length - 1 ? "border-b border-[rgb(var(--muted)/0.14)]" : ""
-            } ${row.differs ? "border-l-2 border-l-[rgb(var(--text)/0.35)] bg-[rgb(var(--text)/0.02)]" : ""}`}
+            } ${row.differs ? "border-l-2 border-l-[rgb(var(--text)/0.35)] bg-[rgb(var(--text)/0.02)]" : ""} ${
+              firstOpen && row.differs ? "accent-pulse" : ""
+            }`}
             style={{ gridTemplateColumns: cols }}
           >
             <span className="text-[0.62rem] uppercase tracking-[0.12em] text-[rgb(var(--subtext)/0.8)]">
