@@ -127,9 +127,10 @@ export function HomeSlides({ shoes, shoesCount, brandsCount, initialQuery }: Pro
       <div
         className="flex flex-col"
         style={{
-          transform: `translateY(calc(${-slide} * ${slideHeight}))`,
+          transform: `translate3d(0, calc(${-slide} * ${slideHeight}), 0)`,
           transition: `transform ${SLIDE_TRANSITION_MS}ms ${EASE}`,
-          willChange: "transform"
+          willChange: "transform",
+          backfaceVisibility: "hidden"
         }}
       >
         <div

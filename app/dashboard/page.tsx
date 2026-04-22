@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Eye, EyeOff, MessageCircle, ThumbsUp, ThumbsDown, Upload, GitCompare, Settings as SettingsIcon, LayoutGrid, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -327,12 +327,23 @@ export default function DashboardPage() {
   }
 
   function StatTile({ label, value }: { label: string; value: number }) {
+    const rafRef = useRef(0);
+    const pendingRef = useRef<{ el: HTMLElement; x: number; y: number } | null>(null);
+    const flush = () => {
+      rafRef.current = 0;
+      const p = pendingRef.current;
+      if (!p) return;
+      p.el.style.setProperty("--mx", `${p.x}%`);
+      p.el.style.setProperty("--my", `${p.y}%`);
+    };
     const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
       const y = ((e.clientY - rect.top) / rect.height) * 100;
-      e.currentTarget.style.setProperty("--mx", `${x}%`);
-      e.currentTarget.style.setProperty("--my", `${y}%`);
+      pendingRef.current = { el: e.currentTarget, x, y };
+      if (!rafRef.current) {
+        rafRef.current = requestAnimationFrame(flush);
+      }
     };
     return (
       <motion.div

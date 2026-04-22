@@ -91,7 +91,7 @@ export function HomeHero({
     };
   }, [active]);
 
-  // Desktop-only cursor parallax on grid background
+  // Desktop-only cursor parallax — translate a child layer (GPU-composited transform).
   useEffect(() => {
     if (!active) return;
     if (typeof window === "undefined") return;
@@ -106,17 +106,32 @@ export function HomeHero({
     let raf = 0;
     let tx = 0;
     let ty = 0;
+    // Eased pursuit so the layer catches up to the pointer over a few frames.
+    let cx = 0;
+    let cy = 0;
+    let running = false;
+
+    const animate = () => {
+      cx += (tx - cx) * 0.12;
+      cy += (ty - cy) * 0.12;
+      node.style.transform = `translate3d(${cx.toFixed(2)}px, ${cy.toFixed(2)}px, 0)`;
+      if (Math.abs(tx - cx) > 0.05 || Math.abs(ty - cy) > 0.05) {
+        raf = requestAnimationFrame(animate);
+      } else {
+        running = false;
+        raf = 0;
+      }
+    };
+
     const onMove = (e: PointerEvent) => {
       const rect = node.getBoundingClientRect();
       const nx = (e.clientX - rect.left) / rect.width - 0.5;
       const ny = (e.clientY - rect.top) / rect.height - 0.5;
       tx = nx * -14;
       ty = ny * -10;
-      if (!raf) {
-        raf = requestAnimationFrame(() => {
-          node.style.backgroundPosition = `calc(0px + ${tx}px) calc(0px + ${ty}px)`;
-          raf = 0;
-        });
+      if (!running) {
+        running = true;
+        raf = requestAnimationFrame(animate);
       }
     };
     window.addEventListener("pointermove", onMove);
@@ -145,16 +160,22 @@ export function HomeHero({
   return (
     <section className="relative flex h-full w-full flex-col justify-center overflow-hidden px-0 py-10 sm:py-12 md:py-16">
       <div
-        ref={parallaxRef}
         aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right,rgb(var(--text)/0.02) 1px,transparent 1px),linear-gradient(to bottom,rgb(var(--text)/0.02) 1px,transparent 1px)",
-          backgroundSize: "48px 48px",
-          transition: "background-position 320ms cubic-bezier(0.22,1,0.36,1)"
-        }}
-      />
+        className="pointer-events-none absolute overflow-hidden"
+        style={{ inset: "-32px" }}
+      >
+        <div
+          ref={parallaxRef}
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right,rgb(var(--text)/0.02) 1px,transparent 1px),linear-gradient(to bottom,rgb(var(--text)/0.02) 1px,transparent 1px)",
+            backgroundSize: "48px 48px",
+            willChange: "transform",
+            transform: "translate3d(0,0,0)"
+          }}
+        />
+      </div>
       <div
         aria-hidden
         className="pointer-events-none absolute bottom-0 left-0 right-0 h-[40%]"
@@ -169,20 +190,26 @@ export function HomeHero({
           {headlineLines.map((line, i) => (
             <div
               key={i}
-              className="t-display"
               style={{
-                color: "rgb(var(--text))",
                 display: "block",
-                opacity: up ? 1 : 0,
-                clipPath: up ? "inset(0 0 -10% 0)" : "inset(100% 0 -10% 0)",
-                transform: up ? "translateY(0)" : "translateY(22px)",
-                transition:
-                  "opacity 620ms cubic-bezier(0.22,1,0.36,1),transform 620ms cubic-bezier(0.22,1,0.36,1),clip-path 760ms cubic-bezier(0.22,1,0.36,1)",
-                transitionDelay: `${80 + i * 90}ms`,
-                willChange: "clip-path,transform"
+                overflow: "hidden",
+                paddingBottom: "0.08em"
               }}
             >
-              {line}
+              <div
+                className="t-display"
+                style={{
+                  color: "rgb(var(--text))",
+                  display: "block",
+                  transform: up ? "translate3d(0,0,0)" : "translate3d(0,110%,0)",
+                  transition:
+                    "transform 760ms cubic-bezier(0.22,1,0.36,1)",
+                  transitionDelay: `${80 + i * 90}ms`,
+                  willChange: "transform"
+                }}
+              >
+                {line}
+              </div>
             </div>
           ))}
         </div>

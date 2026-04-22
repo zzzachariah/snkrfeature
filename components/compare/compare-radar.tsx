@@ -113,18 +113,20 @@ export function CompareRadar({ shoes }: Props) {
         {shoes.map((shoe, si) => {
           const style = getLineStyle(si);
           const dimmed = hoverIdx !== null && hoverIdx !== si;
-          const boosted = hoverIdx === si;
           const fillBase = 0.06 + 0.02 * (shoes.length - si);
           return (
             <polygon
               key={shoe.id}
               points={shoePoints(shoe)}
-              fill={`rgb(var(--text) / ${boosted ? fillBase + 0.08 : dimmed ? fillBase * 0.3 : fillBase})`}
-              stroke={`rgb(var(--text) / ${boosted ? Math.min(style.opacity + 0.2, 1) : dimmed ? style.opacity * 0.3 : style.opacity})`}
-              strokeWidth={boosted ? style.strokeWidth + 0.6 : style.strokeWidth}
+              fill={`rgb(var(--text) / ${fillBase})`}
+              stroke={`rgb(var(--text) / ${style.opacity})`}
+              strokeWidth={style.strokeWidth}
               strokeDasharray={style.dashArray}
               strokeLinejoin="round"
-              style={{ transition: "fill 240ms cubic-bezier(0.22,1,0.36,1),stroke 240ms cubic-bezier(0.22,1,0.36,1),stroke-width 240ms cubic-bezier(0.22,1,0.36,1)" }}
+              style={{
+                opacity: dimmed ? 0.28 : 1,
+                transition: "opacity 220ms cubic-bezier(0.22,1,0.36,1)"
+              }}
             />
           );
         })}
@@ -185,14 +187,14 @@ export function CompareRadar({ shoes }: Props) {
                 active ? "bg-[rgb(var(--text)/0.06)]" : ""
               }`}
             >
-              <svg width={22} height={6} aria-hidden>
+              <svg width={22} height={6} aria-hidden style={{ opacity: active ? 1 : 0.85, transition: "opacity 180ms cubic-bezier(0.22,1,0.36,1)" }}>
                 <line
                   x1={0}
                   y1={3}
                   x2={22}
                   y2={3}
-                  stroke={`rgb(var(--text) / ${active ? Math.min(style.opacity + 0.2, 1) : style.opacity})`}
-                  strokeWidth={active ? style.strokeWidth + 0.6 : style.strokeWidth}
+                  stroke={`rgb(var(--text) / ${style.opacity})`}
+                  strokeWidth={style.strokeWidth}
                   strokeDasharray={style.dashArray}
                 />
               </svg>

@@ -523,9 +523,9 @@ body {
 
 /* Shimmer sweep — used on BrowseButton + form submit button */
 @keyframes shimmerSweep {
-  0%   { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+  0%   { transform: translate3d(-120%, 0, 0) skewX(-18deg); opacity: 0; }
   30%  { opacity: 0.85; }
-  100% { transform: translateX(240%) skewX(-18deg); opacity: 0; }
+  100% { transform: translate3d(240%, 0, 0) skewX(-18deg); opacity: 0; }
 }
 .shimmer-on-hover {
   position: relative;
@@ -544,9 +544,10 @@ body {
     rgb(var(--bg) / 0.55) 52%,
     transparent 80%
   );
-  transform: translateX(-120%) skewX(-18deg);
+  transform: translate3d(-120%, 0, 0) skewX(-18deg);
   opacity: 0;
   z-index: 1;
+  will-change: transform, opacity;
 }
 .shimmer-on-hover:hover::before {
   animation: shimmerSweep 820ms var(--ease) forwards;
@@ -642,8 +643,12 @@ body {
     rotateX(var(--tilt-x, 0deg))
     rotateY(var(--tilt-y, 0deg))
     translateZ(0);
-  transition: transform 360ms var(--ease);
+  transition: transform 220ms cubic-bezier(0.33, 1, 0.68, 1);
   will-change: transform;
+  backface-visibility: hidden;
+}
+.tilt-3d:hover {
+  transition: transform 80ms linear;
 }
 
 /* Tab pill animation ease for dashboard chip scrolling */
