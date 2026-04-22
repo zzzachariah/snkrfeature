@@ -41,7 +41,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   return (
-    <AnimatePresence custom={direction}>
+    <AnimatePresence mode="wait" custom={direction}>
       <motion.div
         key={pathname}
         custom={direction}
