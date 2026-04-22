@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
 import { Shoe } from "@/lib/types";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { DynamicTranslatedText } from "@/components/i18n/dynamic-translated-text";
@@ -12,21 +10,21 @@ const EMPTY_LABEL = "—";
 
 type Props = {
   shoes: Shoe[];
+  active?: boolean;
 };
 
-export function CompareSpecTable({ shoes }: Props) {
+export function CompareSpecTable({ shoes, active = true }: Props) {
   const { translate } = useLocale();
-  const [open, setOpen] = useState(false);
-  const hasOpenedRef = useRef(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const pulsedRef = useRef(false);
+  const [pulse, setPulse] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
-    const timeout = setTimeout(() => {
-      wrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }, 260);
-    return () => clearTimeout(timeout);
-  }, [open]);
+    if (!active || pulsedRef.current) return;
+    pulsedRef.current = true;
+    setPulse(true);
+    const t = setTimeout(() => setPulse(false), 1500);
+    return () => clearTimeout(t);
+  }, [active]);
 
   if (!shoes.length) return null;
 
@@ -36,49 +34,13 @@ export function CompareSpecTable({ shoes }: Props) {
     return { ...row, values, differs: distinct.size > 1 };
   });
 
-  const firstOpen = open && !hasOpenedRef.current;
-  if (firstOpen) {
-    hasOpenedRef.current = true;
-  }
-
   return (
-    <div
-      ref={wrapperRef}
-      id="compare-specs"
-      className="compare-snap-stop-end rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.3)] bg-[rgb(var(--bg-elev)/0.45)]"
-    >
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between rounded-2xl bg-[rgb(var(--surface)/0.75)] px-6 py-4 transition hover:bg-[rgb(var(--surface))]"
-        aria-expanded={open}
-      >
-        <p className="t-eyebrow">{translate("Tech Specifications")}</p>
-        <ChevronDown
-          className={`h-4 w-4 soft-text transition-transform duration-[320ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-            open ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      <AnimatePresence initial={false}>
-        {open ? (
-          <motion.div
-            key="spec"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
-          >
-            {shoes.length === 2 ? (
-              <PairedLayout rows={rows} shoes={shoes} translate={translate} firstOpen={firstOpen} />
-            ) : (
-              <ColumnLayout rows={rows} shoes={shoes} translate={translate} firstOpen={firstOpen} />
-            )}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+    <div className="overflow-hidden rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.3)] bg-[rgb(var(--bg-elev)/0.45)]">
+      {shoes.length === 2 ? (
+        <PairedLayout rows={rows} shoes={shoes} translate={translate} pulse={pulse} />
+      ) : (
+        <ColumnLayout rows={rows} shoes={shoes} translate={translate} pulse={pulse} />
+      )}
     </div>
   );
 }
@@ -87,12 +49,12 @@ function PairedLayout({
   rows,
   shoes,
   translate,
-  firstOpen
+  pulse
 }: {
   rows: Array<{ key: string; label: string; values: Array<string | null>; differs: boolean }>;
   shoes: Shoe[];
   translate: (value: string) => string;
-  firstOpen: boolean;
+  pulse: boolean;
 }) {
   return (
     <div>
@@ -116,7 +78,7 @@ function PairedLayout({
           key={row.key}
           className={`${i < rows.length - 1 ? "border-b border-[rgb(var(--muted)/0.14)]" : ""} ${
             row.differs ? "border-l-2 border-l-[rgb(var(--text)/0.35)] bg-[rgb(var(--text)/0.02)]" : ""
-          } ${firstOpen && row.differs ? "accent-pulse" : ""}`}
+          } ${pulse && row.differs ? "accent-pulse" : ""}`}
         >
           {/* Mobile stacked layout (<md) */}
           <div className="flex flex-col gap-2 px-4 py-3 md:hidden">
@@ -146,12 +108,12 @@ function ColumnLayout({
   rows,
   shoes,
   translate,
-  firstOpen
+  pulse
 }: {
   rows: Array<{ key: string; label: string; values: Array<string | null>; differs: boolean }>;
   shoes: Shoe[];
   translate: (value: string) => string;
-  firstOpen: boolean;
+  pulse: boolean;
 }) {
   const cols = `minmax(140px,1fr) repeat(${shoes.length}, minmax(140px,1fr))`;
   return (
@@ -174,7 +136,7 @@ function ColumnLayout({
             className={`grid items-center gap-4 px-6 py-3 ${
               i < rows.length - 1 ? "border-b border-[rgb(var(--muted)/0.14)]" : ""
             } ${row.differs ? "border-l-2 border-l-[rgb(var(--text)/0.35)] bg-[rgb(var(--text)/0.02)]" : ""} ${
-              firstOpen && row.differs ? "accent-pulse" : ""
+              pulse && row.differs ? "accent-pulse" : ""
             }`}
             style={{ gridTemplateColumns: cols }}
           >

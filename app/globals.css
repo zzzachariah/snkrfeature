@@ -635,22 +635,6 @@ body {
 }
 .chip-scroll::-webkit-scrollbar { display: none; }
 
-/* Compare page: slide-like snap on desktop only */
-@media (min-width: 1024px) {
-  html.compare-snap-root {
-    scroll-snap-type: y proximity;
-    scroll-padding-top: 80px;
-  }
-  .compare-snap-stop {
-    scroll-snap-align: start;
-    scroll-snap-stop: normal;
-  }
-  .compare-snap-stop-end {
-    scroll-snap-align: end;
-    scroll-snap-stop: normal;
-  }
-}
-
 /* Safe-area utility for iOS */
 .safe-pb {
   padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
