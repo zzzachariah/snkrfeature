@@ -10,6 +10,7 @@ import { ComparePlinths } from "@/components/compare/compare-plinths";
 import { CompareRadar } from "@/components/compare/compare-radar";
 import { CompareDiffRows } from "@/components/compare/compare-diff-rows";
 import { CompareSpecTable } from "@/components/compare/compare-spec-table";
+import { CompareSectionNav } from "@/components/compare/compare-section-nav";
 import { AddShoeDialog } from "@/components/compare/add-shoe-dialog";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,11 @@ export function ComparePageClient({ selected, allShoes }: Props) {
   useEffect(() => {
     setLocalShoes(selected);
   }, [selected]);
+
+  useEffect(() => {
+    document.documentElement.classList.add("compare-snap-root");
+    return () => document.documentElement.classList.remove("compare-snap-root");
+  }, []);
 
   const setCompareIds = useCallback(
     (nextShoes: Shoe[]) => {
@@ -182,7 +188,7 @@ export function ComparePageClient({ selected, allShoes }: Props) {
 
   return (
     <main className="container-shell pb-24">
-      <section className="py-16 text-center md:py-20">
+      <section id="compare-top" className="py-16 text-center md:py-20">
         <p className="t-eyebrow mb-3">{translate("Head to Head")}</p>
         <h1
           className="font-extrabold leading-[1] tracking-[-0.04em]"
@@ -238,12 +244,14 @@ export function ComparePageClient({ selected, allShoes }: Props) {
         <EmptyState onOpenAdd={() => setDialogOpen(true)} translate={translate} />
       ) : (
         <>
-          <ComparePlinths
-            shoes={localShoes}
-            onRemove={onRemove}
-            onAdd={() => setDialogOpen(true)}
-            canAdd={canAdd}
-          />
+          <div id="compare-lineup">
+            <ComparePlinths
+              shoes={localShoes}
+              onRemove={onRemove}
+              onAdd={() => setDialogOpen(true)}
+              canAdd={canAdd}
+            />
+          </div>
 
           <div
             className="mb-16 h-px"
@@ -252,7 +260,10 @@ export function ComparePageClient({ selected, allShoes }: Props) {
             }}
           />
 
-          <section className="mb-16 grid items-start gap-12 lg:grid-cols-2 lg:gap-14">
+          <section
+            id="compare-perf"
+            className="compare-snap-stop mb-16 grid items-start gap-12 scroll-mt-20 lg:grid-cols-2 lg:gap-14"
+          >
             <div>
               <p className="t-eyebrow mb-5 text-center">{translate("Performance Profile")}</p>
               <CompareRadar shoes={localShoes} />
@@ -263,6 +274,8 @@ export function ComparePageClient({ selected, allShoes }: Props) {
           </section>
 
           <CompareSpecTable shoes={localShoes} />
+
+          <CompareSectionNav />
         </>
       )}
 
