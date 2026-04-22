@@ -85,7 +85,7 @@ function ShoePlinth({
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-      className="relative"
+      className="group relative"
     >
       <button
         type="button"
@@ -96,13 +96,21 @@ function ShoePlinth({
         <X className="h-3.5 w-3.5" />
       </button>
 
-      <div className="mb-5 flex min-h-[200px] items-center justify-center rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.28)] bg-[rgb(var(--surface))] px-6 py-10 shadow-[0_40px_80px_rgb(var(--shadow)/0.45)] md:min-h-[240px] md:px-10 md:py-14">
+      <div className="relative mb-5 flex min-h-[160px] items-center justify-center overflow-hidden rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.28)] bg-[rgb(var(--surface))] px-4 py-6 shadow-[0_40px_80px_rgb(var(--shadow)/0.45)] md:min-h-[240px] md:px-10 md:py-14">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:opacity-100"
+          style={{
+            background:
+              "radial-gradient(60% 60% at 50% 40%, rgb(var(--text)/0.06), transparent 70%)"
+          }}
+        />
         <ShoeImage
           src={shoe.image_url}
           alt={shoe.shoe_name}
           fallbackLabel={translateLabel("No image")}
           variant="compare"
-          className="w-full max-w-[18rem]"
+          className="relative w-full max-w-[18rem] transition-transform duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
         />
       </div>
 

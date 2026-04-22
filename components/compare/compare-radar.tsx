@@ -64,6 +64,7 @@ export function CompareRadar({ shoes }: Props) {
   const { translate } = useLocale();
   const { ref, inView } = useInView<HTMLDivElement>();
   const progress = useProgress(inView);
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const n = METRICS.length;
   const angles = METRICS.map((_, i) => ((-90 + i * (360 / n)) * Math.PI) / 180);
 
@@ -78,6 +79,8 @@ export function CompareRadar({ shoes }: Props) {
         return `${CX + v * R * Math.cos(a)},${CY + v * R * Math.sin(a)}`;
       })
       .join(" ");
+
+  const labelsVisible = progress > 0.88;
 
   return (
     <div ref={ref}>
@@ -109,15 +112,19 @@ export function CompareRadar({ shoes }: Props) {
         ))}
         {shoes.map((shoe, si) => {
           const style = getLineStyle(si);
+          const dimmed = hoverIdx !== null && hoverIdx !== si;
+          const boosted = hoverIdx === si;
+          const fillBase = 0.06 + 0.02 * (shoes.length - si);
           return (
             <polygon
               key={shoe.id}
               points={shoePoints(shoe)}
-              fill={`rgb(var(--text) / ${0.06 + 0.02 * (shoes.length - si)})`}
-              stroke={`rgb(var(--text) / ${style.opacity})`}
-              strokeWidth={style.strokeWidth}
+              fill={`rgb(var(--text) / ${boosted ? fillBase + 0.08 : dimmed ? fillBase * 0.3 : fillBase})`}
+              stroke={`rgb(var(--text) / ${boosted ? Math.min(style.opacity + 0.2, 1) : dimmed ? style.opacity * 0.3 : style.opacity})`}
+              strokeWidth={boosted ? style.strokeWidth + 0.6 : style.strokeWidth}
               strokeDasharray={style.dashArray}
               strokeLinejoin="round"
+              style={{ transition: "fill 240ms cubic-bezier(0.22,1,0.36,1),stroke 240ms cubic-bezier(0.22,1,0.36,1),stroke-width 240ms cubic-bezier(0.22,1,0.36,1)" }}
             />
           );
         })}
@@ -151,6 +158,11 @@ export function CompareRadar({ shoes }: Props) {
               fontWeight={500}
               fill="rgb(var(--subtext) / 0.9)"
               letterSpacing="0.14em"
+              style={{
+                opacity: labelsVisible ? 1 : 0,
+                transition: "opacity 420ms cubic-bezier(0.22,1,0.36,1)",
+                transitionDelay: `${i * 40}ms`
+              }}
             >
               {translate(METRICS[i].label).toUpperCase()}
             </text>
@@ -160,21 +172,34 @@ export function CompareRadar({ shoes }: Props) {
       <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
         {shoes.map((shoe, si) => {
           const style = getLineStyle(si);
+          const active = hoverIdx === si;
           return (
-            <div key={shoe.id} className="flex items-center gap-2">
+            <button
+              key={shoe.id}
+              type="button"
+              onPointerEnter={() => setHoverIdx(si)}
+              onPointerLeave={() => setHoverIdx((cur) => (cur === si ? null : cur))}
+              onFocus={() => setHoverIdx(si)}
+              onBlur={() => setHoverIdx((cur) => (cur === si ? null : cur))}
+              className={`flex items-center gap-2 rounded-md px-1.5 py-1 transition-colors duration-200 hover:bg-[rgb(var(--text)/0.04)] ${
+                active ? "bg-[rgb(var(--text)/0.06)]" : ""
+              }`}
+            >
               <svg width={22} height={6} aria-hidden>
                 <line
                   x1={0}
                   y1={3}
                   x2={22}
                   y2={3}
-                  stroke={`rgb(var(--text) / ${style.opacity})`}
-                  strokeWidth={style.strokeWidth}
+                  stroke={`rgb(var(--text) / ${active ? Math.min(style.opacity + 0.2, 1) : style.opacity})`}
+                  strokeWidth={active ? style.strokeWidth + 0.6 : style.strokeWidth}
                   strokeDasharray={style.dashArray}
                 />
               </svg>
-              <span className="text-[0.7rem] soft-text">{shoe.shoe_name}</span>
-            </div>
+              <span className={`text-[0.7rem] transition-colors ${active ? "text-[rgb(var(--text))]" : "soft-text"}`}>
+                {shoe.shoe_name}
+              </span>
+            </button>
           );
         })}
       </div>

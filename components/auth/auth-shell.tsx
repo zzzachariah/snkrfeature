@@ -24,10 +24,10 @@ export function AuthShell({
   const { translate } = useLocale();
 
   return (
-    <main className="relative min-h-[calc(100vh-64px)] overflow-hidden">
+    <main className="relative min-h-[calc(100dvh-64px)] overflow-hidden">
       <AnimatedBackground />
 
-      <div className="container-shell relative z-10 grid grid-cols-1 items-center gap-10 py-10 md:py-16 lg:grid-cols-[1.05fr,0.95fr] lg:gap-16 lg:py-24">
+      <div className="container-shell relative z-10 grid grid-cols-1 items-center gap-10 py-8 md:py-16 lg:grid-cols-[1.05fr,0.95fr] lg:gap-16 lg:py-24">
         <motion.section
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}

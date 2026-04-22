@@ -520,3 +520,230 @@ body {
     animation: none;
   }
 }
+
+/* Shimmer sweep — used on BrowseButton + form submit button */
+@keyframes shimmerSweep {
+  0%   { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+  30%  { opacity: 0.85; }
+  100% { transform: translateX(240%) skewX(-18deg); opacity: 0; }
+}
+.shimmer-on-hover {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.shimmer-on-hover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgb(var(--bg) / 0.35) 48%,
+    rgb(var(--bg) / 0.55) 52%,
+    transparent 80%
+  );
+  transform: translateX(-120%) skewX(-18deg);
+  opacity: 0;
+  z-index: 1;
+}
+.shimmer-on-hover:hover::before {
+  animation: shimmerSweep 820ms var(--ease) forwards;
+}
+/* Inverse variant for light-on-dark surfaces (secondary buttons, ghost elements) */
+.shimmer-on-hover-inverse::before {
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgb(var(--text) / 0.12) 48%,
+    rgb(var(--text) / 0.22) 52%,
+    transparent 80%
+  );
+}
+
+/* Number underline sweep — fires once on count-up completion */
+@keyframes statUnderlineSweep {
+  0%   { transform: scaleX(0); transform-origin: left; opacity: 0; }
+  25%  { opacity: 1; }
+  55%  { transform: scaleX(1); transform-origin: left; opacity: 1; }
+  56%  { transform-origin: right; }
+  100% { transform: scaleX(0); transform-origin: right; opacity: 0; }
+}
+.stat-underline {
+  position: relative;
+  display: inline-block;
+}
+.stat-underline::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  bottom: -3px;
+  height: 1.5px;
+  background: rgb(var(--text));
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+}
+.stat-underline.is-complete::after {
+  animation: statUnderlineSweep 760ms var(--ease) forwards;
+}
+
+/* Accent wash pulse — fires once on first reveal of diff spec rows */
+@keyframes accentPulseWash {
+  0%   { background-color: rgb(var(--text) / 0.02); }
+  40%  { background-color: rgb(var(--text) / 0.12); }
+  100% { background-color: rgb(var(--text) / 0.02); }
+}
+.accent-pulse {
+  animation: accentPulseWash 900ms var(--ease) 1;
+}
+
+/* SVG stroke draw-in — used by radar polygon */
+@keyframes strokeDraw {
+  from { stroke-dashoffset: var(--dash-length, 600); }
+  to   { stroke-dashoffset: 0; }
+}
+.stroke-draw {
+  stroke-dasharray: var(--dash-length, 600);
+  stroke-dashoffset: var(--dash-length, 600);
+  animation: strokeDraw 900ms var(--ease) forwards;
+}
+
+/* Cursor-tracked radial spotlight for dashboard StatTiles */
+.cursor-spotlight {
+  position: relative;
+  isolation: isolate;
+}
+.cursor-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(
+    240px circle at var(--mx, 50%) var(--my, 50%),
+    rgb(var(--text) / 0.08),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 280ms var(--ease);
+  z-index: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cursor-spotlight:hover::after { opacity: 1; }
+}
+
+/* Card tilt — used by auth form card. Uses CSS custom properties set via JS. */
+.tilt-3d {
+  transform-style: preserve-3d;
+  transform:
+    perspective(900px)
+    rotateX(var(--tilt-x, 0deg))
+    rotateY(var(--tilt-y, 0deg))
+    translateZ(0);
+  transition: transform 360ms var(--ease);
+  will-change: transform;
+}
+
+/* Tab pill animation ease for dashboard chip scrolling */
+.chip-scroll {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.chip-scroll::-webkit-scrollbar { display: none; }
+
+/* Safe-area utility for iOS */
+.safe-pb {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+}
+
+/* Row left-edge accent — used by home table hover */
+.row-accent {
+  position: relative;
+}
+.row-accent::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: rgb(var(--text) / 0.55);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 220ms var(--ease);
+  pointer-events: none;
+}
+.row-accent:hover::before { transform: scaleY(1); }
+
+/* Chevron bounce — spec table accordion */
+@keyframes chevronBounce {
+  0%   { transform: rotate(0deg) scale(1); }
+  45%  { transform: rotate(90deg) scale(1.15); }
+  100% { transform: rotate(180deg) scale(1); }
+}
+@keyframes chevronBounceReverse {
+  0%   { transform: rotate(180deg) scale(1); }
+  45%  { transform: rotate(90deg) scale(1.15); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+.chevron-bounce[data-open="true"] {
+  animation: chevronBounce 320ms var(--ease) forwards;
+}
+.chevron-bounce[data-open="false"] {
+  animation: chevronBounceReverse 320ms var(--ease) forwards;
+}
+
+/* Floating label shimmer pulse on focus */
+@keyframes labelShimmer {
+  0%   { background-position: 180% 50%; }
+  100% { background-position: -80% 50%; }
+}
+.float-label.label-pulse {
+  background-image: linear-gradient(
+    100deg,
+    rgb(var(--text) / 0.6) 35%,
+    rgb(var(--text)) 48%,
+    rgb(var(--text) / 0.6) 62%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: labelShimmer 680ms var(--ease) 1;
+}
+
+/* Enhanced input focus state — richer border + glow */
+@layer base {
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: rgb(var(--text) / 0.45);
+    box-shadow:
+      0 0 0 3px rgb(var(--text) / 0.12),
+      0 1px 2px rgb(var(--shadow) / 0.06);
+    transition:
+      border-color 240ms var(--ease),
+      box-shadow 240ms var(--ease);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-on-hover:hover::before,
+  .stat-underline.is-complete::after,
+  .accent-pulse,
+  .stroke-draw,
+  .chevron-bounce[data-open="true"],
+  .chevron-bounce[data-open="false"],
+  .float-label.label-pulse {
+    animation: none;
+  }
+  .stroke-draw {
+    stroke-dashoffset: 0;
+  }
+  .tilt-3d {
+    transform: none;
+  }
+}

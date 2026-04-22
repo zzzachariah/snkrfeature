@@ -50,6 +50,26 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = CLIE
   }
 }
 
+function useTiltHandlers() {
+  const onMove = (e: React.PointerEvent<HTMLElement>) => {
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const nx = (e.clientX - rect.left) / rect.width - 0.5;
+    const ny = (e.clientY - rect.top) / rect.height - 0.5;
+    el.style.setProperty("--tilt-y", `${nx * 4}deg`);
+    el.style.setProperty("--tilt-x", `${ny * -4}deg`);
+  };
+  const onLeave = (e: React.PointerEvent<HTMLElement>) => {
+    const el = e.currentTarget;
+    el.style.setProperty("--tilt-x", "0deg");
+    el.style.setProperty("--tilt-y", "0deg");
+  };
+  return { onMove, onLeave };
+}
+
 export default function SignupPage() {
   const { translate } = useLocale();
   const [form, setForm] = useState({ username: "", email: "", password: "" });
@@ -58,6 +78,7 @@ export default function SignupPage() {
   const [error, setError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [gateOpen, setGateOpen] = useState(true);
+  const tilt = useTiltHandlers();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -160,10 +181,12 @@ export default function SignupPage() {
       >
         <motion.form
           onSubmit={onSubmit}
+          onPointerMove={tilt.onMove}
+          onPointerLeave={tilt.onLeave}
           initial="initial"
           animate="animate"
           variants={stagger}
-          className={`glass-card mx-auto w-full max-w-md space-y-5 p-7 md:p-8 ${gateOpen ? "pointer-events-none select-none opacity-60" : ""}`}
+          className={`glass-card tilt-3d mx-auto w-full max-w-md space-y-5 p-5 md:p-8 ${gateOpen ? "pointer-events-none select-none opacity-60" : ""}`}
         >
           <motion.div variants={fadeUp} className="space-y-1.5">
             <p className="auth-eyebrow">{translate("sign up")}</p>
@@ -211,8 +234,8 @@ export default function SignupPage() {
 
           <motion.div variants={fadeUp}>
             <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.985 }} transition={{ duration: 0.18, ease }}>
-              <Button type="submit" className="group h-11 w-full text-[0.95rem]" disabled={submitting}>
-                <span className="inline-flex items-center gap-2">
+              <Button type="submit" className="shimmer-on-hover group h-11 w-full text-[0.95rem]" disabled={submitting}>
+                <span className="relative z-10 inline-flex items-center gap-2">
                   {submitting ? translate("Creating account...") : translate("Create account")}
                   {!submitting && (
                     <ArrowRight className="h-4 w-4 transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5" />

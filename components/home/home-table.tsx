@@ -88,7 +88,7 @@ export function HomeTable({
   return (
     <section className="flex h-full min-h-0 flex-col gap-5">
       <div
-        className="flex flex-wrap items-end justify-between gap-4"
+        className="flex flex-col items-stretch gap-3 md:flex-row md:flex-wrap md:items-end md:justify-between md:gap-4"
         style={revealStyle(0)}
       >
         <div>
@@ -97,11 +97,11 @@ export function HomeTable({
         </div>
         <form
           onSubmit={runSearch}
-          className="flex items-center gap-2"
+          className="flex flex-col items-stretch gap-2 md:flex-row md:items-center"
         >
           <div className="relative">
             <select
-              className="h-9 appearance-none rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.45)] bg-[rgb(var(--surface)/0.7)] pl-3 pr-8 text-[0.77rem] text-[rgb(var(--subtext))] outline-none transition hover:border-[rgb(var(--text)/0.35)]"
+              className="h-9 w-full appearance-none rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.45)] bg-[rgb(var(--surface)/0.7)] pl-3 pr-8 text-[0.77rem] text-[rgb(var(--subtext))] outline-none transition hover:border-[rgb(var(--text)/0.35)] md:w-auto"
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
             >
@@ -114,12 +114,12 @@ export function HomeTable({
             </select>
             <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[rgb(var(--subtext))]" />
           </div>
-          <div className="relative">
+          <div className="relative flex-1 md:flex-initial">
             <Input
               placeholder={translate("Search 247 shoes…")}
               value={searchDraft}
               onChange={(e) => setSearchDraft(e.target.value)}
-              className="h-9 w-[220px] pr-9 text-[0.77rem]"
+              className="h-9 w-full pr-9 text-[0.77rem] md:w-[220px]"
             />
             {searchDraft.trim().length > 0 && (
               <button
@@ -146,7 +146,86 @@ export function HomeTable({
           className="h-full overflow-auto"
           {...(scrollContainerAttr ? { "data-home-scroll-container": "true" } : {})}
         >
-          <table className="w-full table-fixed text-left text-sm">
+          {/* Mobile card list (<md) */}
+          <ul className="divide-y divide-[rgb(var(--muted)/0.18)] md:hidden">
+            {filtered.length === 0 && (
+              <li className="px-4 py-12 text-center soft-text">
+                <div className="mx-auto flex max-w-md flex-col items-center gap-2">
+                  <SearchX className="h-5 w-5" />
+                  <p>{translate("No sneakers match this search.")}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchDraft("");
+                      setQuery("");
+                      setBrand("all");
+                    }}
+                    className="text-xs text-[rgb(var(--text))] underline-offset-2 hover:underline"
+                  >
+                    {translate("Clear filters")}
+                  </button>
+                </div>
+              </li>
+            )}
+            {filtered.map((shoe, i) => {
+              const checked = selected.includes(shoe.id);
+              return (
+                <motion.li
+                  key={shoe.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
+                  transition={{
+                    duration: 0.34,
+                    delay: revealed ? 0.18 + Math.min(i, 12) * 0.028 : 0,
+                    ease: [0.22, 1, 0.36, 1]
+                  }}
+                  className="relative flex items-center gap-3 px-3 py-3"
+                >
+                  <label className="flex shrink-0 items-center">
+                    <input
+                      className="h-4 w-4 accent-[rgb(var(--text))]"
+                      type="checkbox"
+                      checked={checked}
+                      aria-label={translate("Compare")}
+                      onChange={(e) =>
+                        setSelected((p) =>
+                          e.target.checked ? [...p, shoe.id] : p.filter((id) => id !== shoe.id)
+                        )
+                      }
+                    />
+                  </label>
+                  <div className="shrink-0">
+                    <ShoeImage
+                      src={shoe.image_url}
+                      alt={shoe.shoe_name}
+                      fallbackLabel={translate("No image")}
+                      variant="thumbnail"
+                    />
+                  </div>
+                  <Link
+                    href={`/shoes/${shoe.slug}`}
+                    className="flex min-w-0 flex-1 flex-col gap-0.5"
+                  >
+                    <span className="truncate text-[0.88rem] font-semibold tracking-[-0.01em]">
+                      {shoe.shoe_name}
+                    </span>
+                    <span className="text-[0.72rem] soft-text">
+                      {shoe.brand}
+                      {shoe.release_year ? (
+                        <>
+                          <span className="mx-1.5 opacity-50">·</span>
+                          {shoe.release_year}
+                        </>
+                      ) : null}
+                    </span>
+                  </Link>
+                </motion.li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop table (md+) */}
+          <table className="hidden w-full table-fixed text-left text-sm md:table">
             <colgroup>
               <col className="w-[60px]" />
               <col className="w-[88px]" />
@@ -226,7 +305,7 @@ export function HomeTable({
                     delay: revealed ? 0.18 + Math.min(i, 12) * 0.028 : 0,
                     ease: [0.22, 1, 0.36, 1]
                   }}
-                  className="border-t border-[rgb(var(--muted)/0.15)] transition-colors duration-[160ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[rgb(var(--text)/0.035)]"
+                  className="row-accent border-t border-[rgb(var(--muted)/0.15)] transition-colors duration-[160ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[rgb(var(--text)/0.035)]"
                 >
                   <td className="px-3 py-3 text-center align-middle">
                     <input
@@ -273,7 +352,7 @@ export function HomeTable({
         {translate("Showing")} {filtered.length} {translate("of")} {shoes.length}
       </p>
       {selected.length > 1 && (
-        <div className="sticky bottom-4 flex flex-col gap-2 rounded-xl border border-[rgb(var(--text)/0.35)] bg-[rgb(var(--bg-elev)/0.92)] p-3 shadow-lift backdrop-blur-[20px] sm:flex-row sm:items-center sm:justify-between">
+        <div className="safe-pb sticky bottom-4 flex flex-col gap-2 rounded-xl border border-[rgb(var(--text)/0.35)] bg-[rgb(var(--bg-elev)/0.92)] p-3 shadow-lift backdrop-blur-[20px] sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm">
             {selected.length} {translate("shoes selected for compare")}
           </p>

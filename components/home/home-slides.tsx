@@ -115,24 +115,26 @@ export function HomeSlides({ shoes, shoesCount, brandsCount, initialQuery }: Pro
 
   const labels = [translate("Index"), translate("Database")];
 
+  const slideHeight = "calc(100dvh - 64px)";
+
   return (
     <div
       ref={rootRef}
       className="relative"
-      style={{ height: "calc(100vh - 76px)", overflow: "hidden" }}
+      style={{ height: slideHeight, overflow: "hidden" }}
     >
       {/* Slide track */}
       <div
         className="flex flex-col"
         style={{
-          transform: `translateY(calc(${-slide} * (100vh - 76px)))`,
+          transform: `translateY(calc(${-slide} * ${slideHeight}))`,
           transition: `transform ${SLIDE_TRANSITION_MS}ms ${EASE}`,
           willChange: "transform"
         }}
       >
         <div
           className="shrink-0 overflow-hidden"
-          style={{ height: "calc(100vh - 76px)" }}
+          style={{ height: slideHeight }}
         >
           <div className="container-shell h-full">
             <HomeHero
@@ -144,9 +146,9 @@ export function HomeSlides({ shoes, shoesCount, brandsCount, initialQuery }: Pro
         </div>
         <div
           className="shrink-0 overflow-hidden"
-          style={{ height: "calc(100vh - 76px)" }}
+          style={{ height: slideHeight }}
         >
-          <div className="container-shell flex h-full flex-col py-10">
+          <div className="container-shell flex h-full flex-col py-6 md:py-10">
             <HomeTable
               shoes={shoes}
               initialQuery={initialQuery}
@@ -186,7 +188,8 @@ export function HomeSlides({ shoes, shoesCount, brandsCount, initialQuery }: Pro
               height: slide === i ? 22 : 4,
               background:
                 slide === i ? "rgb(var(--text)/0.8)" : "rgb(var(--muted)/0.55)",
-              transition: `height 320ms ${EASE},background 220ms ${EASE}`,
+              boxShadow: slide === i ? "0 0 0 4px rgb(var(--text)/0.08)" : "none",
+              transition: `height 320ms ${EASE},background 220ms ${EASE},box-shadow 320ms ${EASE}`,
               cursor: "pointer"
             }}
           />
