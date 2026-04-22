@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { navIndex } from "@/lib/nav-order";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -35,10 +35,13 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     reduceMotion || prev.current === null || prevIdx === -1 || currIdx === -1
       ? 0
       : Math.sign(currIdx - prevIdx);
-  prev.current = pathname;
+
+  useEffect(() => {
+    prev.current = pathname;
+  }, [pathname]);
 
   return (
-    <AnimatePresence mode="wait" custom={direction} initial={false}>
+    <AnimatePresence mode="wait" custom={direction}>
       <motion.div
         key={pathname}
         custom={direction}
