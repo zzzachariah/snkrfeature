@@ -157,9 +157,11 @@ export function DashboardSlides(props: Props) {
   useEffect(() => {
     let startY = 0;
     let blockNav = false;
+    let scroller: HTMLElement | null = null;
     const onStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement | null;
       blockNav = !!target?.closest("input, textarea, select, button, a");
+      scroller = target?.closest("[data-dashboard-scroll-container]") as HTMLElement | null;
       startY = e.touches[0]?.clientY ?? 0;
     };
     const onEnd = (e: TouchEvent) => {
@@ -167,6 +169,7 @@ export function DashboardSlides(props: Props) {
       const endY = e.changedTouches[0]?.clientY ?? 0;
       const dy = startY - endY;
       if (Math.abs(dy) < TOUCH_DELTA_THRESHOLD) return;
+      if (scroller && trySelfScroll(scroller, dy)) return;
       if (dy > 0) goTo(slideRef.current + 1);
       else goTo(slideRef.current - 1);
     };
@@ -278,85 +281,92 @@ export function DashboardSlides(props: Props) {
                 title={translate("Library")}
                 description={translate("Your submissions and saved comparisons.")}
               />
-              <div
-                className="mt-5 grid min-h-0 flex-1 gap-6 overflow-y-auto pr-1 lg:grid-cols-2"
-                data-dashboard-scroll-container
-              >
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] soft-text">
+              <div className="mt-5 grid min-h-0 flex-1 grid-rows-2 gap-6 lg:grid-cols-2 lg:grid-rows-1">
+                <section className="flex min-h-0 flex-col">
+                  <h3 className="shrink-0 text-sm font-semibold uppercase tracking-[0.18em] soft-text">
                     {translate("Submissions")}
                   </h3>
-                  {!props.signedIn && !props.loading ? (
-                    <p className="text-sm soft-text">{translate("Please sign in to view your User Center.")}</p>
-                  ) : props.submissions.length === 0 ? (
-                    <p className="text-sm soft-text">{translate("No submissions yet.")}</p>
-                  ) : (
-                    props.submissions.map((item) => (
-                      <div
-                        key={item.id}
-                        className="premium-hover-lift rounded-2xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.6)] p-4 text-sm backdrop-blur-md"
-                      >
-                        <p className="font-medium">
-                          {translate("Status")}:{" "}
-                          <span className="text-[rgb(var(--text)/0.8)]">{translate(item.status)}</span>
-                        </p>
-                        <p className="mt-1 text-xs soft-text">{new Date(item.created_at).toLocaleString()}</p>
-                      </div>
-                    ))
-                  )}
-                </section>
-
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] soft-text">
-                    {translate("Saved compares")}
-                  </h3>
-                  {!props.signedIn && !props.loading ? null : props.savedCompares.length === 0 ? (
-                    <p className="text-sm soft-text">{translate("No saved comparisons yet.")}</p>
-                  ) : (
-                    props.savedCompares.map((item) => {
-                      const openHref = (
-                        item.shoe_ids.length ? `/compare?ids=${item.shoe_ids.join(",")}` : "/compare"
-                      ) as Route;
-                      const deleting = props.deletingCompareId === item.id;
-                      return (
+                  <div
+                    className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1"
+                    data-dashboard-scroll-container
+                  >
+                    {!props.signedIn && !props.loading ? (
+                      <p className="text-sm soft-text">{translate("Please sign in to view your User Center.")}</p>
+                    ) : props.submissions.length === 0 ? (
+                      <p className="text-sm soft-text">{translate("No submissions yet.")}</p>
+                    ) : (
+                      props.submissions.map((item) => (
                         <div
                           key={item.id}
                           className="premium-hover-lift rounded-2xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.6)] p-4 text-sm backdrop-blur-md"
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="truncate font-medium">{item.title}</p>
-                              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs soft-text">
-                                <span>{new Date(item.created_at).toLocaleString()}</span>
-                                <span aria-hidden>·</span>
-                                <span>
-                                  {item.shoe_ids.length}{" "}
-                                  {item.shoe_ids.length === 1 ? translate("shoe") : translate("shoes")}
-                                </span>
+                          <p className="font-medium">
+                            {translate("Status")}:{" "}
+                            <span className="text-[rgb(var(--text)/0.8)]">{translate(item.status)}</span>
+                          </p>
+                          <p className="mt-1 text-xs soft-text">{new Date(item.created_at).toLocaleString()}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </section>
+
+                <section className="flex min-h-0 flex-col">
+                  <h3 className="shrink-0 text-sm font-semibold uppercase tracking-[0.18em] soft-text">
+                    {translate("Saved compares")}
+                  </h3>
+                  <div
+                    className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1"
+                    data-dashboard-scroll-container
+                  >
+                    {!props.signedIn && !props.loading ? null : props.savedCompares.length === 0 ? (
+                      <p className="text-sm soft-text">{translate("No saved comparisons yet.")}</p>
+                    ) : (
+                      props.savedCompares.map((item) => {
+                        const openHref = (
+                          item.shoe_ids.length ? `/compare?ids=${item.shoe_ids.join(",")}` : "/compare"
+                        ) as Route;
+                        const deleting = props.deletingCompareId === item.id;
+                        return (
+                          <div
+                            key={item.id}
+                            className="premium-hover-lift rounded-2xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.6)] p-4 text-sm backdrop-blur-md"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate font-medium">{item.title}</p>
+                                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs soft-text">
+                                  <span>{new Date(item.created_at).toLocaleString()}</span>
+                                  <span aria-hidden>·</span>
+                                  <span>
+                                    {item.shoe_ids.length}{" "}
+                                    {item.shoe_ids.length === 1 ? translate("shoe") : translate("shoes")}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-2">
+                                <Link
+                                  href={openHref}
+                                  className="rounded-lg border border-[rgb(var(--muted)/0.5)] px-3 py-1.5 text-xs font-medium soft-text transition hover:border-[rgb(var(--text)/0.45)] hover:text-[rgb(var(--text))]"
+                                >
+                                  {translate("Open")}
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={() => props.onDeleteCompare(item.id)}
+                                  disabled={deleting}
+                                  aria-label={translate("Delete")}
+                                  className="rounded-lg border border-[rgb(var(--muted)/0.5)] p-2 soft-text transition hover:border-[rgb(var(--text)/0.45)] hover:text-[rgb(var(--text))] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
                               </div>
                             </div>
-                            <div className="flex shrink-0 items-center gap-2">
-                              <Link
-                                href={openHref}
-                                className="rounded-lg border border-[rgb(var(--muted)/0.5)] px-3 py-1.5 text-xs font-medium soft-text transition hover:border-[rgb(var(--text)/0.45)] hover:text-[rgb(var(--text))]"
-                              >
-                                {translate("Open")}
-                              </Link>
-                              <button
-                                type="button"
-                                onClick={() => props.onDeleteCompare(item.id)}
-                                disabled={deleting}
-                                aria-label={translate("Delete")}
-                                className="rounded-lg border border-[rgb(var(--muted)/0.5)] p-2 soft-text transition hover:border-[rgb(var(--text)/0.45)] hover:text-[rgb(var(--text))] disabled:cursor-not-allowed disabled:opacity-50"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
                           </div>
-                        </div>
-                      );
-                    })
-                  )}
+                        );
+                      })
+                    )}
+                  </div>
                 </section>
               </div>
             </div>
