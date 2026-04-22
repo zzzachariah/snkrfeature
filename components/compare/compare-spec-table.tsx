@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Shoe } from "@/lib/types";
@@ -18,6 +18,12 @@ export function CompareSpecTable({ shoes }: Props) {
   const { translate } = useLocale();
   const [open, setOpen] = useState(false);
   const hasOpenedRef = useRef(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    wrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [open]);
 
   if (!shoes.length) return null;
 
@@ -33,7 +39,11 @@ export function CompareSpecTable({ shoes }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.3)] bg-[rgb(var(--bg-elev)/0.45)]">
+    <div
+      ref={wrapperRef}
+      id="compare-specs"
+      className="compare-snap-stop scroll-mt-20 rounded-2xl border border-[rgb(var(--glass-stroke-soft)/0.3)] bg-[rgb(var(--bg-elev)/0.45)]"
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
