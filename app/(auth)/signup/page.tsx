@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -51,6 +51,17 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = CLIE
 }
 
 function useTiltHandlers() {
+  const rafRef = useRef(0);
+  const pendingRef = useRef<{ el: HTMLElement; ty: number; tx: number } | null>(null);
+
+  const flush = () => {
+    rafRef.current = 0;
+    const p = pendingRef.current;
+    if (!p) return;
+    p.el.style.setProperty("--tilt-y", `${p.ty}deg`);
+    p.el.style.setProperty("--tilt-x", `${p.tx}deg`);
+  };
+
   const onMove = (e: React.PointerEvent<HTMLElement>) => {
     if (typeof window === "undefined") return;
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
@@ -59,14 +70,23 @@ function useTiltHandlers() {
     const rect = el.getBoundingClientRect();
     const nx = (e.clientX - rect.left) / rect.width - 0.5;
     const ny = (e.clientY - rect.top) / rect.height - 0.5;
-    el.style.setProperty("--tilt-y", `${nx * 4}deg`);
-    el.style.setProperty("--tilt-x", `${ny * -4}deg`);
+    pendingRef.current = { el, ty: nx * 4, tx: ny * -4 };
+    if (!rafRef.current) {
+      rafRef.current = requestAnimationFrame(flush);
+    }
   };
+
   const onLeave = (e: React.PointerEvent<HTMLElement>) => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+    }
+    pendingRef.current = null;
     const el = e.currentTarget;
     el.style.setProperty("--tilt-x", "0deg");
     el.style.setProperty("--tilt-y", "0deg");
   };
+
   return { onMove, onLeave };
 }
 
