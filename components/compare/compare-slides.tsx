@@ -139,20 +139,20 @@ export function CompareSlides({ shoes, canAdd, canSave, onAdd, onSave, onRemove,
         {/* Slide 0: Hero + Plinths */}
         <div className="shrink-0 overflow-hidden" style={{ height: slideHeight }}>
           <div
-            className="container-shell flex h-full flex-col overflow-y-auto py-6 md:py-8"
+            className="container-shell h-full overflow-y-auto py-6 md:py-8"
             data-compare-scroll-container
           >
-            <HeroBlock
-              shoes={shoes}
-              canAdd={canAdd}
-              canSave={canSave}
-              onAdd={onAdd}
-              onSave={onSave}
-              onClear={onClear}
-              translate={translate}
-            />
-            <div className="mt-6 flex flex-1 items-center md:mt-10">
-              <div className="w-full">
+            <div className="flex min-h-full flex-col justify-center">
+              <HeroBlock
+                shoes={shoes}
+                canAdd={canAdd}
+                canSave={canSave}
+                onAdd={onAdd}
+                onSave={onSave}
+                onClear={onClear}
+                translate={translate}
+              />
+              <div className="mt-6 md:mt-10">
                 <ComparePlinths shoes={shoes} onRemove={onRemove} onAdd={onAdd} canAdd={canAdd} />
               </div>
             </div>
@@ -162,13 +162,15 @@ export function CompareSlides({ shoes, canAdd, canSave, onAdd, onSave, onRemove,
         {/* Slide 1: Performance Profile */}
         <div className="shrink-0 overflow-hidden" style={{ height: slideHeight }}>
           <div
-            className="container-shell flex h-full flex-col justify-center overflow-y-auto py-6 md:py-10"
+            className="container-shell h-full overflow-y-auto py-6 md:py-10"
             data-compare-scroll-container
           >
-            <p className="t-eyebrow mb-6 text-center">{translate("Performance Profile")}</p>
-            <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14">
-              <CompareRadar shoes={shoes} />
-              <CompareDiffRows shoes={shoes} />
+            <div className="flex min-h-full flex-col justify-center">
+              <p className="t-eyebrow mb-6 text-center">{translate("Performance Profile")}</p>
+              <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14">
+                <CompareRadar shoes={shoes} />
+                <CompareDiffRows shoes={shoes} />
+              </div>
             </div>
           </div>
         </div>

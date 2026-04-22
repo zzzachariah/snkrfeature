@@ -41,7 +41,7 @@ export function ComparePlinths({ shoes, onRemove, onAdd, canAdd }: Props) {
   });
 
   return (
-    <div className={`mb-16 grid items-start gap-x-6 gap-y-10 ${gridClass}`}>
+    <div className={`grid items-start gap-x-6 gap-y-10 ${gridClass}`}>
       {count === 2 ? (
         <>
           <ShoePlinth {...plinthProps(shoes[0])} />

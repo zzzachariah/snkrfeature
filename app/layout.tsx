@@ -2,7 +2,6 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Navbar } from "@/components/layout/navbar";
 import { ThemeInitScript } from "@/components/theme/theme-toggle";
-import { SiteFooter } from "@/components/layout/site-footer";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { Analytics } from "@vercel/analytics/next";
 import { DEFAULT_OG_IMAGE_URL, HOME_DESCRIPTION, HOME_TITLE, SITE_URL } from "@/lib/seo";
@@ -42,7 +41,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="app-ambient-bg pointer-events-none fixed inset-0 -z-10" />
           <Navbar />
           <div className="flex-1">{children}</div>
-          <SiteFooter />
         </div>
         </LocaleProvider>
         <Analytics />
