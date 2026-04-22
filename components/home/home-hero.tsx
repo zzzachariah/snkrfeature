@@ -75,7 +75,6 @@ export function HomeHero({
   const { translate } = useLocale();
   const [up, setUp] = useState(false);
   const timerRef = useRef<number | null>(null);
-  const parallaxRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!active) {
@@ -88,56 +87,6 @@ export function HomeHero({
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
-    };
-  }, [active]);
-
-  // Desktop-only cursor parallax — translate a child layer (GPU-composited transform).
-  useEffect(() => {
-    if (!active) return;
-    if (typeof window === "undefined") return;
-    const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-    if (!canHover) return;
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) return;
-
-    const node = parallaxRef.current;
-    if (!node) return;
-
-    let raf = 0;
-    let tx = 0;
-    let ty = 0;
-    // Eased pursuit so the layer catches up to the pointer over a few frames.
-    let cx = 0;
-    let cy = 0;
-    let running = false;
-
-    const animate = () => {
-      cx += (tx - cx) * 0.12;
-      cy += (ty - cy) * 0.12;
-      node.style.transform = `translate3d(${cx.toFixed(2)}px, ${cy.toFixed(2)}px, 0)`;
-      if (Math.abs(tx - cx) > 0.05 || Math.abs(ty - cy) > 0.05) {
-        raf = requestAnimationFrame(animate);
-      } else {
-        running = false;
-        raf = 0;
-      }
-    };
-
-    const onMove = (e: PointerEvent) => {
-      const rect = node.getBoundingClientRect();
-      const nx = (e.clientX - rect.left) / rect.width - 0.5;
-      const ny = (e.clientY - rect.top) / rect.height - 0.5;
-      tx = nx * -14;
-      ty = ny * -10;
-      if (!running) {
-        running = true;
-        raf = requestAnimationFrame(animate);
-      }
-    };
-    window.addEventListener("pointermove", onMove);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      if (raf) cancelAnimationFrame(raf);
     };
   }, [active]);
 
@@ -165,14 +114,11 @@ export function HomeHero({
         style={{ inset: "-32px" }}
       >
         <div
-          ref={parallaxRef}
           className="absolute inset-0"
           style={{
             backgroundImage:
               "linear-gradient(to right,rgb(var(--text)/0.02) 1px,transparent 1px),linear-gradient(to bottom,rgb(var(--text)/0.02) 1px,transparent 1px)",
-            backgroundSize: "48px 48px",
-            willChange: "transform",
-            transform: "translate3d(0,0,0)"
+            backgroundSize: "48px 48px"
           }}
         />
       </div>

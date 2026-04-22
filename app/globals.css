@@ -611,30 +611,6 @@ body {
   animation: strokeDraw 900ms var(--ease) forwards;
 }
 
-/* Cursor-tracked radial spotlight for dashboard StatTiles */
-.cursor-spotlight {
-  position: relative;
-  isolation: isolate;
-}
-.cursor-spotlight::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background: radial-gradient(
-    240px circle at var(--mx, 50%) var(--my, 50%),
-    rgb(var(--text) / 0.08),
-    transparent 60%
-  );
-  opacity: 0;
-  transition: opacity 280ms var(--ease);
-  z-index: 0;
-}
-@media (hover: hover) and (pointer: fine) {
-  .cursor-spotlight:hover::after { opacity: 1; }
-}
-
 /* Card tilt — used by auth form card. Uses CSS custom properties set via JS. */
 .tilt-3d {
   transform-style: preserve-3d;
