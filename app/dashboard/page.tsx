@@ -2,18 +2,30 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Eye, EyeOff, MessageCircle, ThumbsUp, ThumbsDown, Upload, GitCompare, Settings as SettingsIcon, LayoutGrid } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { SneakerLoader } from "@/components/ui/sneaker-loader";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/components/i18n/locale-provider";
 
 type TabKey = "Overview" | "Comments" | "Liked comments" | "Disliked comments" | "Submissions" | "Saved compares" | "Settings";
 const tabs: TabKey[] = ["Overview", "Comments", "Liked comments", "Disliked comments", "Submissions", "Saved compares", "Settings"];
+
+const tabIcons: Record<TabKey, React.ComponentType<{ className?: string }>> = {
+  "Overview": LayoutGrid,
+  "Comments": MessageCircle,
+  "Liked comments": ThumbsUp,
+  "Disliked comments": ThumbsDown,
+  "Submissions": Upload,
+  "Saved compares": GitCompare,
+  "Settings": SettingsIcon
+};
 
 type DashboardComment = {
   id: string;
@@ -37,6 +49,15 @@ type CommentWithShoeRow = {
 type VoteRow = {
   comment_id: string;
   vote_type: "like" | "dislike";
+};
+
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
+const listContainer = {
+  animate: { transition: { staggerChildren: 0.05, delayChildren: 0.05 } }
+};
+const listItem = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.36, ease } }
 };
 
 export default function DashboardPage() {
@@ -251,121 +272,203 @@ export default function DashboardPage() {
 
   function renderCommentCard(item: DashboardComment) {
     return (
-      <div key={item.id} className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.5)] p-3 text-sm">
-        <p>{item.content}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs soft-text">
+      <motion.div
+        key={item.id}
+        variants={listItem}
+        className="premium-hover-lift rounded-2xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.6)] p-4 text-sm backdrop-blur-md"
+      >
+        <p className="leading-relaxed">{item.content}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs soft-text">
           <span>{new Date(item.created_at).toLocaleString()}</span>
-          <span>•</span>
-          <span>{item.shoe_name}</span>
+          <span aria-hidden>·</span>
+          <span className="font-medium text-[rgb(var(--text)/0.85)]">{item.shoe_name}</span>
           {item.shoe_slug && (
             <>
-              <span>•</span>
-              <Link className="underline" href={`/shoes/${item.shoe_slug}`}>{translate("View shoe")}</Link>
+              <span aria-hidden>·</span>
+              <Link className="underline underline-offset-4 hover:text-[rgb(var(--text))]" href={`/shoes/${item.shoe_slug}`}>
+                {translate("View shoe")}
+              </Link>
             </>
           )}
-          <span>• 👍 {item.likes}</span>
-          <span>👎 {item.dislikes}</span>
+          <span aria-hidden>·</span>
+          <span className="inline-flex items-center gap-1"><ThumbsUp className="h-3 w-3" /> {item.likes}</span>
+          <span className="inline-flex items-center gap-1"><ThumbsDown className="h-3 w-3" /> {item.dislikes}</span>
         </div>
-      </div>
+      </motion.div>
+    );
+  }
+
+  function StatTile({ label, value }: { label: string; value: number }) {
+    return (
+      <motion.div
+        variants={listItem}
+        className="premium-hover-lift group relative overflow-hidden rounded-2xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.65)] p-5 backdrop-blur-md"
+      >
+        <p className="auth-eyebrow">{translate(label)}</p>
+        <p className="mt-3 text-4xl font-semibold tracking-[-0.03em] text-[rgb(var(--text))]">
+          <AnimatedCounter value={value} />
+        </p>
+        <div className="pointer-events-none absolute inset-x-5 bottom-4 h-px bg-gradient-to-r from-transparent via-[rgb(var(--text)/0.18)] to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      </motion.div>
     );
   }
 
   function renderTabContent() {
     if (!signedIn && !loading) {
-      return <Card className="p-5"><p className="text-sm soft-text">{translate("Please sign in to view your User Center.")}</p></Card>;
+      return (
+        <Card className="p-6">
+          <p className="text-sm soft-text">{translate("Please sign in to view your User Center.")}</p>
+        </Card>
+      );
     }
 
     switch (activeTab) {
       case "Overview":
         return (
-          <Card className="p-5">
-            <h2 className="text-xl font-semibold">{translate("Overview")}</h2>
-            <p className="mt-2 soft-text">{loading ? translate("Loading account...") : `${translate("Welcome back")}, ${username || translate("user")} (${email})`}</p>
-            {!loading && role === "admin" && <p className="mt-1 text-xs font-medium text-emerald-400">{translate("Admin account")}</p>}
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3"><p className="text-xs soft-text">{translate("My comments")}</p><p className="mt-1 text-xl font-semibold">{summary.comments}</p></div>
-              <div className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3"><p className="text-xs soft-text">{translate("Liked comments")}</p><p className="mt-1 text-xl font-semibold">{summary.likedComments}</p></div>
-              <div className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.55)] p-3"><p className="text-xs soft-text">{translate("Disliked comments")}</p><p className="mt-1 text-xl font-semibold">{summary.dislikedComments}</p></div>
-            </div>
-          </Card>
+          <motion.div
+            initial="initial"
+            animate="animate"
+            variants={listContainer}
+            className="space-y-5"
+          >
+            <motion.div variants={listItem} className="glass-card p-6 md:p-7">
+              <p className="auth-eyebrow">{translate("overview")}</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em]">
+                {loading
+                  ? translate("Loading account...")
+                  : `${translate("Welcome back")}, `}
+                {!loading && (
+                  <span className="brand-shimmer">{username || translate("user")}</span>
+                )}
+              </h2>
+              <p className="mt-1 text-sm soft-text">{email}</p>
+              {!loading && role === "admin" && (
+                <p className="mt-2 inline-flex items-center rounded-full border border-[rgb(var(--muted)/0.6)] bg-[rgb(var(--bg-elev)/0.7)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.22em] text-[rgb(var(--text))]">
+                  {translate("Admin account")}
+                </p>
+              )}
+            </motion.div>
+
+            <motion.div variants={listContainer} className="grid gap-4 md:grid-cols-3">
+              <StatTile label="My comments" value={summary.comments} />
+              <StatTile label="Liked comments" value={summary.likedComments} />
+              <StatTile label="Disliked comments" value={summary.dislikedComments} />
+            </motion.div>
+          </motion.div>
         );
       case "Comments":
         return (
-          <Card className="p-5">
-            <h2 className="text-xl font-semibold">{translate("My comments")}</h2>
-            <div className="mt-3 space-y-2">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold tracking-[-0.015em]">{translate("My comments")}</h2>
+            <motion.div initial="initial" animate="animate" variants={listContainer} className="mt-4 space-y-3">
               {comments.length === 0 && <p className="text-sm soft-text">{translate("No comments yet.")}</p>}
               {comments.map(renderCommentCard)}
-            </div>
+            </motion.div>
           </Card>
         );
       case "Liked comments":
         return (
-          <Card className="p-5">
-            <h2 className="text-xl font-semibold">{translate("Comments you liked")}</h2>
-            <div className="mt-3 space-y-2">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold tracking-[-0.015em]">{translate("Comments you liked")}</h2>
+            <motion.div initial="initial" animate="animate" variants={listContainer} className="mt-4 space-y-3">
               {likedComments.length === 0 && <p className="text-sm soft-text">{translate("You have not liked any comments yet.")}</p>}
               {likedComments.map(renderCommentCard)}
-            </div>
+            </motion.div>
           </Card>
         );
       case "Disliked comments":
         return (
-          <Card className="p-5">
-            <h2 className="text-xl font-semibold">{translate("Comments you disliked")}</h2>
-            <div className="mt-3 space-y-2">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold tracking-[-0.015em]">{translate("Comments you disliked")}</h2>
+            <motion.div initial="initial" animate="animate" variants={listContainer} className="mt-4 space-y-3">
               {dislikedComments.length === 0 && <p className="text-sm soft-text">{translate("You have not disliked any comments yet.")}</p>}
               {dislikedComments.map(renderCommentCard)}
-            </div>
+            </motion.div>
           </Card>
         );
       case "Submissions":
         return (
-          <Card className="p-5">
-            <h2 className="text-xl font-semibold">{translate("Submissions")}</h2>
-            <div className="mt-3 space-y-2">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold tracking-[-0.015em]">{translate("Submissions")}</h2>
+            <motion.div initial="initial" animate="animate" variants={listContainer} className="mt-4 space-y-3">
               {submissions.length === 0 && <p className="text-sm soft-text">{translate("No submissions yet.")}</p>}
-              {submissions.map((item) => <div key={item.id} className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.5)] p-3 text-sm"><p>{translate("Status")}: {translate(item.status)}</p><p className="mt-1 text-xs soft-text">{new Date(item.created_at).toLocaleString()}</p></div>)}
-            </div>
+              {submissions.map((item) => (
+                <motion.div
+                  key={item.id}
+                  variants={listItem}
+                  className="premium-hover-lift rounded-2xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.6)] p-4 text-sm backdrop-blur-md"
+                >
+                  <p className="font-medium">
+                    {translate("Status")}: <span className="text-[rgb(var(--text)/0.8)]">{translate(item.status)}</span>
+                  </p>
+                  <p className="mt-1 text-xs soft-text">{new Date(item.created_at).toLocaleString()}</p>
+                </motion.div>
+              ))}
+            </motion.div>
           </Card>
         );
       case "Saved compares":
         return (
-          <Card className="p-5">
-            <h2 className="text-xl font-semibold">{translate("Saved compares")}</h2>
-            <div className="mt-3 space-y-2">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold tracking-[-0.015em]">{translate("Saved compares")}</h2>
+            <motion.div initial="initial" animate="animate" variants={listContainer} className="mt-4 space-y-3">
               {savedCompares.length === 0 && <p className="text-sm soft-text">{translate("No saved comparisons yet.")}</p>}
-              {savedCompares.map((item) => <div key={item.id} className="rounded-xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.5)] p-3 text-sm"><p>{item.title}</p><p className="mt-1 text-xs soft-text">{new Date(item.created_at).toLocaleString()}</p></div>)}
-            </div>
+              {savedCompares.map((item) => (
+                <motion.div
+                  key={item.id}
+                  variants={listItem}
+                  className="premium-hover-lift rounded-2xl border border-[rgb(var(--muted)/0.45)] bg-[rgb(var(--bg-elev)/0.6)] p-4 text-sm backdrop-blur-md"
+                >
+                  <p className="font-medium">{item.title}</p>
+                  <p className="mt-1 text-xs soft-text">{new Date(item.created_at).toLocaleString()}</p>
+                </motion.div>
+              ))}
+            </motion.div>
           </Card>
         );
       case "Settings":
         return (
-          <Card className="p-5">
-            <h2 className="text-xl font-semibold">{translate("Settings")}</h2>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold tracking-[-0.015em]">{translate("Settings")}</h2>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs soft-text">{translate("Username")}</label>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.18em] soft-text">{translate("Username")}</label>
                 <Input value={username} onChange={(e) => setUsername(e.target.value)} />
               </div>
               <div>
-                <label className="mb-1 block text-xs soft-text">{translate("Email (read-only)")}</label>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.18em] soft-text">{translate("Email (read-only)")}</label>
                 <Input value={email} disabled />
               </div>
               <div>
-                <label className="mb-1 block text-xs soft-text">{translate("Current password")}</label>
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-[0.18em] soft-text">{translate("Current password")}</label>
                 <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                   <Input value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} type={showCurrentPassword ? "text" : "password"} placeholder={translate("Enter current password")} />
-                  <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setShowCurrentPassword((v) => !v)}>{showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
+                  <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setShowCurrentPassword((v) => !v)}>
+                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
                 </div>
               </div>
               <div className="flex items-end">
                 <Button type="button" onClick={() => setChangePasswordOpen(true)}>{translate("Change password")}</Button>
               </div>
             </div>
-            <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-              <Button type="button" className="w-full sm:w-auto" onClick={saveSettings}>{translate("Save profile")}</Button>
-              {settingsMessage && <FeedbackMessage message={settingsMessage} isError={settingsError} />}
+            <div className="mt-5 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+              <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.985 }} transition={{ duration: 0.18, ease }}>
+                <Button type="button" className="w-full sm:w-auto" onClick={saveSettings}>{translate("Save profile")}</Button>
+              </motion.div>
+              <AnimatePresence mode="wait">
+                {settingsMessage && (
+                  <motion.div
+                    key={`${settingsError ? "err" : "ok"}-${settingsMessage}`}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.24, ease }}
+                  >
+                    <FeedbackMessage message={settingsMessage} isError={settingsError} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <Modal open={changePasswordOpen} onClose={() => setChangePasswordOpen(false)} title="Change password">
@@ -390,27 +493,97 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="container-shell py-8">
-      <div className="grid gap-4 lg:grid-cols-[240px,1fr]">
-        <aside className="surface-card premium-border rounded-3xl p-4">
-          <h2 className="font-semibold tracking-[0.01em]">{translate("User center")}</h2>
-          {role === "admin" && <p className="mt-1 text-xs font-medium text-emerald-400">{translate("Admin")}</p>}
-          <ul className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 lg:grid-cols-1">
-            {tabs.map((tab) => (
-              <li key={tab}>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`w-full rounded-lg border px-2 py-1.5 text-left transition ${activeTab === tab ? "border-[rgb(var(--accent)/0.55)] bg-[rgb(var(--accent)/0.15)] text-[rgb(var(--text))]" : "border-transparent soft-text hover:border-[rgb(var(--muted)/0.5)] hover:bg-[rgb(var(--bg-elev)/0.6)]"}`}
-                >
-                  {translate(tab)}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </aside>
+    <main className="container-shell relative py-10 md:py-12">
+      <motion.header
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease }}
+        className="mb-8 flex flex-col gap-2"
+      >
+        <p className="auth-eyebrow">{translate("user center")}</p>
+        <h1 className="t-display-sm">
+          {translate("Welcome back")}
+          {!loading && username ? (
+            <>
+              , <span className="brand-shimmer">{username}</span>
+            </>
+          ) : null}
+          .
+        </h1>
+        <p className="max-w-xl text-sm soft-text">
+          {translate("A living index of every pair worth playing in.")}
+        </p>
+      </motion.header>
 
-        <section className="space-y-4">{loading ? <Card className="p-10"><SneakerLoader label="Loading dashboard data" /></Card> : renderTabContent()}</section>
+      <div className="grid gap-6 lg:grid-cols-[260px,1fr]">
+        <motion.aside
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease }}
+          className="glass-card h-max p-4 lg:sticky lg:top-24"
+        >
+          <div className="mb-3 flex items-center justify-between px-1">
+            <h2 className="text-sm font-semibold tracking-[0.01em]">{translate("User center")}</h2>
+            {role === "admin" && (
+              <span className="rounded-full border border-[rgb(var(--muted)/0.6)] px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.22em]">
+                {translate("Admin")}
+              </span>
+            )}
+          </div>
+          <ul className="grid grid-cols-2 gap-1.5 text-sm sm:grid-cols-3 lg:grid-cols-1">
+            {tabs.map((tab) => {
+              const Icon = tabIcons[tab];
+              const active = activeTab === tab;
+              return (
+                <li key={tab} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={`relative z-10 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors duration-200 ${
+                      active ? "text-[rgb(var(--text))]" : "soft-text hover:text-[rgb(var(--text))]"
+                    }`}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="dashboard-tab-pill"
+                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                        className="absolute inset-0 -z-10 rounded-xl border border-[rgb(var(--text)/0.22)] bg-[rgb(var(--text)/0.06)]"
+                      />
+                    )}
+                    <Icon className="h-4 w-4 shrink-0 opacity-80" />
+                    <span className="truncate">{translate(tab)}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </motion.aside>
+
+        <section className="space-y-4">
+          {loading ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, ease }}
+            >
+              <Card className="flex min-h-[320px] items-center justify-center p-10">
+                <SneakerLoader label="Loading dashboard data" />
+              </Card>
+            </motion.div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.28, ease }}
+              >
+                {renderTabContent()}
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </section>
       </div>
     </main>
   );

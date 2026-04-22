@@ -4,16 +4,28 @@ import { useState } from "react";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { SneakerLoader } from "@/components/ui/sneaker-loader";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FloatingInput } from "@/components/ui/floating-input";
 import { TurnstileWidget } from "@/components/ui/turnstile";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { createClient } from "@/lib/supabase/client";
 import { useLocale } from "@/components/i18n/locale-provider";
 
 const CLIENT_TIMEOUT_MS = 12000;
 const SESSION_SYNC_TIMEOUT_MS = 5000;
+
+const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
+const stagger = {
+  animate: { transition: { staggerChildren: 0.06, delayChildren: 0.08 } }
+};
+const fadeUp = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.42, ease } }
+};
 
 function devLog(step: string, payload?: unknown) {
   if (process.env.NODE_ENV !== "production") {
@@ -130,51 +142,95 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="container-shell py-10">
-      <form
+    <AuthShell
+      eyebrow="account"
+      heading="Welcome back to snkrfeature."
+      accentWord="snkrfeature"
+      subheading="Sign in to write reviews, save compares, and keep your index synced across devices."
+    >
+      <motion.form
         onSubmit={onSubmit}
-        className="surface-card premium-border mx-auto max-w-md space-y-4 rounded-3xl p-7"
+        initial="initial"
+        animate="animate"
+        variants={stagger}
+        className="glass-card mx-auto w-full max-w-md space-y-5 p-7 md:p-8"
       >
-        <h1 className="text-2xl font-semibold tracking-[0.02em]">{translate("Login")}</h1>
-        <p className="text-sm soft-text">{translate("Sign in with email or username.")}</p>
+        <motion.div variants={fadeUp} className="space-y-1.5">
+          <p className="auth-eyebrow">{translate("log in")}</p>
+          <h2 className="text-[28px] font-semibold tracking-[-0.02em]">{translate("Sign in")}</h2>
+          <p className="text-sm soft-text">{translate("Sign in with email or username.")}</p>
+        </motion.div>
 
-        <div>
-          <label className="mb-1 block text-xs soft-text">{translate("Email or username")}</label>
-          <Input
+        <motion.div variants={fadeUp}>
+          <FloatingInput
+            label={translate("Email or username")}
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            placeholder={translate("kobe24 or mail@domain.com")}
+            autoComplete="username"
             required
           />
-        </div>
+        </motion.div>
 
-        <div>
-          <label className="mb-1 block text-xs soft-text">{translate("Password")}</label>
-          <Input
+        <motion.div variants={fadeUp}>
+          <FloatingInput
+            label={translate("Password")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder={translate("••••••••")}
             type="password"
+            autoComplete="current-password"
             required
           />
-        </div>
+        </motion.div>
 
-        <TurnstileWidget onToken={setTurnstileToken} />
+        <motion.div variants={fadeUp}>
+          <TurnstileWidget onToken={setTurnstileToken} />
+        </motion.div>
 
-        <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? translate("Signing in...") : translate("Sign in")}
-        </Button>
+        <motion.div variants={fadeUp}>
+          <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.985 }} transition={{ duration: 0.18, ease }}>
+            <Button type="submit" className="group h-11 w-full text-[0.95rem]" disabled={submitting}>
+              <span className="inline-flex items-center gap-2">
+                {submitting ? translate("Signing in...") : translate("Sign in")}
+                {!submitting && (
+                  <ArrowRight className="h-4 w-4 transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5" />
+                )}
+              </span>
+            </Button>
+          </motion.div>
+        </motion.div>
 
-        {submitting && <SneakerLoader compact label="Authenticating" />}
-        {message && <FeedbackMessage message={message} isError={error} />}
+        <AnimatePresence mode="wait">
+          {submitting && (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2, ease }}
+            >
+              <SneakerLoader compact label="Authenticating" />
+            </motion.div>
+          )}
+          {message && !submitting && (
+            <motion.div
+              key={`${error ? "err" : "ok"}-${message}`}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.24, ease }}
+            >
+              <FeedbackMessage message={message} isError={error} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <p className="text-xs soft-text">
+        <motion.p variants={fadeUp} className="pt-1 text-xs soft-text">
           {translate("Need an account?")}{" "}
-          <Link href="/signup" className="text-[rgb(var(--accent))] hover:underline">
+          <Link href="/signup" className="text-[rgb(var(--text))] underline-offset-4 hover:underline">
             {translate("Sign up")}
           </Link>
-        </p>
-      </form>
-    </main>
+        </motion.p>
+      </motion.form>
+    </AuthShell>
   );
 }
