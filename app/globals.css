@@ -645,6 +645,10 @@ body {
     scroll-snap-align: start;
     scroll-snap-stop: normal;
   }
+  .compare-snap-stop-end {
+    scroll-snap-align: end;
+    scroll-snap-stop: normal;
+  }
 }
 
 /* Safe-area utility for iOS */
