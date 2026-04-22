@@ -8,7 +8,7 @@ export function SneakerLoader({
   compact = false,
   className
 }: {
-  label?: string;
+  label?: string | null;
   compact?: boolean;
   className?: string;
 }) {
@@ -61,9 +61,11 @@ export function SneakerLoader({
           stroke="rgb(var(--muted))"
         />
       </svg>
-      <p className="text-xs uppercase tracking-[0.18em] soft-text">
-        {translate(label)}
-      </p>
+      {label ? (
+        <p className="text-xs uppercase tracking-[0.18em] soft-text">
+          {translate(label)}
+        </p>
+      ) : null}
     </div>
   );
 }
