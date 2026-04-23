@@ -4,6 +4,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { ThemeInitScript } from "@/components/theme/theme-toggle";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DEFAULT_OG_IMAGE_URL, HOME_DESCRIPTION, HOME_TITLE, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
         </LocaleProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
