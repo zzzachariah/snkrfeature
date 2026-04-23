@@ -26,9 +26,6 @@ export const metadata: Metadata = {
     description: HOME_DESCRIPTION,
     images: [DEFAULT_OG_IMAGE_URL],
   },
-  icons: {
-    icon: "/icon.ico",
-  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
