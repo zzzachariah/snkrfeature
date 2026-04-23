@@ -45,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
         </LocaleProvider>
         <Analytics />
+        <SpeedInsights />
         {GOOGLE_ADS_ID && (
           <>
             <Script
