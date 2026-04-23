@@ -4,13 +4,22 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireAdminApi } from "@/lib/admin/route-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSerpApiConfig, importBestShoeImage } from "@/lib/admin/shoe-image-import";
+import { downloadImageFromUrl, getSerpApiConfig, importBestShoeImage } from "@/lib/admin/shoe-image-import";
 
-const schema = z.object({
-  action: z.enum(["find", "approve", "reject"])
-});
+const schema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("find") }),
+  z.object({ action: z.literal("approve") }),
+  z.object({ action: z.literal("reject") }),
+  z.object({ action: z.literal("preview_url"), source_url: z.string().url() }),
+  z.object({
+    action: z.literal("confirm_url"),
+    source_url: z.string().url(),
+    storage_path: z.string().min(1),
+    public_url: z.string().url()
+  })
+]);
 
-type ErrorStep = "request_parse" | "auth" | "shoe_load" | "env" | "search_request" | "db_update" | "db_insert";
+type ErrorStep = "request_parse" | "auth" | "shoe_load" | "env" | "search_request" | "db_update" | "db_insert" | "download" | "storage_upload";
 
 function fail({
   status,
@@ -146,6 +155,139 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     return success({ message: "Image rejected" }, requestId);
+  }
+
+  if (parsed.data.action === "preview_url") {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+    if (!supabaseUrl) {
+      return fail({
+        status: 500,
+        error: "Supabase URL is not configured.",
+        step: "env",
+        requestId
+      });
+    }
+
+    const { data: shoe, error: shoeError } = await supabase
+      .from("shoes")
+      .select("id")
+      .eq("id", shoeId)
+      .maybeSingle();
+
+    if (shoeError || !shoe) {
+      return fail({
+        status: 404,
+        error: "Shoe not found.",
+        step: "shoe_load",
+        detail: shoeError?.message,
+        requestId
+      });
+    }
+
+    const download = await downloadImageFromUrl(parsed.data.source_url);
+    if (!download.ok) {
+      return fail({
+        status: 502,
+        error: "Image URL could not be downloaded",
+        step: "download",
+        detail: download.reason,
+        requestId
+      });
+    }
+
+    const extension = download.contentType.includes("png")
+      ? "png"
+      : download.contentType.includes("webp")
+        ? "webp"
+        : "jpg";
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "shoe-images";
+    const path = `shoes/${shoeId}/${Date.now()}-${randomUUID()}.${extension}`;
+
+    const { error: uploadError } = await adminClient.storage.from(bucket).upload(path, download.imageBytes, {
+      upsert: false,
+      contentType: download.contentType
+    });
+
+    if (uploadError) {
+      return fail({
+        status: 500,
+        error: "Preview upload failed",
+        step: "storage_upload",
+        detail: uploadError.message,
+        requestId
+      });
+    }
+
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
+    return success(
+      {
+        message: "Preview ready",
+        storage_path: path,
+        public_url: publicUrl,
+        content_type: download.contentType
+      },
+      requestId
+    );
+  }
+
+  if (parsed.data.action === "confirm_url") {
+    const nowIso = new Date().toISOString();
+
+    const { error: closePendingError } = await supabase
+      .from("shoe_images")
+      .update({ status: "rejected", rejected_at: nowIso, rejection_reason: "Superseded by newer pending import." })
+      .eq("shoe_id", shoeId)
+      .eq("status", "pending");
+
+    if (closePendingError) {
+      return fail({
+        status: 500,
+        error: "Failed to close previous pending image.",
+        step: "db_update",
+        detail: closePendingError.message,
+        requestId
+      });
+    }
+
+    let sourceDomain = "";
+    try {
+      sourceDomain = new URL(parsed.data.source_url).hostname;
+    } catch {
+      sourceDomain = "";
+    }
+
+    const { error: insertError } = await supabase.from("shoe_images").insert({
+      shoe_id: shoeId,
+      storage_path: parsed.data.storage_path,
+      public_url: parsed.data.public_url,
+      status: "pending",
+      provider: "manual_url",
+      source_image_url: parsed.data.source_url,
+      source_domain: sourceDomain || null,
+      source_type: "manual",
+      selection_reason: "Admin pasted URL",
+      created_by: user.id
+    });
+
+    if (insertError) {
+      return fail({
+        status: 500,
+        error: "Image metadata insert failed",
+        step: "db_insert",
+        detail: insertError.message,
+        requestId
+      });
+    }
+
+    return success(
+      {
+        message: "Image imported for review",
+        storage_path: parsed.data.storage_path,
+        public_url: parsed.data.public_url,
+        source_image_url: parsed.data.source_url
+      },
+      requestId
+    );
   }
 
   const config = getSerpApiConfig();

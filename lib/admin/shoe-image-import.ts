@@ -52,7 +52,7 @@ type ImportBestImageFailure = {
 export type ImportBestImageResult = ImportBestImageSuccess | ImportBestImageFailure;
 
 const DEFAULT_SERP_BASE_URL = "https://serpapi.com/search.json";
-const MIN_IMAGE_BYTES = 14_000;
+export const MIN_IMAGE_BYTES = 14_000;
 const MAX_CANDIDATE_ATTEMPTS = 8;
 
 const OFFICIAL_DOMAINS = ["nike.com", "adidas.com", "underarmour.com", "newbalance.com", "puma.com", "anta.com", "lining.com", "wayofwade.com", "asics.com", "jordan.com"];
@@ -214,7 +214,7 @@ async function searchCandidates(config: SerpApiConfig, query: string): Promise<S
   return Array.isArray(payload.images_results) ? payload.images_results : [];
 }
 
-function getDownloadHeaders(url: string, sourcePageUrl: string) {
+export function getDownloadHeaders(url: string, sourcePageUrl: string) {
   const referer = sourcePageUrl || `${new URL(url).origin}/`;
   return {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
@@ -224,7 +224,7 @@ function getDownloadHeaders(url: string, sourcePageUrl: string) {
   };
 }
 
-function looksLikeHtml(buffer: Buffer) {
+export function looksLikeHtml(buffer: Buffer) {
   const sample = buffer.toString("utf8", 0, Math.min(buffer.length, 512)).toLowerCase();
   return sample.includes("<html") || sample.includes("<!doctype html") || sample.includes("<head") || sample.includes("<body");
 }
@@ -387,4 +387,46 @@ export async function importBestShoeImage(input: ImportBestImageInput): Promise<
     selectionReason,
     queryUsed: queries[0]
   };
+}
+
+export type DownloadImageFromUrlResult =
+  | { ok: true; imageBytes: Buffer; contentType: string }
+  | { ok: false; reason: string };
+
+export async function downloadImageFromUrl(url: string): Promise<DownloadImageFromUrlResult> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { ok: false, reason: "invalid_url" };
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return { ok: false, reason: `unsupported_protocol_${parsed.protocol}` };
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: getDownloadHeaders(url, `${parsed.origin}/`),
+      signal: AbortSignal.timeout(20_000)
+    });
+
+    if (!response.ok) return { ok: false, reason: `download_status_${response.status}` };
+
+    const contentType = (response.headers.get("content-type") ?? "").toLowerCase();
+    if (!contentType.startsWith("image/")) {
+      return { ok: false, reason: `download_non_image_content_type_${contentType || "unknown"}` };
+    }
+
+    const imageBytes = Buffer.from(await response.arrayBuffer());
+    if (looksLikeHtml(imageBytes)) return { ok: false, reason: "download_html_payload" };
+    if (imageBytes.byteLength < MIN_IMAGE_BYTES) {
+      return { ok: false, reason: `download_image_too_small_${imageBytes.byteLength}` };
+    }
+
+    return { ok: true, imageBytes, contentType };
+  } catch (error) {
+    return { ok: false, reason: `download_exception_${error instanceof Error ? error.message : "unknown"}` };
+  }
 }

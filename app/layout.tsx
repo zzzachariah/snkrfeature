@@ -5,6 +5,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { ThemeInitScript } from "@/components/theme/theme-toggle";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DEFAULT_OG_IMAGE_URL, HOME_DESCRIPTION, HOME_TITLE, SITE_URL } from "@/lib/seo";
 
 const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
@@ -28,9 +29,6 @@ export const metadata: Metadata = {
     title: HOME_TITLE,
     description: HOME_DESCRIPTION,
     images: [DEFAULT_OG_IMAGE_URL],
-  },
-  icons: {
-    icon: "/icon.ico",
   },
 };
 

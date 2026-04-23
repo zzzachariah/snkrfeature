@@ -22,6 +22,7 @@ const TOUCH_DELTA_THRESHOLD = 48;
 const TOTAL = 5;
 
 type ImageAction = "find" | "approve" | "reject";
+type ImageActionLoading = ImageAction | "preview_url" | "confirm_url";
 
 type ShoeDetailImageState = {
   approved: ShoeImageRecord | null;
@@ -34,6 +35,11 @@ type TechCardConfig = {
   field: string;
 };
 
+type PreviewUpload = {
+  storage_path: string;
+  public_url: string;
+};
+
 type Props = {
   shoe: Shoe;
   related: Shoe[];
@@ -41,10 +47,16 @@ type Props = {
   imageState: ShoeDetailImageState;
   reviewImage: string | null | undefined;
   hasPendingImage: boolean;
-  imageActionLoading: ImageAction | null;
+  imageActionLoading: ImageActionLoading | null;
   imageActionError: string | null;
   imageActionSuccess: string | null;
   runAdminImageAction: (action: ImageAction) => void;
+  pasteUrl: string;
+  onPasteUrlChange: (value: string) => void;
+  previewUpload: PreviewUpload | null;
+  onPreviewUrl: () => void;
+  onConfirmUpload: () => void;
+  onCancelPreview: () => void;
   radarAxes: RadarAxis[];
   extraTechCards: Record<string, TechCardConfig>;
   hasStory: boolean;
@@ -315,6 +327,12 @@ function OverviewSlide({
   imageActionError,
   imageActionSuccess,
   runAdminImageAction,
+  pasteUrl,
+  onPasteUrlChange,
+  previewUpload,
+  onPreviewUrl,
+  onConfirmUpload,
+  onCancelPreview,
   active
 }: Props & { active: boolean }) {
   const { translate } = useLocale();
@@ -412,6 +430,52 @@ function OverviewSlide({
                     {translate("Reject image")}
                   </Button>
                 </>
+              )}
+            </div>
+          )}
+
+          {isAdmin && (
+            <div className="flex w-full max-w-xs flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={pasteUrl}
+                  onChange={(event) => onPasteUrlChange(event.target.value)}
+                  placeholder={translate("Paste image URL")}
+                  disabled={imageActionLoading !== null || previewUpload !== null}
+                  className="flex-1 rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.22)] bg-[rgb(var(--surface))] px-3 py-2 text-sm text-[rgb(var(--text))] placeholder:soft-text disabled:opacity-50"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={onPreviewUrl}
+                  disabled={imageActionLoading !== null || previewUpload !== null || !pasteUrl.trim()}
+                >
+                  {imageActionLoading === "preview_url" ? translate("Loading...") : translate("Preview")}
+                </Button>
+              </div>
+              {previewUpload && (
+                <div className="flex flex-col items-center gap-2 rounded-lg border border-[rgb(var(--glass-stroke-soft)/0.22)] bg-[rgb(var(--surface))] p-3">
+                  <ShoeImage
+                    src={previewUpload.public_url}
+                    alt={translate("Pasted image preview")}
+                    fallbackLabel={translate("No image")}
+                    variant="detail"
+                  />
+                  <div className="flex gap-2">
+                    <Button type="button" onClick={onConfirmUpload} disabled={imageActionLoading !== null}>
+                      {imageActionLoading === "confirm_url" ? translate("Uploading...") : translate("Upload")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={onCancelPreview}
+                      disabled={imageActionLoading !== null}
+                    >
+                      {translate("Cancel")}
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           )}
