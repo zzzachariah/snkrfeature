@@ -1,10 +1,13 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Navbar } from "@/components/layout/navbar";
 import { ThemeInitScript } from "@/components/theme/theme-toggle";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { Analytics } from "@vercel/analytics/next";
 import { DEFAULT_OG_IMAGE_URL, HOME_DESCRIPTION, HOME_TITLE, SITE_URL } from "@/lib/seo";
+
+const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -44,6 +47,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
         </LocaleProvider>
         <Analytics />
+        {GOOGLE_ADS_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-ads-gtag" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GOOGLE_ADS_ID}');
+              `}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );
