@@ -42,9 +42,15 @@ export function ShoeDetailClient({
 }) {
   const { translate } = useLocale();
   const router = useRouter();
-  const [imageActionLoading, setImageActionLoading] = useState<"find" | "approve" | "reject" | null>(null);
+  const [imageActionLoading, setImageActionLoading] = useState<
+    "find" | "approve" | "reject" | "preview_url" | "confirm_url" | null
+  >(null);
   const [imageActionError, setImageActionError] = useState<string | null>(null);
   const [imageActionSuccess, setImageActionSuccess] = useState<string | null>(null);
+  const [pasteUrl, setPasteUrl] = useState("");
+  const [previewUpload, setPreviewUpload] = useState<
+    { storage_path: string; public_url: string } | null
+  >(null);
 
   const storyTitle = shoe.story?.title?.trim();
   const storyContent = shoe.story?.content?.trim();
@@ -143,6 +149,75 @@ export function ShoeDetailClient({
     }
   }
 
+  async function handlePreviewUrl() {
+    const trimmed = pasteUrl.trim();
+    if (!trimmed) return;
+    setImageActionLoading("preview_url");
+    setImageActionError(null);
+    setImageActionSuccess(null);
+    try {
+      const res = await fetch(`/api/admin/shoes/${shoe.id}/image`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "preview_url", source_url: trimmed })
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) {
+        const errorText = [json?.error, json?.step ? `step=${json.step}` : null, json?.detail ? `detail=${json.detail}` : null]
+          .filter(Boolean)
+          .join(" | ");
+        throw new Error(errorText || translate("Image import failed"));
+      }
+      setPreviewUpload({ storage_path: json.storage_path, public_url: json.public_url });
+    } catch (error) {
+      setImageActionError(error instanceof Error ? error.message : translate("Image import failed"));
+    } finally {
+      setImageActionLoading(null);
+    }
+  }
+
+  async function handleConfirmUpload() {
+    if (!previewUpload) return;
+    const trimmed = pasteUrl.trim();
+    if (!trimmed) return;
+    setImageActionLoading("confirm_url");
+    setImageActionError(null);
+    setImageActionSuccess(null);
+    try {
+      const res = await fetch(`/api/admin/shoes/${shoe.id}/image`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "confirm_url",
+          source_url: trimmed,
+          storage_path: previewUpload.storage_path,
+          public_url: previewUpload.public_url
+        })
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) {
+        const errorText = [json?.error, json?.step ? `step=${json.step}` : null, json?.detail ? `detail=${json.detail}` : null]
+          .filter(Boolean)
+          .join(" | ");
+        throw new Error(errorText || translate("Image import failed"));
+      }
+      setImageActionSuccess(json?.message ?? translate("Image imported for review"));
+      setPreviewUpload(null);
+      setPasteUrl("");
+      router.refresh();
+    } catch (error) {
+      setImageActionError(error instanceof Error ? error.message : translate("Image import failed"));
+    } finally {
+      setImageActionLoading(null);
+    }
+  }
+
+  function handleCancelPreview() {
+    setPreviewUpload(null);
+    setImageActionError(null);
+    setImageActionSuccess(null);
+  }
+
   return (
     <main className="relative">
       {!isLoggedIn ? (
@@ -164,6 +239,12 @@ export function ShoeDetailClient({
         imageActionError={imageActionError}
         imageActionSuccess={imageActionSuccess}
         runAdminImageAction={runAdminImageAction}
+        pasteUrl={pasteUrl}
+        onPasteUrlChange={setPasteUrl}
+        previewUpload={previewUpload}
+        onPreviewUrl={handlePreviewUrl}
+        onConfirmUpload={handleConfirmUpload}
+        onCancelPreview={handleCancelPreview}
         radarAxes={radarAxes}
         extraTechCards={extraTechCards}
         hasStory={hasStory}
