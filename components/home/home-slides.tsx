@@ -12,6 +12,16 @@ const SLIDE_TRANSITION_MS = 720;
 const SCROLL_DELTA_THRESHOLD = 14;
 const TOUCH_DELTA_THRESHOLD = 48;
 
+function trySelfScroll(el: HTMLElement | null, deltaY: number): boolean {
+  if (!el) return false;
+  if (el.scrollHeight <= el.clientHeight) return false;
+  const atTop = el.scrollTop <= 0;
+  const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+  if (deltaY > 0 && !atBottom) return true;
+  if (deltaY < 0 && !atTop) return true;
+  return false;
+}
+
 type Props = {
   shoes: Shoe[];
   shoesCount: number;
@@ -47,11 +57,8 @@ export function HomeSlides({ shoes, shoesCount, brandsCount, initialQuery }: Pro
     let lastFire = 0;
     const onWheel = (e: WheelEvent) => {
       const target = e.target as HTMLElement | null;
-      // Let nested scroll containers (like the database table) handle their own scroll
-      // once we're on slide 2; but on slide 1, always intercept.
-      if (slideRef.current === 1 && target?.closest("[data-home-scroll-container]")) {
-        return;
-      }
+      const sc = target?.closest("[data-home-scroll-container]") as HTMLElement | null;
+      if (sc && trySelfScroll(sc, e.deltaY)) return;
       const now = Date.now();
       if (now - lastFire < 80) return;
       if (Math.abs(e.deltaY) < SCROLL_DELTA_THRESHOLD) return;
@@ -86,13 +93,17 @@ export function HomeSlides({ shoes, shoesCount, brandsCount, initialQuery }: Pro
   // Touch
   useEffect(() => {
     let startY = 0;
+    let scroller: HTMLElement | null = null;
     const onStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement | null;
+      scroller = target?.closest("[data-home-scroll-container]") as HTMLElement | null;
       startY = e.touches[0]?.clientY ?? 0;
     };
     const onEnd = (e: TouchEvent) => {
       const endY = e.changedTouches[0]?.clientY ?? 0;
       const dy = startY - endY;
       if (Math.abs(dy) < TOUCH_DELTA_THRESHOLD) return;
+      if (scroller && trySelfScroll(scroller, dy)) return;
       if (dy > 0) goTo(slideRef.current + 1);
       else goTo(slideRef.current - 1);
     };
