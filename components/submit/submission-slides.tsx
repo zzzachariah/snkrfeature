@@ -143,9 +143,11 @@ export const SubmissionSlides = forwardRef<SubmissionSlidesHandle, Props>(functi
   useEffect(() => {
     let startY = 0;
     let blockNav = false;
+    let scroller: HTMLElement | null = null;
     const onStart = (e: TouchEvent) => {
       const target = e.target as HTMLElement | null;
       blockNav = !!target?.closest("input, textarea, select, button");
+      scroller = target?.closest("[data-submission-scroll-container]") as HTMLElement | null;
       startY = e.touches[0]?.clientY ?? 0;
     };
     const onEnd = (e: TouchEvent) => {
@@ -153,6 +155,7 @@ export const SubmissionSlides = forwardRef<SubmissionSlidesHandle, Props>(functi
       const endY = e.changedTouches[0]?.clientY ?? 0;
       const dy = startY - endY;
       if (Math.abs(dy) < TOUCH_DELTA_THRESHOLD) return;
+      if (scroller && trySelfScroll(scroller, dy)) return;
       if (dy > 0) goTo(slideRef.current + 1);
       else goTo(slideRef.current - 1);
     };
