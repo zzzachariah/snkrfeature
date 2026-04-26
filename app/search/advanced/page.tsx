@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { DynamicTranslatedText } from "@/components/i18n/dynamic-translated-text";
 import { getShoes } from "@/lib/data/shoes";
 import { normalizeSearchText, rankShoeMatch } from "@/lib/search/shoe-search";
 import type { Metadata } from "next";
@@ -71,18 +72,26 @@ export default async function AdvancedSearchPage({
       <section className="surface-card premium-border rounded-3xl p-6 md:p-7">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-[rgb(var(--accent))]" />
-          <h1 className="text-2xl font-semibold">Advanced Search</h1>
+          <DynamicTranslatedText
+            as="div"
+            text="Advanced Search"
+            className="text-2xl font-semibold"
+          />
         </div>
-        <p className="mt-2 text-sm soft-text">Use structured filters here. The home table search remains your quick/basic search.</p>
+        <DynamicTranslatedText
+          as="p"
+          text="Use structured filters here. The home table search remains your quick/basic search."
+          className="mt-2 text-sm soft-text"
+        />
 
         <form action="/search/advanced" method="GET" className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           <div className="md:col-span-2 lg:col-span-3">
-            <label className="mb-1 block text-xs soft-text">Keywords</label>
+            <DynamicTranslatedText as="div" text="Keywords" className="mb-1 block text-xs soft-text" />
             <Input name="q" defaultValue={params.q ?? ""} placeholder="Name, tags, tech, notes..." />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs soft-text">Brand</label>
+            <DynamicTranslatedText as="div" text="Brand" className="mb-1 block text-xs soft-text" />
             <select name="brand" defaultValue={params.brand ?? ""} className="w-full rounded-xl border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.95)] px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--ring)/0.4)] focus:border-[rgb(var(--ring)/0.85)] focus:outline-none focus:ring-4 focus:ring-[rgb(var(--ring)/0.18)]">
               <option value="">All brands</option>
               {brands.map((b) => <option key={b} value={b}>{b}</option>)}
@@ -90,7 +99,7 @@ export default async function AdvancedSearchPage({
           </div>
 
           <div>
-            <label className="mb-1 block text-xs soft-text">Category</label>
+            <DynamicTranslatedText as="div" text="Category" className="mb-1 block text-xs soft-text" />
             <select name="category" defaultValue={params.category ?? ""} className="w-full rounded-xl border border-[rgb(var(--muted)/0.55)] bg-[rgb(var(--bg-elev)/0.95)] px-3 py-2 text-sm text-[rgb(var(--text))] transition hover:border-[rgb(var(--ring)/0.4)] focus:border-[rgb(var(--ring)/0.85)] focus:outline-none focus:ring-4 focus:ring-[rgb(var(--ring)/0.18)]">
               <option value="">All categories</option>
               {categories.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -98,32 +107,43 @@ export default async function AdvancedSearchPage({
           </div>
 
           <div>
-            <label className="mb-1 block text-xs soft-text">Player</label>
+            <DynamicTranslatedText as="div" text="Player" className="mb-1 block text-xs soft-text" />
             <Input name="player" defaultValue={params.player ?? ""} placeholder="e.g. LeBron" />
           </div>
 
           <div className="md:col-span-2 lg:col-span-3">
-            <label className="mb-1 block text-xs soft-text">Tech focus</label>
+            <DynamicTranslatedText as="div" text="Tech focus" className="mb-1 block text-xs soft-text" />
             <Input name="tech" defaultValue={params.tech ?? ""} placeholder="e.g. Zoom, traction pattern, carbon plate" />
           </div>
 
           <div className="md:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-2">
-            <Button type="submit" className="inline-flex items-center gap-1.5"><Search className="h-4 w-4" /> Search</Button>
-            <Link href="/search/advanced"><Button type="button" variant="secondary">Reset filters</Button></Link>
+            <Button type="submit" className="inline-flex items-center gap-1.5">
+              <Search className="h-4 w-4" />
+              <DynamicTranslatedText text="Search" />
+            </Button>
+            <Link href="/search/advanced">
+              <Button type="button" variant="secondary">
+                <DynamicTranslatedText text="Reset filters" />
+              </Button>
+            </Link>
           </div>
         </form>
       </section>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Results</h2>
+          <DynamicTranslatedText as="div" text="Results" className="text-lg font-semibold" />
           <p className="text-xs soft-text">{filtered.length} match{filtered.length === 1 ? "" : "es"}</p>
         </div>
 
         {filtered.length === 0 && (
           <Card className="p-6 text-center">
-            <p className="font-medium">No results found</p>
-            <p className="mt-1 text-xs soft-text">Try broadening your keyword or removing one filter.</p>
+            <DynamicTranslatedText as="p" text="No results found" className="font-medium" />
+            <DynamicTranslatedText
+              as="p"
+              text="Try broadening your keyword or removing one filter."
+              className="mt-1 text-xs soft-text"
+            />
           </Card>
         )}
 
@@ -132,12 +152,16 @@ export default async function AdvancedSearchPage({
             <Card key={shoe.id} className="p-4">
               <p className="text-xs soft-text">{shoe.brand}{shoe.category ? ` • ${shoe.category}` : ""}</p>
               <h3 className="mt-1 font-semibold">{shoe.shoe_name}</h3>
-              <p className="mt-1 text-xs soft-text">{shoe.player ?? "No player tag"}</p>
+              <p className="mt-1 text-xs soft-text">
+                {shoe.player ?? <DynamicTranslatedText text="No player tag" />}
+              </p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {(shoe.spec.tags ?? []).slice(0, 3).map((tag) => <Badge key={tag}>{tag}</Badge>)}
               </div>
               <div className="mt-3">
-                <Link href={`/shoes/${shoe.slug}`} className="text-sm text-[rgb(var(--accent))] hover:underline">Open detail</Link>
+                <Link href={`/shoes/${shoe.slug}`} className="text-sm text-[rgb(var(--accent))] hover:underline">
+                  <DynamicTranslatedText text="Open detail" />
+                </Link>
               </div>
             </Card>
           ))}

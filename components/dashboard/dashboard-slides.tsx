@@ -449,10 +449,12 @@ export function DashboardSlides(props: Props) {
         </div>
       </div>
 
-      {/* Left-side text indicator (desktop) */}
+      {/* Left-side text indicator — only when there's enough gutter to sit
+          outside the centered max-w-4xl content panel. Shown at xl+ where
+          the gutter is generous; below that we fall back to right-side
+          dots so the labels never overlap the content. */}
       <div
-        className="absolute top-1/2 z-10 hidden -translate-y-1/2 flex-col items-start gap-5 md:flex"
-        style={{ left: "16%" }}
+        className="absolute left-6 top-1/2 z-10 hidden -translate-y-1/2 flex-col items-start gap-5 xl:flex"
       >
         {labels.map((lbl, i) => (
           <button
@@ -478,9 +480,10 @@ export function DashboardSlides(props: Props) {
         ))}
       </div>
 
-      {/* Right-side dot indicator (mobile fallback) */}
+      {/* Right-side dot indicator — visible everywhere except xl+ (where the
+          left-side text indicator takes over). */}
       <div
-        className="pointer-events-none absolute right-4 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-2 md:hidden"
+        className="pointer-events-none absolute right-4 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-2 xl:hidden"
         aria-hidden
       >
         {Array.from({ length: TOTAL }).map((_, i) => (

@@ -377,6 +377,25 @@ const UI_TRANSLATIONS_ZH: Record<string, string> = {
   "forefoot": "前掌",
   "heel": "后掌",
   "upper": "鞋面",
+
+  // Compare spec table row labels (PROTECTED set used to block these — we
+  // moved value protection into the spec-table component so labels can
+  // translate cleanly.)
+  "fit profile": "包裹感",
+
+  // Advanced search
+  "tech focus": "科技焦点",
+  "e.g. zoom, traction pattern, carbon plate": "例如：Zoom、抓地花纹、碳板",
+  "results": "搜索结果",
+  "no results found": "未找到搜索结果",
+  "try broadening your keyword or removing one filter.": "请尝试更宽泛的关键词，或减少一个筛选条件。",
+  "open detail": "查看详情",
+  "use structured filters here. the home table search remains your quick/basic search.":
+    "在这里使用结构化筛选；主页表格搜索仍是你的快速/基本搜索。",
+  "reset filters": "重置筛选",
+
+  // Misc UI strings
+  "no submissions match current filters.": "没有符合当前筛选条件的投稿。",
 };
 
 export const MANUAL_TRANSLATIONS: Record<string, string> = {
@@ -422,14 +441,15 @@ function normalizeKey(text: string) {
   return text.trim().toLowerCase();
 }
 
-const PROTECTED_NO_TRANSLATE_KEYS = new Set([
-  "forefoot midsole tech",
-  "heel midsole tech",
-  "forefoot midsole",
-  "heel midsole",
-  "forefoot tech",
-  "heel tech"
-]);
+/**
+ * Reserved for keys we never want translated even if they show up in
+ * dynamic content (e.g. brand-locked phrases). Tech-area labels used to
+ * live here; they were moved out so static `translate()` can hand back
+ * proper Chinese labels. Value-side protection is now done explicitly by
+ * the components that render forefoot/heel midsole tech (compare card,
+ * compare spec table) using `skipDynamic`/`protectValue` flags.
+ */
+const PROTECTED_NO_TRANSLATE_KEYS = new Set<string>([]);
 
 function shouldSkipDynamicTranslation(text: string) {
   const trimmed = text.trim();
