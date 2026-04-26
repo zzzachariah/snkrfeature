@@ -99,24 +99,21 @@ export function CardFrame({ children, variant = "single" }: Props) {
 
 function BrandMark({ size = 32 }: { size?: number }) {
   return (
-    <div
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/favicon.png"
+      alt=""
+      width={size}
+      height={size}
+      crossOrigin="anonymous"
       style={{
         width: size,
         height: size,
+        objectFit: "contain",
         borderRadius: 8,
-        background: "rgb(var(--text))",
-        color: "rgb(var(--bg-elev))",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontWeight: 900,
-        fontSize: Math.round(size * 0.55),
-        letterSpacing: "-0.05em",
         flexShrink: 0,
       }}
-    >
-      sf
-    </div>
+    />
   );
 }
 
