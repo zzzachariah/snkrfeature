@@ -12,6 +12,7 @@ const isI18nDebugEnabled = process.env.NEXT_PUBLIC_I18N_DEBUG === "1";
 
 const UI_TRANSLATIONS_ZH: Record<string, string> = {
   "bounce": "弹性",
+  "decent": "中等",
   "kobe": "科比",
   "boom": "䨻",
   "continue": "继续",
