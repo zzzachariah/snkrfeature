@@ -270,6 +270,113 @@ const UI_TRANSLATIONS_ZH: Record<string, string> = {
   "fit / containment": "包裹 / 锁定",
   "tags (comma separated)": "标签（逗号分隔）",
   "source links (comma separated)": "来源链接（逗号分隔）",
+
+  // Form validation & required-field copy
+  "brand is required.": "品牌为必填项。",
+  "shoe name is required.": "鞋名为必填项。",
+  "raw notes are required.": "原始备注为必填项。",
+  "enter a quantity.": "请输入数量。",
+  "quantity must be a whole number greater than 0.": "数量必须为大于 0 的整数。",
+  "complete verification above to enable submit.": "请先完成上方验证后再提交。",
+
+  // Stepper / sectioning
+  "step 1 of 4": "第 1 步（共 4 步）",
+  "step 2 of 4": "第 2 步（共 4 步）",
+  "step 3 of 4": "第 3 步（共 4 步）",
+  "step 4 of 4": "第 4 步（共 4 步）",
+  "section 2 of 4": "第 2 部分（共 4 部分）",
+  "section 3 of 4": "第 3 部分（共 4 部分）",
+  "section 4 of 4": "第 4 部分（共 4 部分）",
+
+  // Buttons & button states
+  "save compare": "保存对比",
+  "add shoes": "添加球鞋",
+  "pick shoes": "选择球鞋",
+  "select up to": "最多可选",
+  "clear all": "全部清除",
+  "uploading...": "上传中…",
+  "submitting...": "提交中…",
+  "starting...": "正在开始…",
+  "saving...": "保存中…",
+  "save": "保存",
+  "next": "下一步",
+  "back": "返回",
+  "open": "打开",
+  "add": "添加",
+  "stop": "停止",
+  "stopped": "已停止",
+  "preview": "预览",
+  "upload": "上传",
+  "generate images": "生成图片",
+  "paste image url": "粘贴图片链接",
+  "pasted image preview": "图片预览",
+
+  // Empty states & feedback
+  "no activity yet.": "还没有活动。",
+  "no shoes selected yet": "还没有选择球鞋",
+  "no matching shoes.": "没有匹配的球鞋。",
+  "nothing to compare yet": "还没有要对比的球鞋",
+  "only one shoe selected — add another to compare.": "只选择了一双鞋，请再添加一双进行对比。",
+  "max reached": "已达上限",
+  "you liked": "你点赞了",
+  "you disliked": "你点踩了",
+  "you commented": "你评论了",
+  "comment posted": "评论已发布",
+  "vote updated": "投票已更新",
+  "vote failed": "投票失败",
+  "comment deleted": "评论已删除",
+  "delete failed": "删除失败",
+
+  // Info copy / help text
+  "let's start with what shoe this is.": "先确定这是哪一双鞋。",
+  "manage your username and password.": "管理你的用户名和密码。",
+  "materials and construction details. all optional.": "材料与构造细节，全部为可选填。",
+  "subjective performance qualities, in your own words.": "用你自己的话描述主观性能体验。",
+  "every metric is tied — these shoes are evenly matched.": "所有指标打平 — 这两双鞋势均力敌。",
+  "add story + raw notes + verification, then submit.": "填写故事、原始备注、完成验证，然后提交。",
+  "add up to five shoes and see their radar, diff, and full spec sheet side by side.":
+    "最多添加五双鞋，并排查看雷达图、差异分析和完整规格。",
+  "your submissions and saved comparisons.": "你的投稿和已保存的对比。",
+  "your comments and reactions, newest first.": "你的评论和点赞 / 点踩记录，最新在前。",
+  "create your snkrfeature account. public identity is username-based.":
+    "创建你的 snkrfeature 账号，公开身份基于用户名。",
+  "create your account to submit sneaker data and join discussions.":
+    "创建账号以提交球鞋数据并参与讨论。",
+  "a living index of every pair worth playing in.": "每一双值得上脚的球鞋的实时索引。",
+  "every pair, indexed.": "每一双，皆有索引。",
+
+  // Section labels & navigation
+  "database": "数据库",
+  "the database": "数据库",
+  "analysis": "分析",
+  "activity": "活动",
+  "performance": "性能",
+  "profile": "数据",
+  "library": "图鉴",
+  "index": "索引",
+  "lineup": "阵容",
+  "identity": "身份",
+  "related": "相关",
+  "verdict": "评估",
+  "context": "背景",
+  "spec": "规格",
+  "specs": "规格",
+  "tech specifications": "技术规格",
+  "title": "标题",
+  "metric": "指标",
+  "metrics": "指标",
+  "leads in": "领先于",
+
+  // Search prompts
+  "name, tags, tech…": "名称、标签、科技……",
+  "search shoes...": "搜索球鞋...",
+  "e.g. guards 2024": "例如：后卫鞋 2024",
+  "scroll to next slide": "滚动到下一张幻灯片",
+
+  // Compare card tech labels (used by share-card grid)
+  "forefoot": "前掌",
+  "heel": "后掌",
+  "upper": "鞋面",
 };
 
 export const MANUAL_TRANSLATIONS: Record<string, string> = {
@@ -292,7 +399,6 @@ export const MANUAL_TRANSLATIONS: Record<string, string> = {
   "forefoot tech": "前掌中底科技",
   "heel tech": "后掌中底科技",
   "upper tech": "鞋面科技",
-  "upper": "鞋面科技",
   "cushioning": "泡棉舒适度",
   "traction": "抓地力/止滑程度",
   "stability": "稳定性",

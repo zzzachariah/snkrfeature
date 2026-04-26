@@ -64,7 +64,7 @@ export function CommentSection({ shoeId }: { shoeId: string }) {
 
     const data = await response.json();
     setIsError(!data.ok);
-    setMessage(data.message ?? (data.ok ? "Comment posted" : "Failed"));
+    setMessage(data.message ?? translate(data.ok ? "Comment posted" : "Failed"));
 
     if (data.ok) {
       setContent("");
@@ -83,7 +83,7 @@ export function CommentSection({ shoeId }: { shoeId: string }) {
 
     const data = await response.json();
     setIsError(!data.ok);
-    setMessage(data.message ?? (data.ok ? "Vote updated" : "Vote failed"));
+    setMessage(data.message ?? translate(data.ok ? "Vote updated" : "Vote failed"));
     if (data.ok) await loadComments();
   }
 
@@ -96,7 +96,7 @@ export function CommentSection({ shoeId }: { shoeId: string }) {
 
     const data = await response.json();
     setIsError(!data.ok);
-    setMessage(data.message ?? (data.ok ? "Comment deleted" : "Delete failed"));
+    setMessage(data.message ?? translate(data.ok ? "Comment deleted" : "Delete failed"));
     if (data.ok) await loadComments();
   }
 
