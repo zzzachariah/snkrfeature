@@ -8,12 +8,15 @@ import { Shoe } from "@/lib/types";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { CompareSlides } from "@/components/compare/compare-slides";
 import { AddShoeDialog } from "@/components/compare/add-shoe-dialog";
+import { CardPreviewModal } from "@/components/card/card-preview-modal";
+import { CompareShoePicker } from "@/components/card/compare-shoe-picker";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FeedbackMessage } from "@/components/ui/feedback-message";
 
 const MAX_SHOES = 5;
+const MAX_CARD_SHOES = 4;
 const COMPARE_STORAGE_KEY = "snkr:compare:ids";
 
 type Props = {
@@ -39,6 +42,8 @@ export function ComparePageClient({ selected, allShoes }: Props) {
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [shareShoes, setShareShoes] = useState<Shoe[] | null>(null);
   const hydratedFromStorageRef = useRef(false);
 
   useEffect(() => {
@@ -124,6 +129,21 @@ export function ComparePageClient({ selected, allShoes }: Props) {
   const onClearAll = () => setCompareIds([]);
 
   const canSave = localShoes.length >= 2;
+  const canShare = localShoes.length >= 1;
+
+  function onShareClick() {
+    if (localShoes.length === 0) return;
+    if (localShoes.length <= MAX_CARD_SHOES) {
+      setShareShoes(localShoes);
+      return;
+    }
+    setPickerOpen(true);
+  }
+
+  function onPickerConfirm(picked: Shoe[]) {
+    setPickerOpen(false);
+    setShareShoes(picked);
+  }
 
   function openSaveModal() {
     setSaveTitle(defaultSaveTitle(localShoes));
@@ -200,8 +220,10 @@ export function ComparePageClient({ selected, allShoes }: Props) {
           shoes={localShoes}
           canAdd={canAdd}
           canSave={canSave}
+          canShare={canShare}
           onAdd={() => setDialogOpen(true)}
           onSave={openSaveModal}
+          onShare={onShareClick}
           onRemove={onRemove}
           onClear={onClearAll}
         />
@@ -214,6 +236,20 @@ export function ComparePageClient({ selected, allShoes }: Props) {
         selectedIds={selectedIds}
         remainingSlots={remainingSlots}
         onConfirm={onConfirm}
+      />
+
+      <CompareShoePicker
+        open={pickerOpen}
+        shoes={localShoes}
+        max={MAX_CARD_SHOES}
+        onCancel={() => setPickerOpen(false)}
+        onConfirm={onPickerConfirm}
+      />
+
+      <CardPreviewModal
+        open={shareShoes !== null}
+        onClose={() => setShareShoes(null)}
+        mode={shareShoes ? { kind: "compare", shoes: shareShoes } : null}
       />
 
       <Modal open={saveOpen} onClose={() => (saveBusy ? null : setSaveOpen(false))} title="Save this compare">
