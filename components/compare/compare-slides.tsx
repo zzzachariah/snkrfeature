@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bookmark, ChevronDown, Plus } from "lucide-react";
+import { Bookmark, ChevronDown, Plus, Share2 } from "lucide-react";
 import { ComparePlinths } from "@/components/compare/compare-plinths";
 import { CompareRadar } from "@/components/compare/compare-radar";
 import { CompareDiffRows } from "@/components/compare/compare-diff-rows";
@@ -28,13 +28,15 @@ type Props = {
   shoes: Shoe[];
   canAdd: boolean;
   canSave: boolean;
+  canShare: boolean;
   onAdd: () => void;
   onSave: () => void;
+  onShare: () => void;
   onRemove: (id: string) => void;
   onClear: () => void;
 };
 
-export function CompareSlides({ shoes, canAdd, canSave, onAdd, onSave, onRemove, onClear }: Props) {
+export function CompareSlides({ shoes, canAdd, canSave, canShare, onAdd, onSave, onShare, onRemove, onClear }: Props) {
   const { translate } = useLocale();
   const TOTAL = 3;
   const [slide, setSlide] = useState(0);
@@ -155,8 +157,10 @@ export function CompareSlides({ shoes, canAdd, canSave, onAdd, onSave, onRemove,
                 shoes={shoes}
                 canAdd={canAdd}
                 canSave={canSave}
+                canShare={canShare}
                 onAdd={onAdd}
                 onSave={onSave}
+                onShare={onShare}
                 onClear={onClear}
                 translate={translate}
               />
@@ -273,16 +277,20 @@ function HeroBlock({
   shoes,
   canAdd,
   canSave,
+  canShare,
   onAdd,
   onSave,
+  onShare,
   onClear,
   translate
 }: {
   shoes: Shoe[];
   canAdd: boolean;
   canSave: boolean;
+  canShare: boolean;
   onAdd: () => void;
   onSave: () => void;
+  onShare: () => void;
   onClear: () => void;
   translate: (value: string) => string;
 }) {
@@ -319,6 +327,15 @@ function HeroBlock({
             className="inline-flex items-center gap-1 rounded-md border border-[rgb(var(--glass-stroke-soft)/0.4)] px-2.5 py-1 text-[0.75rem] soft-text transition hover:border-[rgb(var(--text)/0.4)] hover:text-[rgb(var(--text))]"
           >
             <Bookmark className="h-3.5 w-3.5" /> {translate("Save compare")}
+          </button>
+        ) : null}
+        {canShare ? (
+          <button
+            type="button"
+            onClick={onShare}
+            className="inline-flex items-center gap-1 rounded-md border border-[rgb(var(--glass-stroke-soft)/0.4)] px-2.5 py-1 text-[0.75rem] soft-text transition hover:border-[rgb(var(--text)/0.4)] hover:text-[rgb(var(--text))]"
+          >
+            <Share2 className="h-3.5 w-3.5" /> {translate("Share card")}
           </button>
         ) : null}
         <button

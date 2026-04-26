@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown, Share2 } from "lucide-react";
+import { CardPreviewModal } from "@/components/card/card-preview-modal";
 import { CommentSection } from "@/components/detail/comment-section";
 import { PerformanceRadar, type RadarAxis } from "@/components/detail/performance-radar";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,7 @@ const HASH_TO_INDEX: Record<string, number> = {
 export function ShoeDetailSlides(props: Props) {
   const { translate } = useLocale();
   const [slide, setSlide] = useState(0);
+  const [shareOpen, setShareOpen] = useState(false);
   const slideRef = useRef(0);
   const animatingRef = useRef(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -196,6 +198,7 @@ export function ShoeDetailSlides(props: Props) {
   const viewportHeight = `calc(100vh - ${NAV_HEIGHT}px)`;
 
   return (
+    <>
     <div
       ref={rootRef}
       className="detail-slides relative"
@@ -210,7 +213,7 @@ export function ShoeDetailSlides(props: Props) {
         }}
       >
         <SlideFrame height={viewportHeight}>
-          <OverviewSlide {...props} active={slide === 0} />
+          <OverviewSlide {...props} active={slide === 0} onShareCard={() => setShareOpen(true)} />
         </SlideFrame>
         <SlideFrame height={viewportHeight}>
           <PerformanceSlide {...props} active={slide === 1} />
@@ -300,6 +303,12 @@ export function ShoeDetailSlides(props: Props) {
         }
       `}</style>
     </div>
+    <CardPreviewModal
+      open={shareOpen}
+      onClose={() => setShareOpen(false)}
+      mode={{ kind: "single", shoe: props.shoe, axes: props.radarAxes }}
+    />
+    </>
   );
 }
 
@@ -333,8 +342,9 @@ function OverviewSlide({
   onPreviewUrl,
   onConfirmUpload,
   onCancelPreview,
-  active
-}: Props & { active: boolean }) {
+  active,
+  onShareCard
+}: Props & { active: boolean; onShareCard: () => void }) {
   const { translate } = useLocale();
   return (
     <div className={`flex h-full flex-col justify-center py-10 ${slideEntranceClass(active)}`}>
@@ -375,8 +385,12 @@ function OverviewSlide({
             <Link href={`/compare?ids=${shoe.id}`}>
               <Button>{translate("Add to compare")}</Button>
             </Link>
+            <Button type="button" variant="secondary" onClick={onShareCard}>
+              <Share2 className="mr-1.5 h-3.5 w-3.5" />
+              {translate("Share card")}
+            </Button>
             <Link href={`/submit/correction/${shoe.id}`}>
-              <Button variant="secondary">{translate("Submit correction")}</Button>
+              <Button variant="ghost">{translate("Submit correction")}</Button>
             </Link>
           </div>
         </div>
