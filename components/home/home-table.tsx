@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { ArrowUpDown, ChevronDown, SearchX, X } from "lucide-react";
 import { Shoe } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -84,6 +83,17 @@ export function HomeTable({
       "opacity 520ms cubic-bezier(0.22,1,0.36,1),transform 520ms cubic-bezier(0.22,1,0.36,1)",
     transitionDelay: `${delay}ms`
   });
+
+  const rowReveal = (i: number): React.CSSProperties => {
+    if (i >= 8) return {};
+    return {
+      opacity: revealed ? 1 : 0,
+      transform: revealed ? "none" : "translateY(6px)",
+      transition:
+        "opacity 340ms cubic-bezier(0.22,1,0.36,1),transform 340ms cubic-bezier(0.22,1,0.36,1)",
+      transitionDelay: revealed ? `${180 + i * 28}ms` : "0ms"
+    };
+  };
 
   return (
     <section className="flex h-full min-h-0 flex-col gap-5">
@@ -169,23 +179,10 @@ export function HomeTable({
             )}
             {filtered.map((shoe, i) => {
               const checked = selected.includes(shoe.id);
-              const animated = i < 8;
-              const Row = animated ? motion.li : "li";
-              const motionProps = animated
-                ? {
-                    initial: { opacity: 0, y: 6 },
-                    animate: revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 },
-                    transition: {
-                      duration: 0.34,
-                      delay: revealed ? 0.18 + i * 0.028 : 0,
-                      ease: [0.22, 1, 0.36, 1] as [number, number, number, number]
-                    }
-                  }
-                : {};
               return (
-                <Row
+                <li
                   key={shoe.id}
-                  {...motionProps}
+                  style={rowReveal(i)}
                   className="relative flex items-center gap-3 px-3 py-3"
                 >
                   <label className="flex shrink-0 items-center">
@@ -226,7 +223,7 @@ export function HomeTable({
                       ) : null}
                     </span>
                   </Link>
-                </Row>
+                </li>
               );
             })}
           </ul>
@@ -303,23 +300,10 @@ export function HomeTable({
                 </tr>
               )}
               {filtered.map((shoe, i) => {
-                const animated = i < 8;
-                const Row = animated ? motion.tr : "tr";
-                const motionProps = animated
-                  ? {
-                      initial: { opacity: 0, y: 6 },
-                      animate: revealed ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 },
-                      transition: {
-                        duration: 0.34,
-                        delay: revealed ? 0.18 + i * 0.028 : 0,
-                        ease: [0.22, 1, 0.36, 1] as [number, number, number, number]
-                      }
-                    }
-                  : {};
                 return (
-                  <Row
+                  <tr
                     key={shoe.id}
-                    {...motionProps}
+                    style={rowReveal(i)}
                     className="border-t border-[rgb(var(--muted)/0.15)] transition-colors duration-[160ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[rgb(var(--text)/0.035)]"
                   >
                     <td className="px-3 py-3 text-center align-middle">
@@ -354,7 +338,7 @@ export function HomeTable({
                       {shoe.brand}
                     </td>
                     <td className="px-4 py-3 text-[0.78rem] soft-text">{shoe.release_year ?? "—"}</td>
-                  </Row>
+                  </tr>
                 );
               })}
             </tbody>
