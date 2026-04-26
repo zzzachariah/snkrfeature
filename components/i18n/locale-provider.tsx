@@ -12,6 +12,7 @@ const isI18nDebugEnabled = process.env.NEXT_PUBLIC_I18N_DEBUG === "1";
 
 const UI_TRANSLATIONS_ZH: Record<string, string> = {
   "bounce": "弹性",
+  "boom": "䨻",
   "continue": "继续",
   "translating...": "翻译中…",
   "machine translation may contain some inaccuracies. thank you for your understanding. loading may also take a little time.":
