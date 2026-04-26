@@ -12,24 +12,73 @@ type Props = {
   shoes: Shoe[];
 };
 
-function gridForCount(count: number): { columns: string; rows: string; imageHeight: number; nameSize: number } {
-  if (count <= 2) return { columns: "1fr 1fr", rows: "1fr", imageHeight: 280, nameSize: 32 };
-  if (count === 3) return { columns: "1fr 1fr 1fr", rows: "1fr", imageHeight: 220, nameSize: 24 };
-  return { columns: "1fr 1fr", rows: "1fr 1fr", imageHeight: 168, nameSize: 22 };
+function gridForCount(count: number): {
+  columns: string;
+  rows: string;
+  imageHeight: number;
+  nameSize: number;
+  techLabelSize: number;
+  techValueSize: number;
+} {
+  if (count <= 2)
+    return {
+      columns: "1fr 1fr",
+      rows: "1fr",
+      imageHeight: 260,
+      nameSize: 30,
+      techLabelSize: 9,
+      techValueSize: 13,
+    };
+  if (count === 3)
+    return {
+      columns: "1fr 1fr 1fr",
+      rows: "1fr",
+      imageHeight: 200,
+      nameSize: 22,
+      techLabelSize: 8,
+      techValueSize: 11,
+    };
+  return {
+    columns: "1fr 1fr",
+    rows: "1fr 1fr",
+    imageHeight: 150,
+    nameSize: 21,
+    techLabelSize: 7.5,
+    techValueSize: 10.5,
+  };
 }
 
-function shortTech(shoe: Shoe): string {
-  const parts: string[] = [];
-  const midsole = [shoe.spec.forefoot_midsole_tech, shoe.spec.heel_midsole_tech]
-    .map((t) => (t ?? "").trim())
-    .filter(Boolean);
-  if (midsole.length) {
-    const dedup = midsole[0] === midsole[1] ? [midsole[0]] : midsole;
-    parts.push(dedup.join(" / "));
-  }
-  if (shoe.spec.outsole_tech?.trim()) parts.push(shoe.spec.outsole_tech.trim());
-  const joined = parts.join(" · ");
-  return joined.length > 80 ? `${joined.slice(0, 77)}…` : joined;
+const TECH_ROWS: Array<{
+  key: keyof Shoe["spec"];
+  // Short label key — the compare card's tight cells need a 2-character zh
+  // label, so we use the bare body-part word rather than the full
+  // "<part> midsole tech" string. Both forms are in the locale dict.
+  labelKey: string;
+  englishLabel: string;
+  /**
+   * Forefoot/heel midsole values stay in their original language per editorial
+   * direction (often proprietary tech names that travel poorly through MT).
+   * Outsole/upper get the dynamic-translation treatment via useTranslatedText.
+   */
+  translateValue: boolean;
+}> = [
+  { key: "forefoot_midsole_tech", labelKey: "forefoot", englishLabel: "Forefoot", translateValue: false },
+  { key: "heel_midsole_tech", labelKey: "heel", englishLabel: "Heel", translateValue: false },
+  { key: "outsole_tech", labelKey: "outsole", englishLabel: "Outsole", translateValue: true },
+  { key: "upper_tech", labelKey: "upper", englishLabel: "Upper", translateValue: true },
+];
+
+function clampValue(value: string, max: number): string {
+  if (value.length <= max) return value;
+  return `${value.slice(0, Math.max(0, max - 1))}…`;
+}
+
+function TechValueText({ value, translate }: { value: string; translate: boolean }) {
+  const translated = useTranslatedText(value, {
+    contentType: translate ? "technology" : "brand",
+    skipDynamic: !translate,
+  });
+  return <>{translate ? translated : value}</>;
 }
 
 function ShoeCell({
@@ -37,31 +86,31 @@ function ShoeCell({
   index,
   imageHeight,
   nameSize,
+  techLabelSize,
+  techValueSize,
   noImageLabel,
+  valueClamp,
 }: {
   shoe: Shoe;
   index: number;
   imageHeight: number;
   nameSize: number;
+  techLabelSize: number;
+  techValueSize: number;
   noImageLabel: string;
+  valueClamp: number;
 }) {
+  const { translate } = useLocale();
   const style = getLineStyle(index);
-  /**
-   * The short tech line includes forefoot/heel midsole tech values which the
-   * editorial direction asks us to leave in their original language. Outsole
-   * is concatenated together so we leave the whole string un-translated for
-   * consistency on the card.
-   */
-  const techLine = shortTech(shoe);
   return (
     <div
       style={{
         border: "1px solid rgba(0,0,0,0.08)",
         borderRadius: 14,
-        padding: 18,
+        padding: 16,
         background: "rgba(255,255,255,0.6)",
         display: "grid",
-        gridTemplateRows: `${imageHeight}px auto auto`,
+        gridTemplateRows: `${imageHeight}px auto 1fr`,
         rowGap: 10,
         minHeight: 0,
       }}
@@ -152,16 +201,61 @@ function ShoeCell({
           {shoe.shoe_name}
         </span>
       </div>
-      <span
+      <div
         style={{
-          fontSize: 11.5,
-          color: "rgba(0,0,0,0.6)",
-          letterSpacing: "-0.005em",
-          lineHeight: 1.35,
+          display: "grid",
+          gridTemplateColumns: "auto 1fr",
+          columnGap: 10,
+          rowGap: 4,
+          alignContent: "start",
         }}
       >
-        {techLine || "—"}
-      </span>
+        {TECH_ROWS.map((row) => {
+          const value = (shoe.spec[row.key] as string | null | undefined) ?? null;
+          const translatedLabel = translate(row.labelKey);
+          const labelText =
+            translatedLabel === row.labelKey ? row.englishLabel : translatedLabel;
+          return (
+            <div
+              key={String(row.key)}
+              style={{ display: "contents" }}
+            >
+              <span
+                style={{
+                  fontSize: techLabelSize,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.22em",
+                  color: "rgba(0,0,0,0.5)",
+                  alignSelf: "center",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {labelText}
+              </span>
+              <span
+                style={{
+                  fontSize: techValueSize,
+                  fontWeight: 600,
+                  color: value ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.3)",
+                  letterSpacing: "-0.005em",
+                  lineHeight: 1.25,
+                  overflow: "hidden",
+                }}
+              >
+                {value ? (
+                  <TechValueText
+                    value={clampValue(value, valueClamp)}
+                    translate={row.translateValue}
+                  />
+                ) : (
+                  "—"
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -229,7 +323,10 @@ export function CompareCard({ shoes }: Props) {
               index={i}
               imageHeight={grid.imageHeight}
               nameSize={grid.nameSize}
+              techLabelSize={grid.techLabelSize}
+              techValueSize={grid.techValueSize}
               noImageLabel={translate("No image")}
+              valueClamp={safe.length >= 4 ? 26 : safe.length === 3 ? 32 : 42}
             />
           ))}
         </div>
