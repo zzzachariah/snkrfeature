@@ -54,9 +54,9 @@ export function CardPreviewModal({ open, onClose, mode }: Props) {
       const availableHeight = Math.max(0, node.clientHeight - padY);
       const sx = availableWidth / CARD_WIDTH;
       const sy = availableHeight / CARD_HEIGHT;
-      const next = Math.min(sx, sy, 0.7);
+      const next = Math.min(sx, sy, 0.6);
       if (Number.isFinite(next) && next > 0) {
-        setScale(Math.max(0.18, next));
+        setScale(Math.max(0.16, next));
       }
     };
     compute();
@@ -96,7 +96,7 @@ export function CardPreviewModal({ open, onClose, mode }: Props) {
     <AnimatePresence>
       <motion.div
         key="overlay"
-        className="fixed inset-0 z-[120] flex items-center justify-center bg-[rgb(0_0_0/0.55)] p-4 md:p-8"
+        className="fixed inset-0 z-[120] flex items-center justify-center bg-[rgb(0_0_0/0.55)] p-3 md:p-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -107,26 +107,24 @@ export function CardPreviewModal({ open, onClose, mode }: Props) {
           role="dialog"
           aria-modal
           className="surface-card premium-border relative flex w-full max-w-3xl flex-col overflow-hidden rounded-3xl shadow-[0_30px_72px_rgb(var(--glass-shadow)/0.42)]"
+          style={{ maxHeight: "calc(100dvh - 24px)" }}
           initial={{ y: 18, opacity: 0, scale: 0.985 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 8, opacity: 0, scale: 0.985 }}
           transition={{ duration: 0.22, ease: "easeOut" }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-start justify-between gap-3 px-6 pt-5">
-            <div>
+          <div className="flex shrink-0 items-center justify-between gap-3 px-5 pt-4 md:px-6 md:pt-5">
+            <div className="min-w-0">
               <p className="t-eyebrow">{translate("Share card")}</p>
-              <h2 className="mt-1 text-lg font-semibold tracking-[-0.02em]">
+              <h2 className="mt-0.5 text-base font-semibold tracking-[-0.02em] md:text-lg">
                 {mode.kind === "single" ? translate("Spec sheet") : translate("Comparison sheet")}
               </h2>
-              <p className="mt-1 text-xs soft-text">
-                {translate("3:4 ratio · 1080 × 1440 captured at 3x for retina sharpness.")}
-              </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-[rgb(var(--muted)/0.5)] p-2 soft-text transition hover:border-[rgb(var(--text)/0.45)] hover:text-[rgb(var(--text))]"
+              className="shrink-0 rounded-lg border border-[rgb(var(--muted)/0.5)] p-1.5 soft-text transition hover:border-[rgb(var(--text)/0.45)] hover:text-[rgb(var(--text))] md:p-2"
               aria-label={translate("Close")}
             >
               <X className="h-4 w-4" />
@@ -157,7 +155,7 @@ export function CardPreviewModal({ open, onClose, mode }: Props) {
           {/* Visible scaled preview — separate render */}
           <div
             ref={wrapRef}
-            className="flex flex-1 items-center justify-center overflow-auto px-6 py-5"
+            className="flex flex-1 items-center justify-center overflow-auto px-4 py-3 md:px-6 md:py-4"
             style={{ minHeight: 0 }}
           >
             <div
@@ -192,12 +190,12 @@ export function CardPreviewModal({ open, onClose, mode }: Props) {
           </div>
 
           {error ? (
-            <p className="px-6 pb-2 text-xs text-rose-400">{error}</p>
+            <p className="shrink-0 px-5 pb-2 text-xs text-rose-400 md:px-6">{error}</p>
           ) : null}
 
-          <div className="flex items-center justify-between gap-3 border-t border-[rgb(var(--muted)/0.25)] bg-[rgb(var(--bg-elev)/0.55)] px-6 py-4">
-            <p className="text-xs soft-text">{filename}</p>
-            <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[rgb(var(--muted)/0.25)] bg-[rgb(var(--bg-elev)/0.55)] px-5 py-3 md:px-6 md:py-4">
+            <p className="hidden truncate text-xs soft-text md:block">{filename}</p>
+            <div className="ml-auto flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
