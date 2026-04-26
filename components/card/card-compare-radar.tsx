@@ -1,5 +1,8 @@
+"use client";
+
 import { Shoe } from "@/lib/types";
 import { METRICS, getLineStyle, scoreFor } from "@/components/compare/compare-metrics";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 const SIZE = 360;
 const CX = SIZE / 2;
@@ -13,6 +16,7 @@ type Props = {
 };
 
 export function CardCompareRadar({ shoes, size = 520 }: Props) {
+  const { translate } = useLocale();
   const n = METRICS.length;
   const angles = METRICS.map((_, i) => ((-90 + i * (360 / n)) * Math.PI) / 180);
 
@@ -101,7 +105,7 @@ export function CardCompareRadar({ shoes, size = 520 }: Props) {
             letterSpacing="0.18em"
             style={{ textTransform: "uppercase" }}
           >
-            {METRICS[i].label.toUpperCase()}
+            {translate(METRICS[i].label).toUpperCase()}
           </text>
         );
       })}

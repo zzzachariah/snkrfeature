@@ -1,4 +1,7 @@
+"use client";
+
 import type { CSSProperties, ReactNode } from "react";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 export const CARD_WIDTH = 1080;
 export const CARD_HEIGHT = 1440;
@@ -118,6 +121,7 @@ function BrandMark({ size = 32 }: { size?: number }) {
 }
 
 function CardHeader({ variant }: { variant: "single" | "compare" }) {
+  const { translate } = useLocale();
   return (
     <div
       style={{
@@ -153,13 +157,14 @@ function CardHeader({ variant }: { variant: "single" | "compare" }) {
           color: "rgb(var(--subtext))",
         }}
       >
-        {variant === "compare" ? "Compare" : "Spec Sheet"}
+        {translate(variant === "compare" ? "Compare" : "Spec sheet")}
       </span>
     </div>
   );
 }
 
 function CardFooter() {
+  const { translate } = useLocale();
   return (
     <div
       style={{
@@ -197,7 +202,7 @@ function CardFooter() {
               color: "rgb(var(--text))",
             }}
           >
-            {SLOGAN}
+            {translate(SLOGAN)}
           </span>
         </div>
       </div>
@@ -235,7 +240,7 @@ function CardFooter() {
             color: "rgb(var(--subtext))",
           }}
         >
-          Scan to open
+          {translate("Scan to open")}
         </span>
       </div>
     </div>

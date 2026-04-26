@@ -1,4 +1,7 @@
+"use client";
+
 import type { RadarAxis } from "@/components/detail/performance-radar";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 const VIEW = 320;
 const CENTER = VIEW / 2;
@@ -28,6 +31,7 @@ type Props = {
 };
 
 export function CardStaticRadar({ axes, size = 460 }: Props) {
+  const { translate } = useLocale();
   const count = axes.length;
   const polygonPoints = axes
     .map((axis, i) => {
@@ -118,7 +122,7 @@ export function CardStaticRadar({ axes, size = 460 }: Props) {
               fill="rgba(0,0,0,0.55)"
               style={{ textTransform: "uppercase" }}
             >
-              {axis.label.toUpperCase()}
+              {translate(axis.label).toUpperCase()}
             </text>
             <text
               x={valuePos.x}
