@@ -90,11 +90,30 @@ export function getLineStyle(index: number) {
   return SHOE_LINE_STYLES[index] ?? SHOE_LINE_STYLES[SHOE_LINE_STYLES.length - 1];
 }
 
-export const SPEC_ROWS: Array<{ key: string; label: string; get: (shoe: Shoe) => string | null }> = [
-  { key: "forefoot", label: "Forefoot Midsole", get: (shoe) => shoe.spec.forefoot_midsole_tech ?? null },
-  { key: "heel", label: "Heel Midsole", get: (shoe) => shoe.spec.heel_midsole_tech ?? null },
+export const SPEC_ROWS: Array<{
+  key: string;
+  label: string;
+  get: (shoe: Shoe) => string | null;
+  /**
+   * When true the row's value renders untranslated (forefoot/heel midsole
+   * tech names are kept in their original language per editorial direction).
+   */
+  protectValue?: boolean;
+}> = [
+  {
+    key: "forefoot",
+    label: "Forefoot Midsole",
+    get: (shoe) => shoe.spec.forefoot_midsole_tech ?? null,
+    protectValue: true,
+  },
+  {
+    key: "heel",
+    label: "Heel Midsole",
+    get: (shoe) => shoe.spec.heel_midsole_tech ?? null,
+    protectValue: true,
+  },
   { key: "outsole", label: "Outsole", get: (shoe) => shoe.spec.outsole_tech ?? null },
   { key: "upper", label: "Upper", get: (shoe) => shoe.spec.upper_tech ?? null },
   { key: "traction", label: "Traction", get: (shoe) => shoe.spec.traction ?? null },
-  { key: "fit_profile", label: "Fit Profile", get: (shoe) => shoe.spec.fit ?? null }
+  { key: "fit_profile", label: "Fit Profile", get: (shoe) => shoe.spec.fit ?? null },
 ];
